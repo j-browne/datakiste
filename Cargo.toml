@@ -1,0 +1,10 @@
+[package]
+name = "datakiste"
+version = "0.1.0"
+authors = ["Justin Browne <brownej@nscl.msu.edu>"]
+
+[dependencies]
+byteorder = "0.5.2"
+getopts = "0.2"
+gnuplot = "0.0.21"
+log = "0.3.6"
