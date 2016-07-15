@@ -1,7 +1,7 @@
 #[macro_use]extern crate datakiste;
 extern crate getopts;
 
-use datakiste::Run;
+use datakiste::{DkBinRead, DkBinWrite, Run};
 use getopts::Options;
 use std::error::Error;
 use std::env;
@@ -45,7 +45,7 @@ fn main() {
     };
 
     // Read in run from input file
-    let mut run = Run::from_file(&mut fin).unwrap();
+    let mut run = Run::from_file_bin(&mut fin).unwrap();
 
     // Remove events that do not have silicon hits
     run.events.retain(|e| {
@@ -60,5 +60,5 @@ fn main() {
     });
 
     // Write out to the output file
-    run.write(&mut fout);
+    let _ = run.to_file_bin(&mut fout);
 }

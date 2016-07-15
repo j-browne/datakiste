@@ -12,17 +12,16 @@ pub trait Detector: Debug {
     fn det_to_daq(&self, detch: u16) -> Option<(u16, u16, u16, u16)>;
 }
 
-#[allow(non_camel_case_types)]
 #[derive(Debug)]
-pub struct BB10_F {
+pub struct BB10F {
     name: String,
     start: (u16, u16, u16, u16),
     num_chans: u16,
 }
 
-impl BB10_F {
-    pub fn new(id: (u16, u16, u16, u16), n: String) -> BB10_F {
-        BB10_F {
+impl BB10F {
+    pub fn new(id: (u16, u16, u16, u16), n: String) -> BB10F {
+        BB10F {
             start: id,
             name: n,
             num_chans: 8,
@@ -30,7 +29,7 @@ impl BB10_F {
     }
 }
 
-impl Detector for BB10_F {
+impl Detector for BB10F {
     fn name(&self) -> String {
         self.name.clone()
     }
@@ -73,17 +72,16 @@ impl Detector for BB10_F {
 }
 
 
-#[allow(non_camel_case_types)]
 #[derive(Debug)]
-pub struct BB15_B {
+pub struct BB15B {
     name: String,
     start: (u16, u16, u16, u16),
     num_chans: u16,
 }
 
-impl BB15_B {
-    pub fn new(id: (u16, u16, u16, u16), n: String) -> BB15_B {
-        BB15_B {
+impl BB15B {
+    pub fn new(id: (u16, u16, u16, u16), n: String) -> BB15B {
+        BB15B {
             start: id,
             name: n,
             num_chans: 4,
@@ -91,7 +89,7 @@ impl BB15_B {
     }
 }
 
-impl Detector for BB15_B {
+impl Detector for BB15B {
     fn name(&self) -> String {
         self.name.clone()
     }
@@ -129,17 +127,16 @@ impl Detector for BB15_B {
 }
 
 
-#[allow(non_camel_case_types)]
 #[derive(Debug)]
-pub struct BB15_F {
+pub struct BB15F {
     name: String,
     start: (u16, u16, u16, u16),
     num_chans: u16,
 }
 
-impl BB15_F {
-    pub fn new(id: (u16, u16, u16, u16), n: String) -> BB15_F {
-        BB15_F {
+impl BB15F {
+    pub fn new(id: (u16, u16, u16, u16), n: String) -> BB15F {
+        BB15F {
             start: id,
             name: n,
             num_chans: 64,
@@ -147,7 +144,7 @@ impl BB15_F {
     }
 }
 
-impl Detector for BB15_F {
+impl Detector for BB15F {
     fn name(&self) -> String {
         self.name.clone()
     }
@@ -196,7 +193,6 @@ impl Detector for BB15_F {
 }
 
 
-#[allow(non_camel_case_types)]
 #[derive(Debug)]
 pub struct HABANERO {
     name: String,
@@ -253,7 +249,6 @@ impl Detector for HABANERO {
 }
 
 
-#[allow(non_camel_case_types)]
 #[derive(Debug)]
 pub struct HAGRID {
     name: String,
@@ -309,17 +304,16 @@ impl Detector for HAGRID {
 }
 
 
-#[allow(non_camel_case_types)]
 #[derive(Debug)]
-pub struct PSIC_E {
+pub struct PSICE {
     name: String,
     start: (u16, u16, u16, u16),
     num_chans: u16,
 }
 
-impl PSIC_E {
-    pub fn new(id: (u16, u16, u16, u16), n: String) -> PSIC_E {
-        PSIC_E {
+impl PSICE {
+    pub fn new(id: (u16, u16, u16, u16), n: String) -> PSICE {
+        PSICE {
             start: id,
             name: n,
             num_chans: 1,
@@ -327,7 +321,7 @@ impl PSIC_E {
     }
 }
 
-impl Detector for PSIC_E {
+impl Detector for PSICE {
     fn name(&self) -> String {
         self.name.clone()
     }
@@ -365,17 +359,16 @@ impl Detector for PSIC_E {
 }
 
 
-#[allow(non_camel_case_types)]
 #[derive(Debug)]
-pub struct PSIC_XY {
+pub struct PSICXY {
     name: String,
     start: (u16, u16, u16, u16),
     num_chans: u16,
 }
 
-impl PSIC_XY {
-    pub fn new(id: (u16, u16, u16, u16), n: String) -> PSIC_XY {
-        PSIC_XY {
+impl PSICXY {
+    pub fn new(id: (u16, u16, u16, u16), n: String) -> PSICXY {
+        PSICXY {
             start: id,
             name: n,
             num_chans: 32,
@@ -383,7 +376,7 @@ impl PSIC_XY {
     }
 }
 
-impl Detector for PSIC_XY {
+impl Detector for PSICXY {
     fn name(&self) -> String {
         self.name.clone()
     }
@@ -422,17 +415,16 @@ impl Detector for PSIC_XY {
 }
 
 
-#[allow(non_camel_case_types)]
 #[derive(Debug)]
-pub struct QQQ3_B {
+pub struct QQQ3B {
     name: String,
     start: (u16, u16, u16, u16),
     num_chans: u16,
 }
 
-impl QQQ3_B {
-    pub fn new(id: (u16, u16, u16, u16), n: String) -> QQQ3_B {
-        QQQ3_B {
+impl QQQ3B {
+    pub fn new(id: (u16, u16, u16, u16), n: String) -> QQQ3B {
+        QQQ3B {
             start: id,
             name: n,
             num_chans: 16,
@@ -440,7 +432,7 @@ impl QQQ3_B {
     }
 }
 
-impl Detector for QQQ3_B {
+impl Detector for QQQ3B {
     fn name(&self) -> String {
         self.name.clone()
     }
@@ -477,17 +469,16 @@ impl Detector for QQQ3_B {
 }
 
 
-#[allow(non_camel_case_types)]
 #[derive(Debug)]
-pub struct QQQ3_F {
+pub struct QQQ3F {
     name: String,
     start: (u16, u16, u16, u16),
     num_chans: u16,
 }
 
-impl QQQ3_F {
-    pub fn new(id: (u16, u16, u16, u16), n: String) -> QQQ3_F {
-        QQQ3_F {
+impl QQQ3F {
+    pub fn new(id: (u16, u16, u16, u16), n: String) -> QQQ3F {
+        QQQ3F {
             start: id,
             name: n,
             num_chans: 16,
@@ -495,7 +486,7 @@ impl QQQ3_F {
     }
 }
 
-impl Detector for QQQ3_F {
+impl Detector for QQQ3F {
     fn name(&self) -> String {
         self.name.clone()
     }
@@ -537,17 +528,16 @@ impl Detector for QQQ3_F {
 }
 
 
-#[allow(non_camel_case_types)]
 #[derive(Debug)]
-pub struct QQQ5_B {
+pub struct QQQ5B {
     name: String,
     start: (u16, u16, u16, u16),
     num_chans: u16,
 }
 
-impl QQQ5_B {
-    pub fn new(id: (u16, u16, u16, u16), n: String) -> QQQ5_B {
-        QQQ5_B {
+impl QQQ5B {
+    pub fn new(id: (u16, u16, u16, u16), n: String) -> QQQ5B {
+        QQQ5B {
             start: id,
             name: n,
             num_chans: 4,
@@ -555,7 +545,7 @@ impl QQQ5_B {
     }
 }
 
-impl Detector for QQQ5_B {
+impl Detector for QQQ5B {
     fn name(&self) -> String {
         self.name.clone()
     }
@@ -593,17 +583,16 @@ impl Detector for QQQ5_B {
 }
 
 
-#[allow(non_camel_case_types)]
 #[derive(Debug)]
-pub struct QQQ5_F {
+pub struct QQQ5F {
     name: String,
     start: (u16, u16, u16, u16),
     num_chans: u16,
 }
 
-impl QQQ5_F {
-    pub fn new(id: (u16, u16, u16, u16), n: String) -> QQQ5_F {
-        QQQ5_F {
+impl QQQ5F {
+    pub fn new(id: (u16, u16, u16, u16), n: String) -> QQQ5F {
+        QQQ5F {
             start: id,
             name: n,
             num_chans: 32,
@@ -611,7 +600,7 @@ impl QQQ5_F {
     }
 }
 
-impl Detector for QQQ5_F {
+impl Detector for QQQ5F {
     fn name(&self) -> String {
         self.name.clone()
     }
@@ -655,17 +644,16 @@ impl Detector for QQQ5_F {
 }
 
 
-#[allow(non_camel_case_types)]
 #[derive(Debug)]
-pub struct YY1_F {
+pub struct YY1F {
     name: String,
     start: (u16, u16, u16, u16),
     num_chans: u16,
 }
 
-impl YY1_F {
-    pub fn new(id: (u16, u16, u16, u16), n: String) -> YY1_F {
-        YY1_F {
+impl YY1F {
+    pub fn new(id: (u16, u16, u16, u16), n: String) -> YY1F {
+        YY1F {
             start: id,
             name: n,
             num_chans: 16,
@@ -673,7 +661,7 @@ impl YY1_F {
     }
 }
 
-impl Detector for YY1_F {
+impl Detector for YY1F {
     fn name(&self) -> String {
         self.name.clone()
     }

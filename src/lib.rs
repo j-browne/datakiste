@@ -1,3 +1,5 @@
+//! A library for analyzing nuclear physics data
+
 extern crate byteorder;
 
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
@@ -10,51 +12,84 @@ use std::io::{Write, BufReader, BufRead};
 pub mod detector;
 #[macro_use]pub mod logging;
 
+mod hist;
+pub use hist::{Hist1d, Hist2d};
+
+pub trait DkBinRead: Sized {
+    /// Create an object from a binary file
+    fn from_file_bin(file: &mut File) -> io::Result<Self>;
+}
+
+pub trait DkBinWrite: Sized {
+    /// Write an object to a binary file
+    fn to_file_bin(&self, file: &mut File) -> io::Result<()>;
+}
+
+pub trait DkTxtRead: Sized {
+    /// Create an object from a binary file
+    fn from_file_txt(file: &mut File) -> io::Result<Self>;
+}
+
+pub trait DkTxtWrite: Sized {
+    /// Write an object to a binary file
+    fn to_file_txt(&self, file: &mut File) -> io::Result<()>;
+}
+
+
+/// A type that hold the data from an experimental run
+///
+/// A `Run` holds a sequence of `Event`s
+///
+/// # File Formats
+///
+/// ## Binary
+///
+/// ## Text
+///
+/// # Examples
 #[derive(Debug, Clone)]
 pub struct Run {
     pub events: Vec<Event>,
 }
 
-impl Run {
-    pub fn from_file(f: &mut File) -> io::Result<Run> {
+impl DkBinRead for Run {
+    fn from_file_bin(file: &mut File) -> io::Result<Run> {
         let mut v = Vec::<Event>::new();
-        let n_events = try!(f.read_u32::<LittleEndian>());
+        let n_events = try!(file.read_u32::<LittleEndian>());
         for _ in 0..n_events {
-            let e = try!(Event::from_file(f));
+            let e = try!(Event::from_file_bin(file));
             v.push(e);
         }
 
         Ok(Run { events: v })
     }
+}
 
-    // FIXME: Handle output errors
-    pub fn write(&self, file: &mut File) {
-        let _ = file.write_u32::<LittleEndian>(self.events.len() as u32);
+impl DkBinWrite for Run {
+    fn to_file_bin(&self, file: &mut File) -> io::Result<()> {
+        let _ = try!(file.write_u32::<LittleEndian>(self.events.len() as u32));
         for e in &self.events {
-            e.write(file);
+            let _ = try!(e.to_file_bin(file));
         }
+        Ok(())
     }
 }
 
+/// A type that holds an experimental event
+///
+/// An `Event` holds a sequence of `Hit`s
+///
+/// ## Binary
+///
+/// ## Text
+///
+/// # Examples
 #[derive(Debug, Clone)]
 pub struct Event {
     pub hits: Vec<Hit>,
 }
 
 impl Event {
-    // FIXME: If there's a bad event, skip to next event.
-    // Currently, it fucks up the rest of the file.
-    pub fn from_file(f: &mut File) -> io::Result<Event> {
-        let mut v = Vec::<Hit>::new();
-        let n_hits = try!(f.read_u16::<LittleEndian>());
-        for _ in 0..n_hits {
-            let h = try!(Hit::from_file(f));
-            v.push(h);
-        }
-
-        Ok(Event { hits: v })
-    }
-
     pub fn apply_det(
         &mut self,
         all_dets: &Vec<Box<Detector>>,
@@ -83,16 +118,40 @@ impl Event {
             h.energy = s * (h.value as f64) + o;
         }
     }
+}
 
-    // FIXME: Handle output errors
-    pub fn write(&self, file: &mut File) {
-        let _ = file.write_u16::<LittleEndian>(self.hits.len() as u16);
-        for h in &self.hits {
-            h.write(file);
+impl DkBinRead for Event {
+    fn from_file_bin(file: &mut File) -> io::Result<Event> {
+        // FIXME: If there's a bad event, skip to next event.
+        // Currently, it fucks up the rest of the file.
+        let mut v = Vec::<Hit>::new();
+        let n_hits = try!(file.read_u16::<LittleEndian>());
+        for _ in 0..n_hits {
+            let h = try!(Hit::from_file_bin(file));
+            v.push(h);
         }
+
+        Ok(Event { hits: v })
     }
 }
 
+impl DkBinWrite for Event {
+    fn to_file_bin(&self, file: &mut File) -> io::Result<()> {
+        let _ = try!(file.write_u16::<LittleEndian>(self.hits.len() as u16));
+        for h in &self.hits {
+            let _ = try!(h.to_file_bin(file));
+        }
+        Ok(())
+    }
+}
+
+/// A type that holds an experimental hit
+///
+/// ## Binary
+///
+/// ## Text
+///
+/// # Examples
 #[derive(Debug, Clone)]
 pub struct Hit {
     pub daqid: (u16, u16, u16, u16),
@@ -104,22 +163,22 @@ pub struct Hit {
     pub trace: Vec<u16>,
 }
 
-impl Hit {
-    pub fn from_file(f: &mut File) -> io::Result<Hit> {
-        let so = try!(f.read_u16::<LittleEndian>());
-        let cr = try!(f.read_u16::<LittleEndian>());
-        let sl = try!(f.read_u16::<LittleEndian>());
-        let ch = try!(f.read_u16::<LittleEndian>());
-        let di = try!(f.read_u16::<LittleEndian>());
-        let dc = try!(f.read_u16::<LittleEndian>());
-        let rv = try!(f.read_u16::<LittleEndian>());
-        let val = try!(f.read_u16::<LittleEndian>());
-        let en = try!(f.read_f64::<LittleEndian>());
-        let t = try!(f.read_f64::<LittleEndian>());
-        let tr_size = try!(f.read_u16::<LittleEndian>());
+impl DkBinRead for Hit {
+    fn from_file_bin(file: &mut File) -> io::Result<Hit> {
+        let so = try!(file.read_u16::<LittleEndian>());
+        let cr = try!(file.read_u16::<LittleEndian>());
+        let sl = try!(file.read_u16::<LittleEndian>());
+        let ch = try!(file.read_u16::<LittleEndian>());
+        let di = try!(file.read_u16::<LittleEndian>());
+        let dc = try!(file.read_u16::<LittleEndian>());
+        let rv = try!(file.read_u16::<LittleEndian>());
+        let val = try!(file.read_u16::<LittleEndian>());
+        let en = try!(file.read_f64::<LittleEndian>());
+        let t = try!(file.read_f64::<LittleEndian>());
+        let tr_size = try!(file.read_u16::<LittleEndian>());
         let mut tr = Vec::<u16>::new();
         for _ in 0..tr_size {
-            let y = try!(f.read_u16::<LittleEndian>());
+            let y = try!(file.read_u16::<LittleEndian>());
             tr.push(y);
         }
 
@@ -133,30 +192,32 @@ impl Hit {
             trace: tr,
         })
     }
+}
 
-    // FIXME: Handle output errors
-    pub fn write(&self, file: &mut File) {
-        let _ = file.write_u16::<LittleEndian>(self.daqid.0);
-        let _ = file.write_u16::<LittleEndian>(self.daqid.1);
-        let _ = file.write_u16::<LittleEndian>(self.daqid.2);
-        let _ = file.write_u16::<LittleEndian>(self.daqid.3);
-        let _ = file.write_u16::<LittleEndian>(self.detid.0);
-        let _ = file.write_u16::<LittleEndian>(self.detid.1);
-        let _ = file.write_u16::<LittleEndian>(self.rawval);
-        let _ = file.write_u16::<LittleEndian>(self.value);
-        let _ = file.write_f64::<LittleEndian>(self.energy);
-        let _ = file.write_f64::<LittleEndian>(self.time);
-        let _ = file.write_u16::<LittleEndian>(self.trace.len() as u16);
+impl DkBinWrite for Hit {
+    fn to_file_bin(&self, file: &mut File) -> io::Result<()> {
+        let _ = try!(file.write_u16::<LittleEndian>(self.daqid.0));
+        let _ = try!(file.write_u16::<LittleEndian>(self.daqid.1));
+        let _ = try!(file.write_u16::<LittleEndian>(self.daqid.2));
+        let _ = try!(file.write_u16::<LittleEndian>(self.daqid.3));
+        let _ = try!(file.write_u16::<LittleEndian>(self.detid.0));
+        let _ = try!(file.write_u16::<LittleEndian>(self.detid.1));
+        let _ = try!(file.write_u16::<LittleEndian>(self.rawval));
+        let _ = try!(file.write_u16::<LittleEndian>(self.value));
+        let _ = try!(file.write_f64::<LittleEndian>(self.energy));
+        let _ = try!(file.write_f64::<LittleEndian>(self.time));
+        let _ = try!(file.write_u16::<LittleEndian>(self.trace.len() as u16));
         for i in &self.trace {
-            let _ = file.write_u16::<LittleEndian>(*i);
+            let _ = try!(file.write_u16::<LittleEndian>(*i));
         }
+        Ok(())
     }
 }
 
 //
 // make_det stuff
 //
-pub fn get_dets(file: File) -> Vec<Box<Detector>> {
+pub fn get_dets(file: File) -> Vec<Box<Detector>> { //FIXME: &mut ?
     let mut dets = Vec::<Box<Detector>>::new();
     // Read in the detector configuration file
     let r = BufReader::new(file);
@@ -214,18 +275,18 @@ fn line_to_det(line: &String) -> Option<Box<Detector>> {
         }
         let id = (id_vec[0], id_vec[1], id_vec[2], id_vec[3]);
         let d: Option<Box<Detector>> = match &t as &str {
-            "BB10_F" => Some(Box::new(BB10_F::new(id, n))),
-            "BB15_B" => Some(Box::new(BB15_B::new(id, n))),
-            "BB15_F" => Some(Box::new(BB15_F::new(id, n))),
+            "BB10_F" => Some(Box::new(BB10F::new(id, n))),
+            "BB15_B" => Some(Box::new(BB15B::new(id, n))),
+            "BB15_F" => Some(Box::new(BB15F::new(id, n))),
             "HABANERO" => Some(Box::new(HABANERO::new(id, n))),
             "HAGRID" => Some(Box::new(HAGRID::new(id, n))),
-            "PSIC_XY" => Some(Box::new(PSIC_XY::new(id, n))),
-            "PSIC_E" => Some(Box::new(PSIC_E::new(id, n))),
-            "QQQ3_B" => Some(Box::new(QQQ3_B::new(id, n))),
-            "QQQ3_F" => Some(Box::new(QQQ3_F::new(id, n))),
-            "QQQ5_B" => Some(Box::new(QQQ5_B::new(id, n))),
-            "QQQ5_F" => Some(Box::new(QQQ5_F::new(id, n))),
-            "YY1_F" => Some(Box::new(YY1_F::new(id, n))),
+            "PSIC_XY" => Some(Box::new(PSICXY::new(id, n))),
+            "PSIC_E" => Some(Box::new(PSICE::new(id, n))),
+            "QQQ3_B" => Some(Box::new(QQQ3B::new(id, n))),
+            "QQQ3_F" => Some(Box::new(QQQ3F::new(id, n))),
+            "QQQ5_B" => Some(Box::new(QQQ5B::new(id, n))),
+            "QQQ5_F" => Some(Box::new(QQQ5F::new(id, n))),
+            "YY1_F" => Some(Box::new(YY1F::new(id, n))),
             _ => {
                 warn!("Unrecognized detector type `{}`", t);
                 None
@@ -239,7 +300,7 @@ fn line_to_det(line: &String) -> Option<Box<Detector>> {
 //
 // calibrate stuff
 //
-pub fn get_cal_map(file: File) -> HashMap<(u16, u16, u16, u16), (f64, f64)> {
+pub fn get_cal_map(file: File) -> HashMap<(u16, u16, u16, u16), (f64, f64)> { //FIXME: &mut ?
     let mut map = HashMap::<(u16, u16, u16, u16), (f64, f64)>::new();
     // Read in the calibration file
     let r = BufReader::new(file);
