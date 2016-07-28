@@ -2,7 +2,7 @@
 //extern crate byteorder;
 extern crate getopts;
 
-use datakiste::{DkBinRead, DkTxtWrite, Hist1d, Hist2d, Run};
+use datakiste::{ReadDkBin, WriteDkTxt, Hist1d, Hist2d};
 use getopts::Options;
 use std::error::Error;
 use std::env;
@@ -36,7 +36,7 @@ fn main() {
     };
 
     // Read in run from input file
-    let run = Run::from_file_bin(&mut fin).unwrap();
+    let run = fin.read_run_bin().unwrap();
 
     let de_bins = 250usize;
     let e_bins = 250usize;
@@ -44,9 +44,9 @@ fn main() {
     let e_min = 0f64;
     let de_max = 8000f64;
     let e_max = 8000f64;
-    let mut hist_ic_de = Hist1d::new(de_bins, de_min, de_max);
-    let mut hist_ic_e = Hist1d::new(e_bins, e_min, e_max);
-    let mut hist_ic_de_e = Hist2d::new(e_bins, e_min, e_max, de_bins, de_min, de_max);
+    let mut hist_ic_de = Hist1d::new(de_bins, de_min, de_max).unwrap();
+    let mut hist_ic_e = Hist1d::new(e_bins, e_min, e_max).unwrap();
+    let mut hist_ic_de_e = Hist2d::new(e_bins, e_min, e_max, de_bins, de_min, de_max).unwrap();
     let mut v = Vec::<(f64, f64)>::new();
     for e in run.events {
         // flags
@@ -125,8 +125,8 @@ fn main() {
         Ok(file) => file,
     };
 
-    
-    let _ = hist_ic_de.to_file_txt(&mut fout_de);
-    let _ = hist_ic_e.to_file_txt(&mut fout_e);
-    let _ = hist_ic_de_e.to_file_txt(&mut fout_de_e);
+
+    let _ = fout_de.write_hist_1d_txt(hist_ic_de);
+    let _ = fout_e.write_hist_1d_txt(hist_ic_e);
+    let _ = fout_de_e.write_hist_2d_txt(hist_ic_de_e);
 }

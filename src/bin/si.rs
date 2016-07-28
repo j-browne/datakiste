@@ -1,7 +1,7 @@
 #[macro_use]extern crate datakiste;
 extern crate getopts;
 
-use datakiste::{DkBinRead, DkTxtWrite, Hist2d, Run};
+use datakiste::{ReadDkBin, WriteDkTxt, Hist2d};
 use getopts::Options;
 use std::error::Error;
 use std::env;
@@ -35,11 +35,11 @@ fn main() {
     };
 
     // Read in run from input file
-    let run = Run::from_file_bin(&mut fin).unwrap();
+    let run = fin.read_run_bin().unwrap();
 
     let mut si_pts = Vec::<(f64, f64)>::new();
     let mut si_pts_gic = Vec::<(f64, f64)>::new();
-    let mut hist_si = Hist2d::new(64usize, 0f64, 64f64, 512usize, 0f64, 16384f64);
+    let mut hist_si = Hist2d::new(64usize, 0f64, 64f64, 512usize, 0f64, 16384f64).unwrap();
     //let mut hist_si_gic = Hist2d::new(64usize, 0f64, 64f64, 512usize, 0f64, 16384f64);
     for e in run.events {
         let mut has_ic_de = false;
@@ -93,5 +93,5 @@ fn main() {
         Ok(file) => file,
     };
 
-    let _ = hist_si.to_file_txt(&mut fout_si);
+    let _ = fout_si.write_hist_2d_txt(hist_si);
 }

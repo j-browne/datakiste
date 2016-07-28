@@ -6,8 +6,7 @@ use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use detector::*;
 use std::collections::HashMap;
 use std::fs::File;
-use std::io;
-use std::io::{Write, BufReader, BufRead};
+use std::io::{self, Read, Write, BufReader, BufRead};
 
 pub mod detector;
 #[macro_use]pub mod logging;
@@ -15,25 +14,239 @@ pub mod detector;
 mod hist;
 pub use hist::{Hist1d, Hist2d};
 
-pub trait DkBinRead: Sized {
-    /// Create an object from a binary file
-    fn from_file_bin(file: &mut File) -> io::Result<Self>;
+///
+///
+///
+pub trait ReadDkBin: ReadBytesExt {
+    fn read_run_bin(&mut self) -> io::Result<Run> {
+        let mut v = Vec::<Event>::new();
+        let n_events = try!(self.read_u32::<LittleEndian>());
+        for _ in 0..n_events {
+            let e = try!(self.read_event_bin());
+            v.push(e);
+        }
+
+        Ok(Run { events: v })
+    }
+
+    fn read_event_bin(&mut self) -> io::Result<Event> {
+        // FIXME: If there's a bad event, skip to next event.
+        // Currently, it fucks up the rest of the file.
+        let mut v = Vec::<Hit>::new();
+        let n_hits = try!(self.read_u16::<LittleEndian>());
+        for _ in 0..n_hits {
+            let h = try!(self.read_hit_bin());
+            v.push(h);
+        }
+
+        Ok(Event { hits: v })
+    }
+
+    fn read_hit_bin(&mut self) -> io::Result<Hit> {
+        let so = try!(self.read_u16::<LittleEndian>());
+        let cr = try!(self.read_u16::<LittleEndian>());
+        let sl = try!(self.read_u16::<LittleEndian>());
+        let ch = try!(self.read_u16::<LittleEndian>());
+        let di = try!(self.read_u16::<LittleEndian>());
+        let dc = try!(self.read_u16::<LittleEndian>());
+        let rv = try!(self.read_u16::<LittleEndian>());
+        let val = try!(self.read_u16::<LittleEndian>());
+        let en = try!(self.read_f64::<LittleEndian>());
+        let t = try!(self.read_f64::<LittleEndian>());
+        let tr_size = try!(self.read_u16::<LittleEndian>());
+        let mut tr = Vec::<u16>::new();
+        for _ in 0..tr_size {
+            let y = try!(self.read_u16::<LittleEndian>());
+            tr.push(y);
+        }
+
+        Ok(Hit {
+            daqid: (so, cr, sl, ch),
+            detid: (di, dc),
+            rawval: rv,
+            value: val,
+            energy: en,
+            time: t,
+            trace: tr,
+        })
+    }
 }
 
-pub trait DkBinWrite: Sized {
-    /// Write an object to a binary file
-    fn to_file_bin(&self, file: &mut File) -> io::Result<()>;
+/// Anything that implements `ReadBytesExt` gets a default `ReadDkBin`
+/// implementation.
+impl<R: ReadBytesExt + Sized> ReadDkBin for R {}
+
+
+///
+///
+///
+pub trait WriteDkBin: WriteBytesExt {
+    fn write_run_bin(&mut self, r: Run) -> io::Result<()> {
+        let _ = try!(self.write_u32::<LittleEndian>(r.events.len() as u32));
+        for e in r.events {
+            let _ = try!(self.write_event_bin(e));
+        }
+        Ok(())
+    }
+
+    fn write_event_bin(&mut self, e: Event) -> io::Result<()> {
+        let _ = try!(self.write_u16::<LittleEndian>(e.hits.len() as u16));
+        for h in e.hits {
+            let _ = try!(self.write_hit_bin(h));
+        }
+        Ok(())
+    }
+
+    fn write_hit_bin(&mut self, h: Hit) -> io::Result<()> {
+        let _ = try!(self.write_u16::<LittleEndian>(h.daqid.0));
+        let _ = try!(self.write_u16::<LittleEndian>(h.daqid.1));
+        let _ = try!(self.write_u16::<LittleEndian>(h.daqid.2));
+        let _ = try!(self.write_u16::<LittleEndian>(h.daqid.3));
+        let _ = try!(self.write_u16::<LittleEndian>(h.detid.0));
+        let _ = try!(self.write_u16::<LittleEndian>(h.detid.1));
+        let _ = try!(self.write_u16::<LittleEndian>(h.rawval));
+        let _ = try!(self.write_u16::<LittleEndian>(h.value));
+        let _ = try!(self.write_f64::<LittleEndian>(h.energy));
+        let _ = try!(self.write_f64::<LittleEndian>(h.time));
+        let _ = try!(self.write_u16::<LittleEndian>(h.trace.len() as u16));
+        for i in &h.trace {
+            let _ = try!(self.write_u16::<LittleEndian>(*i));
+        }
+        Ok(())
+    }
 }
 
-pub trait DkTxtRead: Sized {
-    /// Create an object from a binary file
-    fn from_file_txt(file: &mut File) -> io::Result<Self>;
+/// Anything that implements `WriteBytesExt` gets a default `WriteDkBin`
+/// implementation.
+impl<W: WriteBytesExt> WriteDkBin for W {}
+
+
+///
+///
+///
+pub trait ReadDkTxt: Read {
+    fn read_to_hist_1d_txt(&mut self, h: &mut Hist1d) -> io::Result<()> {
+        let b = BufReader::new(self);
+        for line in b.lines() {
+            let l = try!(line);
+            let l: Vec<_> = l.split_whitespace().collect();
+
+            if l.len() < 2 {
+                continue;
+            }
+            let x = l[0].parse::<f64>();
+            let y = l[1].parse::<u64>();
+
+            if x.is_err() {
+                warn!("Error parsing {} as f64", l[0]);
+                continue;
+            }
+            if y.is_err() {
+                warn!("Error parsing {} as u64", l[1]);
+                continue;
+            }
+
+            h.fill_with_counts(x.unwrap(), y.unwrap());
+        }
+        Ok(())
+    }
+    /*
+    fn read_hist_1d_txt(&mut self) -> Option<Hist1d> {
+        let b = BufReader::new(self);
+        let data_started = false;
+
+        for line in b.lines() {
+            if line.starts_with("##") {
+                // This is a Hist1d property
+                if data_started {
+                    // Property found in an invalid location
+                    warn!("A Hist1d property found after start of data");
+                } else {
+
+                }
+            } else if line.starts_with("#") {
+                // Comment
+
+            } else {
+                let l = Vec<_> = line.split_whitespace().collect();
+
+            }
+        }
+    }
+    */
+    fn read_to_hist_2d_txt(&mut self, h: &mut Hist2d) -> io::Result<()> {
+        let b = BufReader::new(self);
+        for line in b.lines() {
+            let l = try!(line);
+            let l: Vec<_> = l.split_whitespace().collect();
+
+            if l.len() < 3 {
+                continue;
+            }
+            let x = l[0].parse::<f64>();
+            let y = l[1].parse::<f64>();
+            let z = l[2].parse::<u64>();
+
+            if x.is_err() {
+                warn!("Error parsing {} as f64", l[0]);
+                continue;
+            }
+            if y.is_err() {
+                warn!("Error parsing {} as f64", l[1]);
+                continue;
+            }
+            if z.is_err() {
+                warn!("Error parsing {} as u64", l[2]);
+                continue;
+            }
+
+            h.fill_with_counts(x.unwrap(), y.unwrap(), z.unwrap());
+        }
+        Ok(())
+    }
 }
 
-pub trait DkTxtWrite: Sized {
-    /// Write an object to a binary file
-    fn to_file_txt(&self, file: &mut File) -> io::Result<()>;
+/// Anything that implements `Read` gets a default `ReadDkBin`
+/// implementation.
+impl<R: Read> ReadDkTxt for R {}
+
+
+///
+///
+///
+pub trait WriteDkTxt: Write {
+    fn write_hist_1d_txt(&mut self, h: Hist1d) -> io::Result<()> {
+        let axis = h.x_axis();
+        for bin in 0..axis.bins {
+            // FIXME: use a function call
+            let x = ((bin as f64) + 0.5) * axis.bin_width() + axis.min;
+            let y = h.counts_at_bin(bin).unwrap();
+            let _ = try!(writeln!(self, "{}\t{}", x, y));
+        }
+        Ok(())
+    }
+
+    fn write_hist_2d_txt(&mut self, h: Hist2d) -> io::Result<()> {
+        let x_axis = h.x_axis();
+        let y_axis = h.y_axis();
+        for bin_x in 0..x_axis.bins {
+            for bin_y in 0..y_axis.bins {
+                // FIXME: use a function call
+                let x = ((bin_x as f64) + 0.5) * x_axis.bin_width() + x_axis.min;
+                // FIXME: use a function call
+                let y = ((bin_y as f64) + 0.5) * y_axis.bin_width() + y_axis.min;
+                let z = h.counts_at_bin(bin_x, bin_y).unwrap();
+                let _ = try!(writeln!(self, "{}\t{}\t{}", x, y, z));
+            }
+            let _ = try!(writeln!(self, ""));
+        }
+        Ok(())
+    }
 }
+
+/// Anything that implements `Write` gets a default `WriteDkBin`
+/// implementation.
+impl<W: Write> WriteDkTxt for W {}
 
 
 /// A type that hold the data from an experimental run
@@ -52,29 +265,6 @@ pub struct Run {
     pub events: Vec<Event>,
 }
 
-impl DkBinRead for Run {
-    fn from_file_bin(file: &mut File) -> io::Result<Run> {
-        let mut v = Vec::<Event>::new();
-        let n_events = try!(file.read_u32::<LittleEndian>());
-        for _ in 0..n_events {
-            let e = try!(Event::from_file_bin(file));
-            v.push(e);
-        }
-
-        Ok(Run { events: v })
-    }
-}
-
-impl DkBinWrite for Run {
-    fn to_file_bin(&self, file: &mut File) -> io::Result<()> {
-        let _ = try!(file.write_u32::<LittleEndian>(self.events.len() as u32));
-        for e in &self.events {
-            let _ = try!(e.to_file_bin(file));
-        }
-        Ok(())
-    }
-}
-
 /// A type that holds an experimental event
 ///
 /// An `Event` holds a sequence of `Hit`s
@@ -90,8 +280,7 @@ pub struct Event {
 }
 
 impl Event {
-    pub fn apply_det(
-        &mut self,
+    pub fn apply_det(&mut self,
         all_dets: &Vec<Box<Detector>>,
         daq_det_map: &HashMap<(u16, u16, u16, u16), (u16, u16)>) {
         for ref mut h in &mut self.hits {
@@ -107,9 +296,7 @@ impl Event {
         }
     }
 
-    pub fn apply_calib(
-        &mut self,
-        calib: &HashMap<(u16, u16, u16, u16), (f64, f64)>) {
+    pub fn apply_calib(&mut self, calib: &HashMap<(u16, u16, u16, u16), (f64, f64)>) {
         for ref mut h in &mut self.hits {
             let (o, s) = match calib.get(&h.daqid) {
                 Some(x) => x.clone(),
@@ -117,31 +304,6 @@ impl Event {
             };
             h.energy = s * (h.value as f64) + o;
         }
-    }
-}
-
-impl DkBinRead for Event {
-    fn from_file_bin(file: &mut File) -> io::Result<Event> {
-        // FIXME: If there's a bad event, skip to next event.
-        // Currently, it fucks up the rest of the file.
-        let mut v = Vec::<Hit>::new();
-        let n_hits = try!(file.read_u16::<LittleEndian>());
-        for _ in 0..n_hits {
-            let h = try!(Hit::from_file_bin(file));
-            v.push(h);
-        }
-
-        Ok(Event { hits: v })
-    }
-}
-
-impl DkBinWrite for Event {
-    fn to_file_bin(&self, file: &mut File) -> io::Result<()> {
-        let _ = try!(file.write_u16::<LittleEndian>(self.hits.len() as u16));
-        for h in &self.hits {
-            let _ = try!(h.to_file_bin(file));
-        }
-        Ok(())
     }
 }
 
@@ -163,61 +325,11 @@ pub struct Hit {
     pub trace: Vec<u16>,
 }
 
-impl DkBinRead for Hit {
-    fn from_file_bin(file: &mut File) -> io::Result<Hit> {
-        let so = try!(file.read_u16::<LittleEndian>());
-        let cr = try!(file.read_u16::<LittleEndian>());
-        let sl = try!(file.read_u16::<LittleEndian>());
-        let ch = try!(file.read_u16::<LittleEndian>());
-        let di = try!(file.read_u16::<LittleEndian>());
-        let dc = try!(file.read_u16::<LittleEndian>());
-        let rv = try!(file.read_u16::<LittleEndian>());
-        let val = try!(file.read_u16::<LittleEndian>());
-        let en = try!(file.read_f64::<LittleEndian>());
-        let t = try!(file.read_f64::<LittleEndian>());
-        let tr_size = try!(file.read_u16::<LittleEndian>());
-        let mut tr = Vec::<u16>::new();
-        for _ in 0..tr_size {
-            let y = try!(file.read_u16::<LittleEndian>());
-            tr.push(y);
-        }
-
-        Ok(Hit {
-            daqid: (so, cr, sl, ch),
-            detid: (di, dc),
-            rawval: rv,
-            value: val,
-            energy: en,
-            time: t,
-            trace: tr,
-        })
-    }
-}
-
-impl DkBinWrite for Hit {
-    fn to_file_bin(&self, file: &mut File) -> io::Result<()> {
-        let _ = try!(file.write_u16::<LittleEndian>(self.daqid.0));
-        let _ = try!(file.write_u16::<LittleEndian>(self.daqid.1));
-        let _ = try!(file.write_u16::<LittleEndian>(self.daqid.2));
-        let _ = try!(file.write_u16::<LittleEndian>(self.daqid.3));
-        let _ = try!(file.write_u16::<LittleEndian>(self.detid.0));
-        let _ = try!(file.write_u16::<LittleEndian>(self.detid.1));
-        let _ = try!(file.write_u16::<LittleEndian>(self.rawval));
-        let _ = try!(file.write_u16::<LittleEndian>(self.value));
-        let _ = try!(file.write_f64::<LittleEndian>(self.energy));
-        let _ = try!(file.write_f64::<LittleEndian>(self.time));
-        let _ = try!(file.write_u16::<LittleEndian>(self.trace.len() as u16));
-        for i in &self.trace {
-            let _ = try!(file.write_u16::<LittleEndian>(*i));
-        }
-        Ok(())
-    }
-}
-
 //
 // make_det stuff
 //
-pub fn get_dets(file: File) -> Vec<Box<Detector>> { //FIXME: &mut ?
+pub fn get_dets(file: File) -> Vec<Box<Detector>> {
+    // FIXME: &mut ?
     let mut dets = Vec::<Box<Detector>>::new();
     // Read in the detector configuration file
     let r = BufReader::new(file);
@@ -230,7 +342,7 @@ pub fn get_dets(file: File) -> Vec<Box<Detector>> { //FIXME: &mut ?
     dets
 }
 
-pub fn get_id_map(dets: &Vec<Box<Detector>>) -> HashMap<(u16, u16,u16, u16), (u16, u16)> {
+pub fn get_id_map(dets: &Vec<Box<Detector>>) -> HashMap<(u16, u16, u16, u16), (u16, u16)> {
     let mut map = HashMap::<(u16, u16, u16, u16), (u16, u16)>::new();
     // Loop through the detectors, creating the daq id to det id map
     for (di, d) in dets.iter().enumerate() {
@@ -240,7 +352,16 @@ pub fn get_id_map(dets: &Vec<Box<Detector>>) -> HashMap<(u16, u16,u16, u16), (u1
                 let v = map.insert(daq_id, (di, dc));
                 if v.is_some() {
                     let v = v.unwrap();
-                    warn!("Daq ID ({}, {}, {}, {}) already used.\n   Old: ({}, {})\n    New: ({}, {})", daq_id.0, daq_id.1, daq_id.2, daq_id.3, v.0, v.1, di, dc);
+                    warn!("Daq ID ({}, {}, {}, {}) already used.\n   Old: ({}, {})\n    New: \
+                           ({}, {})",
+                          daq_id.0,
+                          daq_id.1,
+                          daq_id.2,
+                          daq_id.3,
+                          v.0,
+                          v.1,
+                          di,
+                          dc);
                 }
             } else {
                 warn!("Bad Det ID ({}, {}).", di, dc);
@@ -256,9 +377,11 @@ pub fn get_id_map(dets: &Vec<Box<Detector>>) -> HashMap<(u16, u16,u16, u16), (u1
 fn line_to_det(line: &String) -> Option<Box<Detector>> {
     let l: Vec<_> = line.split_whitespace().collect();
 
-    if l.len() == 0 { // Empty line
+    if l.len() == 0 {
+        // Empty line
         None
-    } else if l[0].starts_with("#") { // Comment
+    } else if l[0].starts_with("#") {
+        // Comment
         None
     } else if l.len() < 6 {
         None
@@ -300,7 +423,8 @@ fn line_to_det(line: &String) -> Option<Box<Detector>> {
 //
 // calibrate stuff
 //
-pub fn get_cal_map(file: File) -> HashMap<(u16, u16, u16, u16), (f64, f64)> { //FIXME: &mut ?
+pub fn get_cal_map(file: File) -> HashMap<(u16, u16, u16, u16), (f64, f64)> {
+    // FIXME: &mut ?
     let mut map = HashMap::<(u16, u16, u16, u16), (f64, f64)>::new();
     // Read in the calibration file
     let r = BufReader::new(file);
@@ -321,9 +445,210 @@ pub fn get_cal_map(file: File) -> HashMap<(u16, u16, u16, u16), (f64, f64)> { //
             let v = map.insert(id, (o, s));
             if v.is_some() {
                 let v = v.unwrap();
-                warn!("There is already a calibration for Daq ID ({}, {}, {}, {}).\n   Old: ({}, {})\n    New: ({}, {})", id.0, id.1, id.2, id.3, v.0, v.1, o, s);
+                warn!("There is already a calibration for Daq ID ({}, {}, {}, {}).\n   Old: ({}, \
+                       {})\n    New: ({}, {})",
+                      id.0,
+                      id.1,
+                      id.2,
+                      id.3,
+                      v.0,
+                      v.1,
+                      o,
+                      s);
             }
         }
     }
     map
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    macro_rules! assert_f64_eq {
+        ($a:expr, $b:expr) => ({
+            let (a, b) = ($a, $b) as (f64, f64);
+            // this allows for the last bit of mantissa to be different
+            let epsilon = f64::max(a, b)/f64::powi(2.0, 51);
+            assert!((a - b).abs() < epsilon);
+        })
+    }
+
+    #[test]
+    fn read_write_hit() {
+        let hit_bytes = &[1u8, 0, 0, 0, 7, 0, 0, 0, 40, 0,
+            0, 0, 130, 37, 130, 37, 0, 0, 0, 0, 0, 193, 194,
+            64, 0, 0, 0, 0, 48, 36, 10, 65, 0, 0] as &[u8];
+
+        // Read in hit from byte array
+        let mut bytes = hit_bytes;
+        let h = bytes.read_hit_bin().unwrap();
+
+        // Make sure it was read correctly
+        assert_eq!(h.daqid.0, 1);
+        assert_eq!(h.daqid.1, 0);
+        assert_eq!(h.daqid.2, 7);
+        assert_eq!(h.daqid.3, 0);
+        assert_eq!(h.detid.0, 40);
+        assert_eq!(h.detid.1, 0);
+        assert_eq!(h.rawval, 9602);
+        assert_eq!(h.value, 9602);
+        assert_f64_eq!(h.energy, 9602.0);
+        assert_f64_eq!(h.time, 214150.0);
+        assert_eq!(h.trace, []);
+
+        // Make sure there's nothing left over in `bytes`
+        assert_eq!(bytes, []);
+
+        // Write the hit out to a byte array
+        let mut v = Vec::<u8>::new();
+        let _ = v.write_hit_bin(h);
+
+        // Make sure it was written out correctly
+        assert_eq!(v, hit_bytes);
+    }
+
+    #[test]
+    fn read_write_hit_trace() {
+        let hit_bytes = &[1u8, 0, 0, 0, 7, 0, 0, 0, 40, 0,
+            0, 0, 130, 37, 130, 37, 0, 0, 0, 0, 0, 193, 194,
+            64, 0, 0, 0, 0, 48, 36, 10, 65, 10, 0, 0, 0, 1,
+            0, 2, 0, 3, 0, 4, 0, 5, 0, 6, 0, 7, 0, 8, 0, 9,
+            0] as &[u8];
+
+        // Read in hit from byte array
+        let mut bytes = hit_bytes;
+        let h = bytes.read_hit_bin().unwrap();
+
+        // Make sure it was read correctly
+        assert_eq!(h.daqid.0, 1);
+        assert_eq!(h.daqid.1, 0);
+        assert_eq!(h.daqid.2, 7);
+        assert_eq!(h.daqid.3, 0);
+        assert_eq!(h.detid.0, 40);
+        assert_eq!(h.detid.1, 0);
+        assert_eq!(h.rawval, 9602);
+        assert_eq!(h.value, 9602);
+        assert_f64_eq!(h.energy, 9602.0);
+        assert_f64_eq!(h.time, 214150.0);
+        assert_eq!(h.trace, [0u16, 1, 2, 3, 4, 5, 6, 7 ,8, 9]);
+
+        // Make sure there's nothing left over in `bytes`
+        assert_eq!(bytes, []);
+
+        // Write the hit out to a byte array
+        let mut v = Vec::<u8>::new();
+        let _ = v.write_hit_bin(h);
+
+        // Make sure it was written out correctly
+        assert_eq!(v, hit_bytes);
+    }
+
+    #[test]
+    fn read_write_event() {
+        let event_bytes = &[2u8, 0, 0, 0, 0, 0, 10, 0, 0, 0,
+            0, 0, 0, 0, 244, 48, 244, 48, 0, 0, 0, 0, 0, 122,
+            200, 64, 0, 0, 0, 0, 192, 17, 10, 65, 0, 0, 1, 0,
+            0, 0, 7, 0, 0, 0, 40, 0, 0, 0, 130, 37, 130, 37,
+            0, 0, 0, 0, 0, 193, 194, 64, 0, 0, 0, 0, 48, 36,
+            10, 65, 0, 0] as &[u8];
+
+        // Read in event from byte array
+        let mut bytes = event_bytes;
+        let e = bytes.read_event_bin().unwrap();
+
+        // Make sure it was read correctly (we don't check that the hits
+        // were read correctly because there are separate tests for that)
+        assert_eq!(e.hits.len(), 2);
+
+        // Make sure there's nothing left over in `bytes`
+        assert_eq!(bytes, []);
+
+        // Write the event out to a byte array
+        let mut v = Vec::<u8>::new();
+        let _ = v.write_event_bin(e);
+
+        // Make sure it was written out correctly
+        assert_eq!(v, event_bytes);
+    }
+
+    #[test]
+    fn read_write_run() {
+        let run_bytes = &[1u8, 0, 0, 0, 2, 0, 0, 0, 0, 0, 10,
+            0, 0, 0, 0, 0, 0, 0, 244, 48, 244, 48, 0, 0, 0,
+            0, 0, 122, 200, 64, 0, 0, 0, 0, 192, 17, 10, 65,
+            0, 0, 1, 0, 0, 0, 7, 0, 0, 0, 40, 0, 0, 0, 130,
+            37, 130, 37, 0, 0, 0, 0, 0, 193, 194, 64, 0, 0,
+            0, 0, 48, 36, 10, 65, 0, 0] as &[u8];
+
+        // Read in run from byte array
+        let mut bytes = run_bytes;
+        let r = bytes.read_run_bin().unwrap();
+
+        // Make sure it was read correctly (we don't check that the events
+        // were read correctly because there are separate tests for that)
+        assert_eq!(r.events.len(), 1);
+
+        // Make sure there's nothing left over in `bytes`
+        assert_eq!(bytes, []);
+
+        // Write the run out to a byte array
+        let mut v = Vec::<u8>::new();
+        let _ = v.write_run_bin(r);
+
+        // Make sure it was written out correctly
+        assert_eq!(v, run_bytes);
+    }
+
+    #[test]
+    fn read_write_hist_1d() {
+        let hist_1d_txt = "0.5\t2\n1.5\t1\n2.5\t0\n";
+
+        // Read in hist from string
+        let bytes = hist_1d_txt.to_string().into_bytes();
+        let mut bytes = bytes.as_slice();
+        let mut h1 = Hist1d::new(3usize, 0f64, 3f64).unwrap();
+        let _ = bytes.read_to_hist_1d_txt(&mut h1);
+
+        // Make sure it was read correctly
+        let h2 = Hist1d::with_counts(3usize, 0f64, 3f64, vec![2, 1, 0]).unwrap();
+        assert_eq!(h1, h2);
+
+        // Make sure there's nothing left over in `bytes`
+        assert_eq!(bytes, []);
+
+        // Write the hist out to a string
+        let mut v = Vec::<u8>::new();
+        let _ = v.write_hist_1d_txt(h2);
+        let s = String::from_utf8(v).unwrap();
+
+        // Make sure it was written out correctly
+        assert_eq!(s, hist_1d_txt);
+    }
+
+    #[test]
+    fn read_write_hist_2d() {
+        let hist_2d_txt = "1\t0.5\t2\n1\t1.5\t1\n\n3\t0.5\t0\n3\t1.5\t4\n\n";
+
+        // Read in hist from string
+        let bytes = hist_2d_txt.to_string().into_bytes();
+        let mut bytes = bytes.as_slice();
+        let mut h1 = Hist2d::new(2usize, 0f64, 4f64, 2usize, 0f64, 2f64).unwrap();
+        let _ = bytes.read_to_hist_2d_txt(&mut h1);
+
+        // Make sure it was read correctly
+        let h2 = Hist2d::with_counts(2usize, 0f64, 4f64, 2usize, 0f64, 2f64, vec![2, 1, 0, 4]).unwrap();
+        assert_eq!(h1, h2);
+
+        // Make sure there's nothing left over in `bytes`
+        assert_eq!(bytes, []);
+
+        // Write the hist out to a string
+        let mut v = Vec::<u8>::new();
+        let _ = v.write_hist_2d_txt(h2);
+        let s = String::from_utf8(v).unwrap();
+
+        // Make sure it was written out correctly
+        assert_eq!(s, hist_2d_txt);
+    }
 }

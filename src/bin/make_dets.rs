@@ -1,7 +1,7 @@
 #[macro_use]extern crate datakiste;
 extern crate getopts;
 
-use datakiste::{DkBinRead, DkBinWrite, Run};
+use datakiste::{ReadDkBin, WriteDkBin};
 use getopts::Options;
 use std::error::Error;
 use std::env;
@@ -71,7 +71,7 @@ fn main() {
     };
 
     // Read in run from input file
-    let mut run = Run::from_file_bin(&mut fin).unwrap();
+    let mut run = fin.read_run_bin().unwrap();
 
     // Change each event
     for mut e in &mut run.events {
@@ -80,5 +80,5 @@ fn main() {
     }
 
     // Write out to the output file
-    let _ = run.to_file_bin(&mut fout);
+    let _ = fout.write_run_bin(run);
 }
