@@ -263,7 +263,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn construct() {
+    fn hist_1d_construct() {
         let h = Hist1d::new(3usize, 0f64, 3f64).unwrap();
         assert_eq!(h.counts, [0, 0, 0]);
         let h = Hist1d::with_counts(3usize, 0f64, 3f64, vec![2, 1, 0]).unwrap();
@@ -271,23 +271,23 @@ mod tests {
     }
 
     #[test]
-    fn fill() {
+    fn hist_1d_fill() {
         let mut h = Hist1d::new(3usize, 0f64, 3f64).unwrap();
-        h.fill_at_val(0.0); // Fills in bin 0
-        h.fill_at_val(1.0); // Fills in bin 1
-        h.fill_at_val(-1.0); // Fills in bin 0
+        h.fill_at_val(0.0);
+        h.fill_at_val(1.0);
+        h.fill_at_val(-1.0);
         assert_eq!(h.counts, [2, 1, 0]);
     }
 
     #[test]
-    fn swap_min_max() {
+    fn hist_1d_swap_min_max() {
         let h1 = Hist1d::new(1usize, 100f64, -10f64).unwrap();
         let h2 = Hist1d::new(1usize, -10f64, 100f64).unwrap();
         assert_eq!(h1, h2);
     }
 
     #[test]
-    fn zero_size() {
+    fn hist_1d_zero_size() {
         let h = Hist1d::new(0usize, 0f64, 100f64);
         assert!(h.is_none());
     }
@@ -304,59 +304,91 @@ mod tests {
 
         let h = Hist1d::new(0usize, 0f64, 0f64);
         assert!(h.is_none());
-        /*
-        assert!(h.bin_width().is_normal() == false);
-        assert!(h.bin_width().is_nan());
-        */
 
         let h = Hist1d::new(0usize, 0f64, 100f64);
         assert!(h.is_none());
-        /*
-        assert!(h.bin_width().is_normal() == false);
-        assert!(h.bin_width().is_infinite());
-        */
+    }
+
+    #[test]
+    fn hist_1d_add() {
+        let mut h1a = Hist1d::with_counts(5usize, 0f64, 10f64, vec![2, 3, 50, 4, 1]).unwrap();
+        let mut h2a = Hist1d::with_counts(10usize, 5f64, 10f64, vec![0, 0, 5, 15, 16, 10, 9, 20, 8, 12]).unwrap();
+
+        let h1b = h1a.clone();
+        let h2b = h2a.clone();
+
+        h1a.add(&h2b);
+        h2a.add(&h1b);
+
+        assert_eq!(h1a.counts, [2, 3, 50, 50, 50]);
+        assert_eq!(h2a.counts, [55, 0, 5, 15, 20, 10, 9, 20, 9, 12]);
+        assert_eq!(h1b.counts, [2, 3, 50, 4, 1]);
+        assert_eq!(h2b.counts, [0, 0, 5, 15, 16, 10, 9, 20, 8, 12]);
     }
 
     /*
     #[test]
-    fn hist_1d_add() {
-        let mut h1a = Hist1d::new(10usize, 0f64, 10f64).unwrap();
-        let mut h2a = Hist1d::new(20usize, 5f64, 10f64).unwrap();
+    fn hist_2d_construct() {
+        let h = Hist2d::new(3usize, 0f64, 3f64).unwrap();
+        assert_eq!(h.counts, [0, 0, 0]);
+        let h = Hist2d::with_counts(3usize, 0f64, 3f64, vec![2, 1, 0]).unwrap();
+        assert_eq!(h.counts, [2, 1, 0]);
+    }
 
-        h1a.fill(0.0);
-        h1a.fill(-1.0);
-        h1a.fill(5.0);
-        h1a.fill(5.4);
-        h1a.fill(10.0);
-        h1a.fill(100.0);
+    #[test]
+    fn hist_2d_fill() {
+        let mut h = Hist2d::new(3usize, 0f64, 3f64).unwrap();
+        h.fill_at_val(0.0);
+        h.fill_at_val(1.0);
+        h.fill_at_val(-1.0);
+        assert_eq!(h.counts, [2, 1, 0]);
+    }
 
-        h2a.fill(2.0);
-        h2a.fill(5.0);
-        h2a.fill(7.4);
-        h2a.fill(10.0);
+    #[test]
+    fn hist_2d_swap_min_max() {
+        let h1 = Hist2d::new(1usize, 100f64, -10f64).unwrap();
+        let h2 = Hist2d::new(1usize, -10f64, 100f64).unwrap();
+        assert_eq!(h1, h2);
+    }
 
-        let mut h1b = h1a.clone();
-        let mut h2b = Hist1d::new(10usize, 0f64, 10f64).unwrap();
-        h2b.add(&h2a);
+    #[test]
+    fn hist_2d_zero_size() {
+        let h = Hist2d::new(0usize, 0f64, 100f64);
+        assert!(h.is_none());
+    }
 
-        println!("{:?}", h1a);
-        println!("{:?}", h1b);
-        println!("{:?}", h2a);
-        println!("{:?}", h2b);
-        println!("");
+    #[test]
+    fn hist_2d_bin_width () {
+        let h = Hist2d::new(1usize, 0f64, 100f64).unwrap();
+        let axis = h.x_axis();
+        assert_eq!(axis.bin_width(), 100f64);
 
-        h1a.add(&h2a);
-        h1b.add(&h2b);
+        let h = Hist2d::new(1usize, 0f64, 0f64).unwrap();
+        let axis = h.x_axis();
+        assert_eq!(axis.bin_width(), 0f64);
 
-        println!("{:?}", h1a);
-        println!("{:?}", h1b);
+        let h = Hist2d::new(0usize, 0f64, 0f64);
+        assert!(h.is_none());
 
-        panic!("not implemented")
+        let h = Hist2d::new(0usize, 0f64, 100f64);
+        assert!(h.is_none());
     }
 
     #[test]
     fn hist_2d_add() {
-        panic!("not implemented")
+        let mut h1a = Hist2d::with_counts(5usize, 0f64, 10f64, vec![2, 3, 50, 4, 1]).unwrap();
+        let mut h2a = Hist2d::with_counts(10usize, 5f64, 10f64, vec![0, 0, 5, 15, 16, 10, 9, 20, 8, 12]).unwrap();
+
+        let h1b = h1a.clone();
+        let h2b = h2a.clone();
+
+        h1a.add(&h2b);
+        h2a.add(&h1b);
+
+        assert_eq!(h1a.counts, [2, 3, 50, 50, 50]);
+        assert_eq!(h2a.counts, [55, 0, 5, 15, 20, 10, 9, 20, 9, 12]);
+        assert_eq!(h1b.counts, [2, 3, 50, 4, 1]);
+        assert_eq!(h2b.counts, [0, 0, 5, 15, 16, 10, 9, 20, 8, 12]);
     }
     */
 }
