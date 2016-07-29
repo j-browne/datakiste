@@ -1,17 +1,17 @@
 dk
 run?, deprecated?, combined?
 
-dka?
+dkt?
 ???
 
 dkr
 run, binary
 
-dkra?
-run, ascii
+dkrt?
+run, text
 
-dkha
-histogram, ascii
+dkht
+histogram, text
 
 dkh
 histogram, binary
@@ -19,5 +19,5 @@ histogram, binary
 dkp
 points, binary
 
-dkpa
-point, ascii
+dkpt
+point, text

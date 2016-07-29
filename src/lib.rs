@@ -12,7 +12,9 @@ pub mod detector;
 #[macro_use]pub mod logging;
 
 mod hist;
-pub use hist::{Hist1d, Hist2d};
+pub use hist::*;
+mod cut;
+pub use cut::*;
 
 ///
 ///
