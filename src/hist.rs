@@ -232,7 +232,7 @@ impl Hist2d {
         bin_x * self.y_axis.bins + bin_y
     }
 
-    pub fn add (mut self, other: &Hist2d) {
+    pub fn add (&mut self, other: &Hist2d) {
         // TODO: iterator?
         for bin_x in 0..other.x_axis.bins {
             for bin_y in 0..other.y_axis.bins {
