@@ -150,8 +150,8 @@ mod tests {
 
     #[test]
     fn poly_is_inside() {
-        let mut c = Cut2dPoly::from_verts(vec![(0f64, 0f64), (1f64, 1f64), (1f64, -1f64)]);
-        let mut c = Cut2dPoly::from_verts(vec![(1f64, -1f64), (1f64, 1f64), (0f64, 0f64)]);
+        let c = Cut2dPoly::from_verts(vec![(0f64, 0f64), (1f64, 1f64), (1f64, -1f64)]);
+        let c = Cut2dPoly::from_verts(vec![(1f64, -1f64), (1f64, 1f64), (0f64, 0f64)]);
         assert!(!c.is_inside(-1f64, 0f64));
         assert!(!c.is_inside(0f64, 2f64));
         assert!(c.is_inside(0f64, 0f64));
