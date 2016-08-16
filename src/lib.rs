@@ -83,23 +83,23 @@ impl<R: ReadBytesExt + Sized> ReadDkBin for R {}
 ///
 ///
 pub trait WriteDkBin: WriteBytesExt {
-    fn write_run_bin(&mut self, r: Run) -> io::Result<()> {
+    fn write_run_bin(&mut self, r: &Run) -> io::Result<()> {
         let _ = try!(self.write_u32::<LittleEndian>(r.events.len() as u32));
-        for e in r.events {
-            let _ = try!(self.write_event_bin(e));
+        for e in &r.events {
+            let _ = try!(self.write_event_bin(&e));
         }
         Ok(())
     }
 
-    fn write_event_bin(&mut self, e: Event) -> io::Result<()> {
+    fn write_event_bin(&mut self, e: &Event) -> io::Result<()> {
         let _ = try!(self.write_u16::<LittleEndian>(e.hits.len() as u16));
-        for h in e.hits {
-            let _ = try!(self.write_hit_bin(h));
+        for h in &e.hits {
+            let _ = try!(self.write_hit_bin(&h));
         }
         Ok(())
     }
 
-    fn write_hit_bin(&mut self, h: Hit) -> io::Result<()> {
+    fn write_hit_bin(&mut self, h: &Hit) -> io::Result<()> {
         let _ = try!(self.write_u16::<LittleEndian>(h.daqid.0));
         let _ = try!(self.write_u16::<LittleEndian>(h.daqid.1));
         let _ = try!(self.write_u16::<LittleEndian>(h.daqid.2));
@@ -217,7 +217,7 @@ impl<R: Read> ReadDkTxt for R {}
 ///
 ///
 pub trait WriteDkTxt: Write {
-    fn write_hist_1d_txt(&mut self, h: Hist1d) -> io::Result<()> {
+    fn write_hist_1d_txt(&mut self, h: &Hist1d) -> io::Result<()> {
         let axis = h.x_axis();
         for bin in 0..axis.bins {
             // FIXME: use a function call
@@ -228,7 +228,7 @@ pub trait WriteDkTxt: Write {
         Ok(())
     }
 
-    fn write_hist_2d_txt(&mut self, h: Hist2d) -> io::Result<()> {
+    fn write_hist_2d_txt(&mut self, h: &Hist2d) -> io::Result<()> {
         let x_axis = h.x_axis();
         let y_axis = h.y_axis();
         for bin_x in 0..x_axis.bins {
@@ -516,7 +516,7 @@ mod tests {
 
         // Write the hit out to a byte array
         let mut v = Vec::<u8>::new();
-        let _ = v.write_hit_bin(h);
+        let _ = v.write_hit_bin(&h);
 
         // Make sure it was written out correctly
         assert_eq!(v, hit_bytes);
@@ -552,7 +552,7 @@ mod tests {
 
         // Write the hit out to a byte array
         let mut v = Vec::<u8>::new();
-        let _ = v.write_hit_bin(h);
+        let _ = v.write_hit_bin(&h);
 
         // Make sure it was written out correctly
         assert_eq!(v, hit_bytes);
@@ -580,7 +580,7 @@ mod tests {
 
         // Write the event out to a byte array
         let mut v = Vec::<u8>::new();
-        let _ = v.write_event_bin(e);
+        let _ = v.write_event_bin(&e);
 
         // Make sure it was written out correctly
         assert_eq!(v, event_bytes);
@@ -608,7 +608,7 @@ mod tests {
 
         // Write the run out to a byte array
         let mut v = Vec::<u8>::new();
-        let _ = v.write_run_bin(r);
+        let _ = v.write_run_bin(&r);
 
         // Make sure it was written out correctly
         assert_eq!(v, run_bytes);
@@ -633,7 +633,7 @@ mod tests {
 
         // Write the hist out to a string
         let mut v = Vec::<u8>::new();
-        let _ = v.write_hist_1d_txt(h2);
+        let _ = v.write_hist_1d_txt(&h2);
         let s = String::from_utf8(v).unwrap();
 
         // Make sure it was written out correctly
@@ -659,7 +659,7 @@ mod tests {
 
         // Write the hist out to a string
         let mut v = Vec::<u8>::new();
-        let _ = v.write_hist_2d_txt(h2);
+        let _ = v.write_hist_2d_txt(&h2);
         let s = String::from_utf8(v).unwrap();
 
         // Make sure it was written out correctly
