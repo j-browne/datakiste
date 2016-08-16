@@ -286,25 +286,13 @@ impl Event {
         all_dets: &Vec<Box<Detector>>,
         daq_det_map: &HashMap<(u16, u16, u16, u16), (u16, u16)>) {
         for ref mut h in &mut self.hits {
-            h.detid = match daq_det_map.get(&h.daqid) {
-                Some(x) => x.clone(),
-                None => (0, 0),
-            };
-            let idx = h.detid.0 as usize;
-            h.value = match idx {
-                _ if idx > 0 => all_dets[idx - 1].val_corr(h.detid.1, h.rawval),
-                _ => h.rawval,
-            };
+            h.apply_det(&all_dets, &daq_det_map);
         }
     }
 
     pub fn apply_calib(&mut self, calib: &HashMap<(u16, u16, u16, u16), (f64, f64)>) {
         for ref mut h in &mut self.hits {
-            let (o, s) = match calib.get(&h.daqid) {
-                Some(x) => x.clone(),
-                None => (0f64, 1f64),
-            };
-            h.energy = s * (h.value as f64) + o;
+            h.apply_calib(&calib);
         }
     }
 }
@@ -325,6 +313,30 @@ pub struct Hit {
     pub energy: f64,
     pub time: f64,
     pub trace: Vec<u16>,
+}
+
+impl Hit {
+    pub fn apply_det(&mut self,
+        all_dets: &Vec<Box<Detector>>,
+        daq_det_map: &HashMap<(u16, u16, u16, u16), (u16, u16)>) {
+        self.detid = match daq_det_map.get(&self.daqid) {
+            Some(x) => x.clone(),
+            None => (0, 0),
+        };
+        let idx = self.detid.0 as usize;
+        self.value = match idx {
+            _ if idx > 0 => all_dets[idx - 1].val_corr(self.detid.1, self.rawval),
+            _ => self.rawval,
+        };
+    }
+
+    pub fn apply_calib(&mut self, calib: &HashMap<(u16, u16, u16, u16), (f64, f64)>) {
+        let (o, s) = match calib.get(&self.daqid) {
+            Some(x) => x.clone(),
+            None => (0f64, 1f64),
+        };
+        self.energy = s * (self.value as f64) + o;
+    }
 }
 
 //
