@@ -21,8 +21,9 @@ pub use cut::*;
 ///
 pub trait ReadDkBin: ReadBytesExt {
     fn read_run_bin(&mut self) -> io::Result<Run> {
-        let mut v = Vec::<Event>::new();
-        let n_events = try!(self.read_u32::<LittleEndian>());
+        let n_events = try!(self.read_u32::<LittleEndian>()) as usize;
+
+        let mut v = Vec::<Event>::with_capacity(n_events);
         for _ in 0..n_events {
             let e = try!(self.read_event_bin());
             v.push(e);
@@ -34,8 +35,9 @@ pub trait ReadDkBin: ReadBytesExt {
     fn read_event_bin(&mut self) -> io::Result<Event> {
         // FIXME: If there's a bad event, skip to next event.
         // Currently, it fucks up the rest of the file.
-        let mut v = Vec::<Hit>::new();
-        let n_hits = try!(self.read_u16::<LittleEndian>());
+        let n_hits = try!(self.read_u16::<LittleEndian>()) as usize;
+
+        let mut v = Vec::<Hit>::with_capacity(n_hits);
         for _ in 0..n_hits {
             let h = try!(self.read_hit_bin());
             v.push(h);
@@ -55,8 +57,9 @@ pub trait ReadDkBin: ReadBytesExt {
         let val = try!(self.read_u16::<LittleEndian>());
         let en = try!(self.read_f64::<LittleEndian>());
         let t = try!(self.read_f64::<LittleEndian>());
-        let tr_size = try!(self.read_u16::<LittleEndian>());
-        let mut tr = Vec::<u16>::new();
+        let tr_size = try!(self.read_u16::<LittleEndian>()) as usize;
+
+        let mut tr = Vec::<u16>::with_capacity(tr_size);
         for _ in 0..tr_size {
             let y = try!(self.read_u16::<LittleEndian>());
             tr.push(y);
@@ -71,6 +74,46 @@ pub trait ReadDkBin: ReadBytesExt {
             time: t,
             trace: tr,
         })
+    }
+
+    fn read_hist_1d_bin(&mut self) -> io::Result<Hist1d> {
+        let bins = try!(self.read_u32::<LittleEndian>()) as usize;
+        let min = try!(self.read_f64::<LittleEndian>());
+        let max = try!(self.read_f64::<LittleEndian>());
+
+        let mut v = Vec::<u64>::with_capacity(bins);
+        for _ in 0..bins {
+            let c = try!(self.read_u64::<LittleEndian>());
+            v.push(c);
+        }
+
+        match Hist1d::with_counts(bins, min, max, v) {
+            Some(h) => Ok(h),
+            None => Err(io::Error::new(io::ErrorKind::Other, "Error creating Hist1d")),
+        }
+    }
+
+    fn read_hist_2d_bin(&mut self) -> io::Result<Hist2d> {
+        let x_bins = try!(self.read_u32::<LittleEndian>()) as usize;
+        let x_min = try!(self.read_f64::<LittleEndian>());
+        let x_max = try!(self.read_f64::<LittleEndian>());
+
+        let y_bins = try!(self.read_u32::<LittleEndian>()) as usize;
+        let y_min = try!(self.read_f64::<LittleEndian>());
+        let y_max = try!(self.read_f64::<LittleEndian>());
+
+        let mut v = Vec::<u64>::with_capacity(x_bins * y_bins);
+        for _ in 0..x_bins {
+            for _ in 0..y_bins {
+                let c = try!(self.read_u64::<LittleEndian>());
+                v.push(c);
+            }
+        }
+
+        match Hist2d::with_counts(x_bins, x_min, x_max, y_bins, y_min, y_max, v) {
+            Some(h) => Ok(h),
+            None => Err(io::Error::new(io::ErrorKind::Other, "Error creating Hist2d")),
+        }
     }
 }
 
@@ -116,6 +159,39 @@ pub trait WriteDkBin: WriteBytesExt {
         }
         Ok(())
     }
+
+    fn write_hist_1d_bin(&mut self, h: &Hist1d) -> io::Result<()> {
+        let axis = h.x_axis();
+        let _ = try!(self.write_u32::<LittleEndian>(axis.bins as u32));
+        let _ = try!(self.write_f64::<LittleEndian>(axis.min));
+        let _ = try!(self.write_f64::<LittleEndian>(axis.max));
+        for bin in 0..axis.bins {
+            let c = h.counts_at_bin(bin).unwrap();
+            let _ = try!(self.write_u64::<LittleEndian>(*c));
+        }
+        Ok(())
+    }
+
+    fn write_hist_2d_bin(&mut self, h: &Hist2d) -> io::Result<()> {
+        let x_axis = h.x_axis();
+        let y_axis = h.y_axis();
+
+        let _ = try!(self.write_u32::<LittleEndian>(x_axis.bins as u32));
+        let _ = try!(self.write_f64::<LittleEndian>(x_axis.min));
+        let _ = try!(self.write_f64::<LittleEndian>(x_axis.max));
+
+        let _ = try!(self.write_u32::<LittleEndian>(y_axis.bins as u32));
+        let _ = try!(self.write_f64::<LittleEndian>(y_axis.min));
+        let _ = try!(self.write_f64::<LittleEndian>(y_axis.max));
+
+        for bin_x in 0..x_axis.bins {
+            for bin_y in 0..y_axis.bins {
+                let c = h.counts_at_bin(bin_x, bin_y).unwrap();
+                let _ = try!(self.write_u64::<LittleEndian>(*c));
+            }
+        }
+        Ok(())
+    }
 }
 
 /// Anything that implements `WriteBytesExt` gets a default `WriteDkBin`
@@ -152,30 +228,7 @@ pub trait ReadDkTxt: Read {
         }
         Ok(())
     }
-    /*
-    fn read_hist_1d_txt(&mut self) -> Option<Hist1d> {
-        let b = BufReader::new(self);
-        let data_started = false;
 
-        for line in b.lines() {
-            if line.starts_with("##") {
-                // This is a Hist1d property
-                if data_started {
-                    // Property found in an invalid location
-                    warn!("A Hist1d property found after start of data");
-                } else {
-
-                }
-            } else if line.starts_with("#") {
-                // Comment
-
-            } else {
-                let l = Vec<_> = line.split_whitespace().collect();
-
-            }
-        }
-    }
-    */
     fn read_to_hist_2d_txt(&mut self, h: &mut Hist2d) -> io::Result<()> {
         let b = BufReader::new(self);
         for line in b.lines() {
@@ -615,7 +668,7 @@ mod tests {
     }
 
     #[test]
-    fn read_write_hist_1d() {
+    fn read_write_hist_1d_txt() {
         let hist_1d_txt = "0.5\t2\n1.5\t1\n2.5\t0\n";
 
         // Read in hist from string
@@ -641,7 +694,35 @@ mod tests {
     }
 
     #[test]
-    fn read_write_hist_2d() {
+    fn read_write_hist_1d_bin() {
+        let hist_bytes = &[3u8, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 8, 64,
+                2, 0, 0, 0, 0, 0, 0, 0,
+                1, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0] as &[u8];
+
+        // Read in hit from byte array
+        let mut bytes = hist_bytes;
+        let h1 = bytes.read_hist_1d_bin().unwrap();
+
+        // Make sure it was read correctly
+        let h2 = Hist1d::with_counts(3usize, 0f64, 3f64, vec![2, 1, 0]).unwrap();
+        assert_eq!(h1, h2);
+
+        // Make sure there's nothing left over in `bytes`
+        assert_eq!(bytes, []);
+
+        // Write the hit out to a byte array
+        let mut v = Vec::<u8>::new();
+        let _ = v.write_hist_1d_bin(&h2);
+
+        // Make sure it was written out correctly
+        assert_eq!(v, hist_bytes);
+    }
+
+    #[test]
+    fn read_write_hist_2d_txt() {
         let hist_2d_txt = "1\t0.5\t2\n1\t1.5\t1\n\n3\t0.5\t0\n3\t1.5\t4\n\n";
 
         // Read in hist from string
@@ -664,5 +745,37 @@ mod tests {
 
         // Make sure it was written out correctly
         assert_eq!(s, hist_2d_txt);
+    }
+
+    #[test]
+    fn read_write_hist_2d_bin() {
+        let hist_bytes = &[2u8, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 16, 64,
+                2, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 64,
+                2, 0, 0, 0, 0, 0, 0, 0,
+                1, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0,
+                4, 0, 0, 0, 0, 0, 0, 0] as &[u8];
+
+        // Read in hit from byte array
+        let mut bytes = hist_bytes;
+        let h1 = bytes.read_hist_2d_bin().unwrap();
+
+        // Make sure it was read correctly
+        let h2 = Hist2d::with_counts(2usize, 0f64, 4f64, 2usize, 0f64, 2f64, vec![2, 1, 0, 4]).unwrap();
+        assert_eq!(h1, h2);
+
+        // Make sure there's nothing left over in `bytes`
+        assert_eq!(bytes, []);
+
+        // Write the hit out to a byte array
+        let mut v = Vec::<u8>::new();
+        let _ = v.write_hist_2d_bin(&h2);
+
+        // Make sure it was written out correctly
+        assert_eq!(v, hist_bytes);
     }
 }
