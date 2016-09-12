@@ -1,9 +1,9 @@
 pub trait Cut1d {
-    fn is_inside(&self, x: f64) -> bool;
+    fn contains(&self, x: f64) -> bool;
 }
 
 pub trait Cut2d {
-    fn is_inside(&self, x: f64, y: f64) -> bool;
+    fn contains(&self, x: f64, y: f64) -> bool;
 }
 
 #[derive(Debug, Clone)]
@@ -24,7 +24,7 @@ impl Cut2dCirc {
 }
 
 impl Cut2d for Cut2dCirc {
-    fn is_inside(&self, x: f64, y: f64) -> bool {
+    fn contains(&self, x: f64, y: f64) -> bool {
         ((x - self.x).powi(2) + (y - self.y).powi(2)) <= self.r.powi(2)
     }
 }
@@ -49,7 +49,7 @@ impl Cut2dPoly {
 }
 
 impl Cut2d for Cut2dPoly {
-    fn is_inside(&self, x: f64, y: f64) -> bool {
+    fn contains(&self, x: f64, y: f64) -> bool {
         let mut inside = false;
 
         let mut j = self.verts.len() - 1;
@@ -79,135 +79,135 @@ mod tests {
     const EP: f64 = 3. * ::std::f64::EPSILON;
 
     #[test]
-    fn circ_is_inside() {
+    fn circ_contains() {
         let c = Cut2dCirc::new(0f64, 0f64, 0f64);
-        assert!(!c.is_inside(0f64, 0f64 + EP));
-        assert!(!c.is_inside(0f64 + EP, 0f64));
-        assert!(!c.is_inside(0f64, 0f64 - EP));
-        assert!(!c.is_inside(0f64 - EP, 0f64));
+        assert!(!c.contains(0f64, 0f64 + EP));
+        assert!(!c.contains(0f64 + EP, 0f64));
+        assert!(!c.contains(0f64, 0f64 - EP));
+        assert!(!c.contains(0f64 - EP, 0f64));
 
         let c = Cut2dCirc::new(1f64, 1f64, -1f64);
-        assert!(c.is_inside(1f64, 1f64));
+        assert!(c.contains(1f64, 1f64));
 
-        assert!(!c.is_inside(1f64, 2f64 + EP));
-        assert!(!c.is_inside(1f64 + EP, 2f64 + EP));
-        assert!(c.is_inside(1f64 + EP, 2f64 - EP));
-        assert!(c.is_inside(1f64, 2f64 - EP));
-        assert!(c.is_inside(1f64 - EP, 2f64 - EP));
-        assert!(!c.is_inside(1f64 - EP, 2f64 + EP));
+        assert!(!c.contains(1f64, 2f64 + EP));
+        assert!(!c.contains(1f64 + EP, 2f64 + EP));
+        assert!(c.contains(1f64 + EP, 2f64 - EP));
+        assert!(c.contains(1f64, 2f64 - EP));
+        assert!(c.contains(1f64 - EP, 2f64 - EP));
+        assert!(!c.contains(1f64 - EP, 2f64 + EP));
 
-        assert!(!c.is_inside(2f64 + EP, 1f64 + EP));
-        assert!(!c.is_inside(2f64 + EP, 1f64));
-        assert!(!c.is_inside(2f64 + EP, 1f64 - EP));
-        assert!(c.is_inside(2f64 - EP, 1f64 - EP));
-        assert!(c.is_inside(2f64 - EP, 1f64));
-        assert!(c.is_inside(2f64 - EP, 1f64 + EP));
+        assert!(!c.contains(2f64 + EP, 1f64 + EP));
+        assert!(!c.contains(2f64 + EP, 1f64));
+        assert!(!c.contains(2f64 + EP, 1f64 - EP));
+        assert!(c.contains(2f64 - EP, 1f64 - EP));
+        assert!(c.contains(2f64 - EP, 1f64));
+        assert!(c.contains(2f64 - EP, 1f64 + EP));
 
-        assert!(c.is_inside(1f64, 0f64 + EP));
-        assert!(c.is_inside(1f64 + EP, 0f64 + EP));
-        assert!(!c.is_inside(1f64 + EP, 0f64 - EP));
-        assert!(!c.is_inside(1f64, 0f64 - EP));
-        assert!(!c.is_inside(1f64 - EP, 0f64 - EP));
-        assert!(c.is_inside(1f64 - EP, 0f64 + EP));
+        assert!(c.contains(1f64, 0f64 + EP));
+        assert!(c.contains(1f64 + EP, 0f64 + EP));
+        assert!(!c.contains(1f64 + EP, 0f64 - EP));
+        assert!(!c.contains(1f64, 0f64 - EP));
+        assert!(!c.contains(1f64 - EP, 0f64 - EP));
+        assert!(c.contains(1f64 - EP, 0f64 + EP));
 
-        assert!(c.is_inside(0f64 + EP, 1f64 + EP));
-        assert!(c.is_inside(0f64 + EP, 1f64));
-        assert!(c.is_inside(0f64 + EP, 1f64 - EP));
-        assert!(!c.is_inside(0f64 - EP, 1f64 - EP));
-        assert!(!c.is_inside(0f64 - EP, 1f64));
-        assert!(!c.is_inside(0f64 - EP, 1f64 + EP));
+        assert!(c.contains(0f64 + EP, 1f64 + EP));
+        assert!(c.contains(0f64 + EP, 1f64));
+        assert!(c.contains(0f64 + EP, 1f64 - EP));
+        assert!(!c.contains(0f64 - EP, 1f64 - EP));
+        assert!(!c.contains(0f64 - EP, 1f64));
+        assert!(!c.contains(0f64 - EP, 1f64 + EP));
     }
 
     #[test]
-    fn poly_is_inside() {
+    fn poly_contains() {
         let c = Cut2dPoly::from_verts(vec![(0f64, -1f64), (2f64, -1f64), (4f64, 1f64),
                                            (3f64, 1f64), (2f64, 1f64), (1f64, 0f64),
                                            (0f64, 1f64), (-1f64, 1f64), (-2f64, 1f64)]);
 
-        assert!(!c.is_inside(-3f64, -2f64));
-        assert!(!c.is_inside(-3f64, -1f64));
-        assert!(!c.is_inside(-3f64, 0f64));
-        assert!(!c.is_inside(-3f64, 1f64));
-        assert!(!c.is_inside(-3f64, 2f64));
+        assert!(!c.contains(-3f64, -2f64));
+        assert!(!c.contains(-3f64, -1f64));
+        assert!(!c.contains(-3f64, 0f64));
+        assert!(!c.contains(-3f64, 1f64));
+        assert!(!c.contains(-3f64, 2f64));
 
-        assert!(!c.is_inside(-2f64, -2f64));
-        assert!(!c.is_inside(-2f64, -1f64));
-        assert!(!c.is_inside(-2f64, 0f64));
-        assert!(!c.is_inside(-2f64, 1f64 + EP));
-        assert!(!c.is_inside(-2f64 - EP, 1f64));
-        assert!(!c.is_inside(-2f64, 1f64 - EP));
-        assert!(c.is_inside(-2f64 + 2. * EP, 1f64 - EP));
-        assert!(!c.is_inside(-2f64, 2f64));
+        assert!(!c.contains(-2f64, -2f64));
+        assert!(!c.contains(-2f64, -1f64));
+        assert!(!c.contains(-2f64, 0f64));
+        assert!(!c.contains(-2f64, 1f64 + EP));
+        assert!(!c.contains(-2f64 - EP, 1f64));
+        assert!(!c.contains(-2f64, 1f64 - EP));
+        assert!(c.contains(-2f64 + 2. * EP, 1f64 - EP));
+        assert!(!c.contains(-2f64, 2f64));
 
-        assert!(!c.is_inside(-1f64, -2f64));
-        assert!(!c.is_inside(-1f64, -1f64));
-        assert!(c.is_inside(-1f64, 0f64 + EP));
-        assert!(c.is_inside(-1f64 + EP, 0f64));
-        assert!(!c.is_inside(-1f64, 0f64 - EP));
-        assert!(!c.is_inside(-1f64 - EP, 0f64));
-        assert!(!c.is_inside(-1f64 + EP, 1f64 + EP));
-        assert!(c.is_inside(-1f64 + EP, 1f64 - EP));
-        assert!(c.is_inside(-1f64 - EP, 1f64 - EP));
-        assert!(!c.is_inside(-1f64 - EP, 1f64 + EP));
-        assert!(!c.is_inside(-1f64, 2f64));
+        assert!(!c.contains(-1f64, -2f64));
+        assert!(!c.contains(-1f64, -1f64));
+        assert!(c.contains(-1f64, 0f64 + EP));
+        assert!(c.contains(-1f64 + EP, 0f64));
+        assert!(!c.contains(-1f64, 0f64 - EP));
+        assert!(!c.contains(-1f64 - EP, 0f64));
+        assert!(!c.contains(-1f64 + EP, 1f64 + EP));
+        assert!(c.contains(-1f64 + EP, 1f64 - EP));
+        assert!(c.contains(-1f64 - EP, 1f64 - EP));
+        assert!(!c.contains(-1f64 - EP, 1f64 + EP));
+        assert!(!c.contains(-1f64, 2f64));
 
-        assert!(!c.is_inside(0f64, -2f64));
-        assert!(c.is_inside(0f64, -1f64 + EP));
-        assert!(!c.is_inside(0f64, -1f64 - EP));
-        assert!(!c.is_inside(0f64 - EP, -1f64));
-        assert!(c.is_inside(0f64, 0f64));
-        assert!(!c.is_inside(0f64, 1f64 + EP));
-        assert!(!c.is_inside(0f64 + EP, 1f64));
-        assert!(c.is_inside(0f64, 1f64 - EP));
-        assert!(!c.is_inside(0f64, 2f64));
+        assert!(!c.contains(0f64, -2f64));
+        assert!(c.contains(0f64, -1f64 + EP));
+        assert!(!c.contains(0f64, -1f64 - EP));
+        assert!(!c.contains(0f64 - EP, -1f64));
+        assert!(c.contains(0f64, 0f64));
+        assert!(!c.contains(0f64, 1f64 + EP));
+        assert!(!c.contains(0f64 + EP, 1f64));
+        assert!(c.contains(0f64, 1f64 - EP));
+        assert!(!c.contains(0f64, 2f64));
 
-        assert!(!c.is_inside(1f64, -2f64));
-        assert!(c.is_inside(1f64 + EP, -1f64 + EP));
-        assert!(!c.is_inside(1f64 + EP, -1f64 - EP));
-        assert!(!c.is_inside(1f64 - EP, -1f64 - EP));
-        assert!(c.is_inside(1f64 - EP, -1f64 + EP));
-        assert!(!c.is_inside(1f64, 0f64 + EP));
-        assert!(c.is_inside(1f64 + EP, 0f64));
-        assert!(c.is_inside(1f64, 0f64 - EP));
-        assert!(c.is_inside(1f64 - EP, 0f64));
-        assert!(!c.is_inside(1f64, 1f64));
-        assert!(!c.is_inside(1f64, 2f64));
+        assert!(!c.contains(1f64, -2f64));
+        assert!(c.contains(1f64 + EP, -1f64 + EP));
+        assert!(!c.contains(1f64 + EP, -1f64 - EP));
+        assert!(!c.contains(1f64 - EP, -1f64 - EP));
+        assert!(c.contains(1f64 - EP, -1f64 + EP));
+        assert!(!c.contains(1f64, 0f64 + EP));
+        assert!(c.contains(1f64 + EP, 0f64));
+        assert!(c.contains(1f64, 0f64 - EP));
+        assert!(c.contains(1f64 - EP, 0f64));
+        assert!(!c.contains(1f64, 1f64));
+        assert!(!c.contains(1f64, 2f64));
 
-        assert!(!c.is_inside(2f64, -2f64));
-        assert!(c.is_inside(2f64, -1f64 + EP));
-        assert!(!c.is_inside(2f64 + EP, -1f64));
-        assert!(!c.is_inside(2f64, -1f64 - EP));
-        assert!(c.is_inside(2f64, 0f64));
-        assert!(!c.is_inside(2f64, 1f64 + EP));
-        assert!(c.is_inside(2f64, 1f64 - EP));
-        assert!(!c.is_inside(2f64 - EP, 1f64));
-        assert!(!c.is_inside(2f64, 2f64));
+        assert!(!c.contains(2f64, -2f64));
+        assert!(c.contains(2f64, -1f64 + EP));
+        assert!(!c.contains(2f64 + EP, -1f64));
+        assert!(!c.contains(2f64, -1f64 - EP));
+        assert!(c.contains(2f64, 0f64));
+        assert!(!c.contains(2f64, 1f64 + EP));
+        assert!(c.contains(2f64, 1f64 - EP));
+        assert!(!c.contains(2f64 - EP, 1f64));
+        assert!(!c.contains(2f64, 2f64));
 
-        assert!(!c.is_inside(3f64, -2f64));
-        assert!(!c.is_inside(3f64, -1f64));
-        assert!(c.is_inside(3f64, 0f64 + EP));
-        assert!(!c.is_inside(3f64 + EP, 0f64));
-        assert!(!c.is_inside(3f64, 0f64 - EP));
-        assert!(c.is_inside(3f64 - EP, 0f64));
-        assert!(!c.is_inside(3f64 + EP, 1f64 + EP));
-        assert!(c.is_inside(3f64 + EP, 1f64 - EP));
-        assert!(c.is_inside(3f64 - EP, 1f64 - EP));
-        assert!(!c.is_inside(3f64 - EP, 1f64 + EP));
-        assert!(!c.is_inside(3f64, 2f64));
+        assert!(!c.contains(3f64, -2f64));
+        assert!(!c.contains(3f64, -1f64));
+        assert!(c.contains(3f64, 0f64 + EP));
+        assert!(!c.contains(3f64 + EP, 0f64));
+        assert!(!c.contains(3f64, 0f64 - EP));
+        assert!(c.contains(3f64 - EP, 0f64));
+        assert!(!c.contains(3f64 + EP, 1f64 + EP));
+        assert!(c.contains(3f64 + EP, 1f64 - EP));
+        assert!(c.contains(3f64 - EP, 1f64 - EP));
+        assert!(!c.contains(3f64 - EP, 1f64 + EP));
+        assert!(!c.contains(3f64, 2f64));
 
-        assert!(!c.is_inside(4f64, -2f64));
-        assert!(!c.is_inside(4f64, -1f64));
-        assert!(!c.is_inside(4f64, 0f64));
-        assert!(!c.is_inside(4f64, 1f64 + EP));
-        assert!(!c.is_inside(4f64 + EP, 1f64));
-        assert!(!c.is_inside(4f64, 1f64 - EP));
-        assert!(c.is_inside(4f64 - EP, 1f64 - EP));
-        assert!(!c.is_inside(4f64, 2f64));
+        assert!(!c.contains(4f64, -2f64));
+        assert!(!c.contains(4f64, -1f64));
+        assert!(!c.contains(4f64, 0f64));
+        assert!(!c.contains(4f64, 1f64 + EP));
+        assert!(!c.contains(4f64 + EP, 1f64));
+        assert!(!c.contains(4f64, 1f64 - EP));
+        assert!(c.contains(4f64 - EP, 1f64 - EP));
+        assert!(!c.contains(4f64, 2f64));
 
-        assert!(!c.is_inside(5f64, -2f64));
-        assert!(!c.is_inside(5f64, -1f64));
-        assert!(!c.is_inside(5f64, 0f64));
-        assert!(!c.is_inside(5f64, 1f64));
-        assert!(!c.is_inside(5f64, 2f64));
+        assert!(!c.contains(5f64, -2f64));
+        assert!(!c.contains(5f64, -1f64));
+        assert!(!c.contains(5f64, 0f64));
+        assert!(!c.contains(5f64, 1f64));
+        assert!(!c.contains(5f64, 2f64));
     }
 }
