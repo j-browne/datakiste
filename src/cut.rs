@@ -86,12 +86,36 @@ mod tests {
         assert!(!c.is_inside(0f64, 0f64 - EP));
         assert!(!c.is_inside(0f64 - EP, 0f64));
 
-        let c = Cut2dCirc::new(1f64, 0f64, -1f64);
-        //FIXME
-        assert!(!c.is_inside(-1f64, 0f64));
-        assert!(c.is_inside(0f64, 0f64));
-        assert!(c.is_inside(1f64, 0f64));
-        assert!(c.is_inside(0.5f64, 0.5f64));
+        let c = Cut2dCirc::new(1f64, 1f64, -1f64);
+        assert!(c.is_inside(1f64, 1f64));
+
+        assert!(!c.is_inside(1f64, 2f64 + EP));
+        assert!(!c.is_inside(1f64 + EP, 2f64 + EP));
+        assert!(c.is_inside(1f64 + EP, 2f64 - EP));
+        assert!(c.is_inside(1f64, 2f64 - EP));
+        assert!(c.is_inside(1f64 - EP, 2f64 - EP));
+        assert!(!c.is_inside(1f64 - EP, 2f64 + EP));
+
+        assert!(!c.is_inside(2f64 + EP, 1f64 + EP));
+        assert!(!c.is_inside(2f64 + EP, 1f64));
+        assert!(!c.is_inside(2f64 + EP, 1f64 - EP));
+        assert!(c.is_inside(2f64 - EP, 1f64 - EP));
+        assert!(c.is_inside(2f64 - EP, 1f64));
+        assert!(c.is_inside(2f64 - EP, 1f64 + EP));
+
+        assert!(c.is_inside(1f64, 0f64 + EP));
+        assert!(c.is_inside(1f64 + EP, 0f64 + EP));
+        assert!(!c.is_inside(1f64 + EP, 0f64 - EP));
+        assert!(!c.is_inside(1f64, 0f64 - EP));
+        assert!(!c.is_inside(1f64 - EP, 0f64 - EP));
+        assert!(c.is_inside(1f64 - EP, 0f64 + EP));
+
+        assert!(c.is_inside(0f64 + EP, 1f64 + EP));
+        assert!(c.is_inside(0f64 + EP, 1f64));
+        assert!(c.is_inside(0f64 + EP, 1f64 - EP));
+        assert!(!c.is_inside(0f64 - EP, 1f64 - EP));
+        assert!(!c.is_inside(0f64 - EP, 1f64));
+        assert!(!c.is_inside(0f64 - EP, 1f64 + EP));
     }
 
     #[test]
