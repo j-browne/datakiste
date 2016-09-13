@@ -217,14 +217,16 @@ mod tests {
     fn poly_contains_rand() {
         // Make sure the order and direction of the points doesn't matter
         let cs = vec![
-            Cut2dPoly::from_verts(vec![(1f64, 1f64), (1f64, -1f64), (-1f64, -1f64), (-1f64, 1f64)]),
-            Cut2dPoly::from_verts(vec![(1f64, -1f64), (-1f64, -1f64), (-1f64, 1f64), (1f64, 1f64)]),
-            Cut2dPoly::from_verts(vec![(-1f64, -1f64), (-1f64, 1f64), (1f64, 1f64), (1f64, -1f64)]),
-            Cut2dPoly::from_verts(vec![(-1f64, 1f64), (1f64, 1f64), (1f64, -1f64), (-1f64, -1f64)]),
-            Cut2dPoly::from_verts(vec![(-1f64, 1f64), (-1f64, -1f64), (1f64, -1f64), (1f64, 1f64)]),
-            Cut2dPoly::from_verts(vec![(-1f64, -1f64), (1f64, -1f64), (1f64, 1f64), (-1f64, 1f64)]),
-            Cut2dPoly::from_verts(vec![(1f64, -1f64), (1f64, 1f64), (-1f64, 1f64), (-1f64, -1f64)]),
-            Cut2dPoly::from_verts(vec![(1f64, 1f64), (-1f64, 1f64), (-1f64, -1f64), (1f64, -1f64)])];
+            Cut2dPoly::from_verts(vec![(1f64, 1f64), (1f64, -1f64), (-1f64, -1f64), (-1f64, 1f64), (0f64, 1f64)]),
+            Cut2dPoly::from_verts(vec![(1f64, -1f64), (-1f64, -1f64), (-1f64, 1f64), (0f64, 1f64), (1f64, 1f64)]),
+            Cut2dPoly::from_verts(vec![(-1f64, -1f64), (-1f64, 1f64), (0f64, 1f64), (1f64, 1f64), (1f64, -1f64)]),
+            Cut2dPoly::from_verts(vec![(-1f64, 1f64), (0f64, 1f64), (1f64, 1f64), (1f64, -1f64), (-1f64, -1f64)]),
+            Cut2dPoly::from_verts(vec![(0f64, 1f64), (1f64, 1f64), (1f64, -1f64), (-1f64, -1f64), (-1f64, 1f64)]),
+            Cut2dPoly::from_verts(vec![(0f64, 1f64), (-1f64, 1f64), (-1f64, -1f64), (1f64, -1f64), (1f64, 1f64)]),
+            Cut2dPoly::from_verts(vec![(-1f64, 1f64), (-1f64, -1f64), (1f64, -1f64), (1f64, 1f64), (0f64, 1f64)]),
+            Cut2dPoly::from_verts(vec![(-1f64, -1f64), (1f64, -1f64), (1f64, 1f64), (0f64, 1f64), (-1f64, 1f64)]),
+            Cut2dPoly::from_verts(vec![(1f64, -1f64), (1f64, 1f64), (0f64, 1f64), (-1f64, 1f64), (-1f64, -1f64)]),
+            Cut2dPoly::from_verts(vec![(1f64, 1f64), (0f64, 1f64), (-1f64, 1f64), (-1f64, -1f64), (1f64, -1f64)])];
 
         let range = Range::new(-2f64, 2f64);
         let mut rng = rand::thread_rng();
