@@ -25,7 +25,7 @@ impl Cut2dCirc {
 
 impl Cut2d for Cut2dCirc {
     fn contains(&self, x: f64, y: f64) -> bool {
-        ((x - self.x).powi(2) + (y - self.y).powi(2)) <= self.r.powi(2)
+        ((x - self.x).powi(2) + (y - self.y).powi(2)) < self.r.powi(2)
     }
 }
 
