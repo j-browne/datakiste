@@ -75,6 +75,8 @@ impl Cut2d for Cut2dPoly {
 
 #[cfg(test)]
 mod tests {
+    extern crate rand;
+    use self::rand::distributions::{IndependentSample, Range};
     use super::*;
     const EP: f64 = 3. * ::std::f64::EPSILON;
 
@@ -209,5 +211,37 @@ mod tests {
         assert!(!c.contains(5f64, 0f64));
         assert!(!c.contains(5f64, 1f64));
         assert!(!c.contains(5f64, 2f64));
+    }
+
+    #[test]
+    fn poly_contains_rand() {
+        // Make sure the order and direction of the points doesn't matter
+        let cs = vec![
+            Cut2dPoly::from_verts(vec![(1f64, 1f64), (1f64, -1f64), (-1f64, -1f64), (-1f64, 1f64)]),
+            Cut2dPoly::from_verts(vec![(1f64, -1f64), (-1f64, -1f64), (-1f64, 1f64), (1f64, 1f64)]),
+            Cut2dPoly::from_verts(vec![(-1f64, -1f64), (-1f64, 1f64), (1f64, 1f64), (1f64, -1f64)]),
+            Cut2dPoly::from_verts(vec![(-1f64, 1f64), (1f64, 1f64), (1f64, -1f64), (-1f64, -1f64)]),
+            Cut2dPoly::from_verts(vec![(-1f64, 1f64), (-1f64, -1f64), (1f64, -1f64), (1f64, 1f64)]),
+            Cut2dPoly::from_verts(vec![(-1f64, -1f64), (1f64, -1f64), (1f64, 1f64), (-1f64, 1f64)]),
+            Cut2dPoly::from_verts(vec![(1f64, -1f64), (1f64, 1f64), (-1f64, 1f64), (-1f64, -1f64)]),
+            Cut2dPoly::from_verts(vec![(1f64, 1f64), (-1f64, 1f64), (-1f64, -1f64), (1f64, -1f64)])];
+
+        let range = Range::new(-2f64, 2f64);
+        let mut rng = rand::thread_rng();
+
+        for c in cs {
+            for i in 0..100000 {
+                let x = range.ind_sample(&mut rng);
+                let y = range.ind_sample(&mut rng);
+
+                if (x < 1f64 && x > -1f64) && (y < 1f64 && y > -1f64) {
+                    println!("iteration {} should be inside: ({}, {})", i, x, y);
+                    assert!(c.contains(x, y));
+                } else if (x > 1f64 || x < -1f64) || (y > 1f64 || y < -1f64) {
+                    println!("iteration {} should be outside: ({}, {})", i, x, y);
+                    assert!(!c.contains(x, y));
+                }
+            }
+        }
     }
 }
