@@ -61,7 +61,7 @@ impl Cut2d for Cut2dPoly {
             let y2 = self.verts[i].1;
 
             if ((y2 < y) && (y1 >= y)) || ((y1 < y) && (y2 >= y)) {
-                if (x2 + (y - y2) * (y1 - y2) / (x1 - x2)) < x {
+                if (x2 + (y - y2) * (x1 - x2) / (y1 - y2)) < x {
                     inside = !inside;
                 }
             }
