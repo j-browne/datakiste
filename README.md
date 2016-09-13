@@ -1,23 +1,2 @@
-dk
-run?, deprecated?, combined?
+[![Build Status](https://travis-ci.org/j-browne/datakiste.svg?branch=master)](https://travis-ci.org/j-browne/datakiste)
 
-dkt?
-???
-
-dkr
-run, binary
-
-dkrt?
-run, text
-
-dkht
-histogram, text
-
-dkh
-histogram, binary
-
-dkp
-points, binary
-
-dkpt
-point, text
