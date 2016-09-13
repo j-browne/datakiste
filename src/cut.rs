@@ -73,6 +73,36 @@ impl Cut2d for Cut2dPoly {
     }
 }
 
+#[derive(Debug, Clone)]
+pub struct Cut2dRect {
+    xmin: f64,
+    ymin: f64,
+    xmax: f64,
+    ymax: f64,
+}
+
+impl Cut2dRect {
+    pub fn new(x1: f64, y1: f64, x2: f64, y2: f64) -> Cut2dRect {
+        let xmin = f64::min(x1, x2);
+        let xmax = f64::max(x1, x2);
+        let ymin = f64::min(y1, y2);
+        let ymax = f64::max(y1, y2);
+
+        Cut2dRect {
+            xmin: xmin,
+            ymin: ymin,
+            xmax: xmax,
+            ymax: ymax,
+        }
+    }
+}
+
+impl Cut2d for Cut2dRect {
+    fn contains(&self, x: f64, y: f64) -> bool {
+        (x > self.xmin && x < self.xmax) && (y > self.ymin && y < self.ymax)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     extern crate rand;
