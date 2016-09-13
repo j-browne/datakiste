@@ -16,10 +16,18 @@ pub use hist::*;
 mod cut;
 pub use cut::*;
 
+/// An interface for reading datakiste binary data.
 ///
-///
-///
+/// Anything that implements `byteorder::ReadBytesExt`
+/// will get a default implementation of `ReadDkBin`
 pub trait ReadDkBin: ReadBytesExt {
+    /// Reads in binary run data.
+    ///
+    /// # Format
+    /// * `n_events: u32`
+    /// * `events: n_events * Event`
+    ///
+    /// # Examples
     fn read_run_bin(&mut self) -> io::Result<Run> {
         let n_events = try!(self.read_u32::<LittleEndian>()) as usize;
 
@@ -32,6 +40,13 @@ pub trait ReadDkBin: ReadBytesExt {
         Ok(Run { events: v })
     }
 
+    /// Reads in binary event data.
+    ///
+    /// # Format
+    /// * `n_hits: u16`
+    /// * `hits: n_hits * Hit`
+    ///
+    /// # Examples
     fn read_event_bin(&mut self) -> io::Result<Event> {
         // FIXME: If there's a bad event, skip to next event.
         // Currently, it fucks up the rest of the file.
@@ -46,6 +61,20 @@ pub trait ReadDkBin: ReadBytesExt {
         Ok(Event { hits: v })
     }
 
+    /// Reads in binary hit data.
+    ///
+    /// # Format
+    /// * `daqid: (u16, u16, u16, u16)`
+    /// * `detid: (u16, u16)`
+    /// * `rawval: u16`
+    /// * `value: u16`
+    /// * `energy: f64`
+    /// * `time: f64`
+    /// * `trace:`
+    ///     * `tr_size: u16`
+    ///     * `trace: tr_size * u16`
+    ///
+    /// # Examples
     fn read_hit_bin(&mut self) -> io::Result<Hit> {
         let so = try!(self.read_u16::<LittleEndian>());
         let cr = try!(self.read_u16::<LittleEndian>());
@@ -76,6 +105,15 @@ pub trait ReadDkBin: ReadBytesExt {
         })
     }
 
+    /// Reads in binary 1d-histogram data.
+    ///
+    /// # Format
+    /// * `bins: u32 `
+    /// * `min: f64`
+    /// * `max: f64`
+    /// * `counts: bins * u64`
+    ///
+    /// # Examples
     fn read_hist_1d_bin(&mut self) -> io::Result<Hist1d> {
         let bins = try!(self.read_u32::<LittleEndian>()) as usize;
         let min = try!(self.read_f64::<LittleEndian>());
@@ -93,6 +131,18 @@ pub trait ReadDkBin: ReadBytesExt {
         }
     }
 
+    /// Reads in binary 2d-histogram data.
+    ///
+    /// # Format
+    /// * `x_bins: u32 `
+    /// * `x_min: f64`
+    /// * `x_max: f64`
+    /// * `y_bins: u32 `
+    /// * `y_min: f64`
+    /// * `y_max: f64`
+    /// * `counts: x_bins * y_bins * u64`
+    ///
+    /// # Examples
     fn read_hist_2d_bin(&mut self) -> io::Result<Hist2d> {
         let x_bins = try!(self.read_u32::<LittleEndian>()) as usize;
         let x_min = try!(self.read_f64::<LittleEndian>());
@@ -117,15 +167,18 @@ pub trait ReadDkBin: ReadBytesExt {
     }
 }
 
-/// Anything that implements `ReadBytesExt` gets a default `ReadDkBin`
-/// implementation.
-impl<R: ReadBytesExt + Sized> ReadDkBin for R {}
-
-
+/// An interface for writing datakiste binary data.
 ///
-///
-///
+/// Anything that implements `byteorder::WriteBytesExt`
+/// will get a default implementation of `WriteDkBin`
 pub trait WriteDkBin: WriteBytesExt {
+    /// Writes out binary run data.
+    ///
+    /// # Format
+    /// * `n_events: u32`
+    /// * `events: n_events * Event`
+    ///
+    /// # Examples
     fn write_run_bin(&mut self, r: &Run) -> io::Result<()> {
         let _ = try!(self.write_u32::<LittleEndian>(r.events.len() as u32));
         for e in &r.events {
@@ -134,6 +187,13 @@ pub trait WriteDkBin: WriteBytesExt {
         Ok(())
     }
 
+    /// Writes out binary event data.
+    ///
+    /// # Format
+    /// * `n_hits: u16`
+    /// * `hits: n_hits * Hit`
+    ///
+    /// # Examples
     fn write_event_bin(&mut self, e: &Event) -> io::Result<()> {
         let _ = try!(self.write_u16::<LittleEndian>(e.hits.len() as u16));
         for h in &e.hits {
@@ -142,6 +202,20 @@ pub trait WriteDkBin: WriteBytesExt {
         Ok(())
     }
 
+    /// Writes out binary hit data.
+    ///
+    /// # Format
+    /// * `daqid: (u16, u16, u16, u16)`
+    /// * `detid: (u16, u16)`
+    /// * `rawval: u16`
+    /// * `value: u16`
+    /// * `energy: f64`
+    /// * `time: f64`
+    /// * `trace:`
+    ///     * `tr_size: u16`
+    ///     * `trace: tr_size * u16`
+    ///
+    /// # Examples
     fn write_hit_bin(&mut self, h: &Hit) -> io::Result<()> {
         let _ = try!(self.write_u16::<LittleEndian>(h.daqid.0));
         let _ = try!(self.write_u16::<LittleEndian>(h.daqid.1));
@@ -160,6 +234,15 @@ pub trait WriteDkBin: WriteBytesExt {
         Ok(())
     }
 
+    /// Writes out binary 1d-histogram data.
+    ///
+    /// # Format
+    /// * `bins: u32 `
+    /// * `min: f64`
+    /// * `max: f64`
+    /// * `counts: bins * u64`
+    ///
+    /// # Examples
     fn write_hist_1d_bin(&mut self, h: &Hist1d) -> io::Result<()> {
         let axis = h.x_axis();
         let _ = try!(self.write_u32::<LittleEndian>(axis.bins as u32));
@@ -172,6 +255,18 @@ pub trait WriteDkBin: WriteBytesExt {
         Ok(())
     }
 
+    /// Writes out binary 2d-histogram data.
+    ///
+    /// # Format
+    /// * `x_bins: u32 `
+    /// * `x_min: f64`
+    /// * `x_max: f64`
+    /// * `y_bins: u32 `
+    /// * `y_min: f64`
+    /// * `y_max: f64`
+    /// * `counts: x_bins * y_bins * u64`
+    ///
+    /// # Examples
     fn write_hist_2d_bin(&mut self, h: &Hist2d) -> io::Result<()> {
         let x_axis = h.x_axis();
         let y_axis = h.y_axis();
@@ -194,14 +289,10 @@ pub trait WriteDkBin: WriteBytesExt {
     }
 }
 
-/// Anything that implements `WriteBytesExt` gets a default `WriteDkBin`
-/// implementation.
-impl<W: WriteBytesExt> WriteDkBin for W {}
-
-
+/// An interface for reading datakiste text data.
 ///
-///
-///
+/// Anything that implements `std::io::Read`
+/// will get a default implementation of `ReadDkTxt`
 pub trait ReadDkTxt: Read {
     fn read_to_hist_1d_txt(&mut self, h: &mut Hist1d) -> io::Result<()> {
         let b = BufReader::new(self);
@@ -261,14 +352,10 @@ pub trait ReadDkTxt: Read {
     }
 }
 
-/// Anything that implements `Read` gets a default `ReadDkBin`
-/// implementation.
-impl<R: Read> ReadDkTxt for R {}
-
-
+/// An interface for writing datakiste text data.
 ///
-///
-///
+/// Anything that implements `std::io::Write`
+/// will get a default implementation of `WriteDkTxt`
 pub trait WriteDkTxt: Write {
     fn write_hist_1d_txt(&mut self, h: &Hist1d) -> io::Result<()> {
         let axis = h.x_axis();
@@ -299,20 +386,16 @@ pub trait WriteDkTxt: Write {
     }
 }
 
-/// Anything that implements `Write` gets a default `WriteDkBin`
-/// implementation.
+// Provide some default implementations
+impl<R: ReadBytesExt + Sized> ReadDkBin for R {}
+impl<W: WriteBytesExt> WriteDkBin for W {}
+impl<R: Read> ReadDkTxt for R {}
 impl<W: Write> WriteDkTxt for W {}
 
 
 /// A type that hold the data from an experimental run
 ///
 /// A `Run` holds a sequence of `Event`s
-///
-/// # File Formats
-///
-/// ## Binary
-///
-/// ## Text
 ///
 /// # Examples
 #[derive(Debug, Clone)]
@@ -323,10 +406,6 @@ pub struct Run {
 /// A type that holds an experimental event
 ///
 /// An `Event` holds a sequence of `Hit`s
-///
-/// ## Binary
-///
-/// ## Text
 ///
 /// # Examples
 #[derive(Debug, Clone)]
@@ -351,10 +430,6 @@ impl Event {
 }
 
 /// A type that holds an experimental hit
-///
-/// ## Binary
-///
-/// ## Text
 ///
 /// # Examples
 #[derive(Debug, Clone)]
