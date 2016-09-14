@@ -106,7 +106,7 @@ impl Cut2d for Cut2dRect {
 #[cfg(test)]
 mod tests {
     extern crate rand;
-    use self::rand::distributions::{IndependentSample, Range};
+    use self::rand::Rng;
     use super::*;
     const EP: f64 = 3. * ::std::f64::EPSILON;
 
@@ -258,20 +258,29 @@ mod tests {
             Cut2dPoly::from_verts(vec![(1f64, -1f64), (1f64, 1f64), (0f64, 1f64), (-1f64, 1f64), (-1f64, -1f64)]),
             Cut2dPoly::from_verts(vec![(1f64, 1f64), (0f64, 1f64), (-1f64, 1f64), (-1f64, -1f64), (1f64, -1f64)])];
 
-        let range = Range::new(-2f64, 2f64);
         let mut rng = rand::thread_rng();
 
         for c in cs {
-            for i in 0..100000 {
-                let x = range.ind_sample(&mut rng);
-                let y = range.ind_sample(&mut rng);
+            println!("cut: {:?}", c);
 
-                if (x < 1f64 && x > -1f64) && (y < 1f64 && y > -1f64) {
-                    println!("iteration {} should be inside: ({}, {})", i, x, y);
-                    assert!(c.contains(x, y));
-                } else if (x > 1f64 || x < -1f64) || (y > 1f64 || y < -1f64) {
-                    println!("iteration {} should be outside: ({}, {})", i, x, y);
-                    assert!(!c.contains(x, y));
+            let mut xs: Vec<f64> = rng.gen_iter::<f64>().map(|x| x * 4f64 - 2f64).take(100).collect();
+            let mut ys: Vec<f64> = rng.gen_iter::<f64>().map(|x| x * 4f64 - 2f64).take(100).collect();
+
+            // Make sure horizontal and vertical lines are fine
+            xs.push(1f64);
+            xs.push(-1f64);
+            ys.push(1f64);
+            ys.push(-1f64);
+
+            for x in &xs {
+                for y in &ys {
+                    if (*x < 1f64 && *x > -1f64) && (*y < 1f64 && *y > -1f64) {
+                        println!("Should be inside: ({}, {})", *x, *y);
+                        assert!(c.contains(*x, *y));
+                    } else if (*x > 1f64 || *x < -1f64) || (*y > 1f64 || *y < -1f64) {
+                        println!("Should be outside: ({}, {})", *x, *y);
+                        assert!(!c.contains(*x, *y));
+                    }
                 }
             }
         }
