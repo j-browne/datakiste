@@ -119,8 +119,9 @@ impl Hist1d {
         self.counts[bin] += c; // FIXME
     }
 
-    pub fn add (&mut self, other: &Hist1d) {
-        for bin in 0..other.x_axis.bins { // TODO: use iterator?
+    pub fn add(&mut self, other: &Hist1d) {
+        for bin in 0..other.x_axis.bins {
+            // TODO: use iterator?
             let v = other.x_axis.val_at_bin_mid(bin);
             let c = other.counts[bin]; // FIXME
             self.fill_at_val_with_counts(v, c);
@@ -145,8 +146,15 @@ pub struct Hist2d {
 }
 
 impl Hist2d {
-    pub fn new(bins_x: usize, min_x: f64, max_x: f64, bins_y: usize, min_y: f64, max_y: f64) -> Option<Hist2d> {
-        match (HistAxis::new(bins_x, min_x, max_x), HistAxis::new(bins_y, min_y, max_y)) {
+    pub fn new(bins_x: usize,
+               min_x: f64,
+               max_x: f64,
+               bins_y: usize,
+               min_y: f64,
+               max_y: f64)
+               -> Option<Hist2d> {
+        match (HistAxis::new(bins_x, min_x, max_x),
+               HistAxis::new(bins_y, min_y, max_y)) {
             (Some(x_axis), Some(y_axis)) => {
                 let counts = vec![0u64; bins_x * bins_y];
                 Some(Hist2d {
@@ -159,11 +167,19 @@ impl Hist2d {
         }
     }
 
-    pub fn with_counts(bins_x: usize, min_x: f64, max_x: f64, bins_y: usize, min_y: f64, max_y: f64, counts: Vec<u64>) -> Option<Hist2d> {
+    pub fn with_counts(bins_x: usize,
+                       min_x: f64,
+                       max_x: f64,
+                       bins_y: usize,
+                       min_y: f64,
+                       max_y: f64,
+                       counts: Vec<u64>)
+                       -> Option<Hist2d> {
         if bins_x * bins_y != counts.len() {
             None
         } else {
-            match (HistAxis::new(bins_x, min_x, max_x), HistAxis::new(bins_y, min_y, max_y)) {
+            match (HistAxis::new(bins_x, min_x, max_x),
+                   HistAxis::new(bins_y, min_y, max_y)) {
                 (Some(x_axis), Some(y_axis)) => {
                     Some(Hist2d {
                         x_axis: x_axis,
@@ -216,7 +232,7 @@ impl Hist2d {
         bin_x * self.y_axis.bins + bin_y
     }
 
-    pub fn add (&mut self, other: &Hist2d) {
+    pub fn add(&mut self, other: &Hist2d) {
         // TODO: iterator?
         for bin_x in 0..other.x_axis.bins {
             for bin_y in 0..other.y_axis.bins {
@@ -277,7 +293,7 @@ mod tests {
     }
 
     #[test]
-    fn hist_1d_bin_width () {
+    fn hist_1d_bin_width() {
         let h = Hist1d::new(1usize, 0f64, 100f64).unwrap();
         let axis = h.x_axis();
         assert_eq!(axis.bin_width(), 100f64);
@@ -296,7 +312,11 @@ mod tests {
     #[test]
     fn hist_1d_add() {
         let mut h1a = Hist1d::with_counts(5usize, 0f64, 10f64, vec![2, 3, 50, 4, 1]).unwrap();
-        let mut h2a = Hist1d::with_counts(10usize, 5f64, 10f64, vec![0, 0, 5, 15, 16, 10, 9, 20, 8, 12]).unwrap();
+        let mut h2a = Hist1d::with_counts(10usize,
+                                          5f64,
+                                          10f64,
+                                          vec![0, 0, 5, 15, 16, 10, 9, 20, 8, 12])
+                          .unwrap();
 
         let h1b = h1a.clone();
         let h2b = h2a.clone();
@@ -360,8 +380,10 @@ mod tests {
 
     #[test]
     fn hist_2d_add() {
-        let mut h1a = Hist2d::with_counts(5usize, 0f64, 10f64, vec![2, 3, 50, 4, 1]).unwrap();
-        let mut h2a = Hist2d::with_counts(10usize, 5f64, 10f64, vec![0, 0, 5, 15, 16, 10, 9, 20, 8, 12]).unwrap();
+        let mut h1a = Hist2d::with_counts(5usize, 0f64, 10f64,
+            vec![2, 3, 50, 4, 1]).unwrap();
+        let mut h2a = Hist2d::with_counts(10usize, 5f64, 10f64,
+            vec![0, 0, 5, 15, 16, 10, 9, 20, 8, 12]).unwrap();
 
         let h1b = h1a.clone();
         let h2b = h2a.clone();

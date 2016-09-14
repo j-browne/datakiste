@@ -422,8 +422,8 @@ pub struct Event {
 
 impl Event {
     pub fn apply_det(&mut self,
-        all_dets: &[Box<Detector>],
-        daq_det_map: &HashMap<(u16, u16, u16, u16), (u16, u16)>) {
+                     all_dets: &[Box<Detector>],
+                     daq_det_map: &HashMap<(u16, u16, u16, u16), (u16, u16)>) {
         for ref mut h in &mut self.hits {
             h.apply_det(all_dets, daq_det_map);
         }
@@ -452,8 +452,8 @@ pub struct Hit {
 
 impl Hit {
     pub fn apply_det(&mut self,
-        all_dets: &[Box<Detector>],
-        daq_det_map: &HashMap<(u16, u16, u16, u16), (u16, u16)>) {
+                     all_dets: &[Box<Detector>],
+                     daq_det_map: &HashMap<(u16, u16, u16, u16), (u16, u16)>) {
         self.detid = match daq_det_map.get(&self.daqid) {
             Some(x) => *x,
             None => (0, 0),
@@ -474,7 +474,6 @@ impl Hit {
     }
 }
 
-//
 // make_det stuff
 //
 pub fn get_dets(file: File) -> Vec<Box<Detector>> {
@@ -501,16 +500,9 @@ pub fn get_id_map(dets: &[Box<Detector>]) -> HashMap<(u16, u16, u16, u16), (u16,
                 let v = map.insert(daq_id, (di, dc));
                 if v.is_some() {
                     let v = v.unwrap();
-                    warn!("Daq ID ({}, {}, {}, {}) already used.\n   Old: ({}, {})\n    New: \
-                           ({}, {})",
-                          daq_id.0,
-                          daq_id.1,
-                          daq_id.2,
-                          daq_id.3,
-                          v.0,
-                          v.1,
-                          di,
-                          dc);
+                    warn!("Daq ID ({}, {}, {}, {}) is already used.\
+                           \n   Old: ({}, {})\n    New: ({}, {})",
+                           daq_id.0, daq_id.1, daq_id.2, daq_id.3, v.0, v.1, di, dc);
                 }
             } else {
                 warn!("Bad Det ID ({}, {}).", di, dc);
@@ -564,7 +556,6 @@ fn line_to_det(line: &str) -> Option<Box<Detector>> {
 }
 
 
-//
 // calibrate stuff
 //
 pub fn get_cal_map(file: File) -> HashMap<(u16, u16, u16, u16), (f64, f64)> {
@@ -589,16 +580,9 @@ pub fn get_cal_map(file: File) -> HashMap<(u16, u16, u16, u16), (f64, f64)> {
             let v = map.insert(id, (o, s));
             if v.is_some() {
                 let v = v.unwrap();
-                warn!("There is already a calibration for Daq ID ({}, {}, {}, {}).\n   Old: ({}, \
-                       {})\n    New: ({}, {})",
-                      id.0,
-                      id.1,
-                      id.2,
-                      id.3,
-                      v.0,
-                      v.1,
-                      o,
-                      s);
+                warn!("There is already a calibration for Daq ID ({}, {}, {}, {}).\
+                       \n    Old: ({}, {})\n    New: ({}, {})",
+                       id.0, id.1, id.2, id.3, v.0, v.1, o, s);
             }
         }
     }
@@ -621,8 +605,9 @@ mod tests {
     #[test]
     fn read_write_hit() {
         let hit_bytes = &[1u8, 0, 0, 0, 7, 0, 0, 0, 40, 0,
-            0, 0, 130, 37, 130, 37, 0, 0, 0, 0, 0, 193, 194,
-            64, 0, 0, 0, 0, 48, 36, 10, 65, 0, 0] as &[u8];
+                          0, 0, 130, 37, 130, 37, 0, 0, 0,
+                          0, 0, 193, 194, 64, 0, 0, 0, 0,
+                          48, 36, 10, 65, 0, 0] as &[u8];
 
         // Read in hit from byte array
         let mut bytes = hit_bytes;
@@ -655,10 +640,11 @@ mod tests {
     #[test]
     fn read_write_hit_trace() {
         let hit_bytes = &[1u8, 0, 0, 0, 7, 0, 0, 0, 40, 0,
-            0, 0, 130, 37, 130, 37, 0, 0, 0, 0, 0, 193, 194,
-            64, 0, 0, 0, 0, 48, 36, 10, 65, 10, 0, 0, 0, 1,
-            0, 2, 0, 3, 0, 4, 0, 5, 0, 6, 0, 7, 0, 8, 0, 9,
-            0] as &[u8];
+                          0, 0, 130, 37, 130, 37, 0, 0, 0,
+                          0, 0, 193, 194, 64, 0, 0, 0, 0,
+                          48, 36, 10, 65, 10, 0, 0, 0, 1,
+                          0, 2, 0, 3, 0, 4, 0, 5, 0, 6, 0,
+                          7, 0, 8, 0, 9, 0] as &[u8];
 
         // Read in hit from byte array
         let mut bytes = hit_bytes;
@@ -675,7 +661,7 @@ mod tests {
         assert_eq!(h.value, 9602);
         assert_f64_eq!(h.energy, 9602.0);
         assert_f64_eq!(h.time, 214150.0);
-        assert_eq!(h.trace, [0u16, 1, 2, 3, 4, 5, 6, 7 ,8, 9]);
+        assert_eq!(h.trace, [0u16, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
 
         // Make sure there's nothing left over in `bytes`
         assert_eq!(bytes, []);
@@ -690,12 +676,15 @@ mod tests {
 
     #[test]
     fn read_write_event() {
-        let event_bytes = &[2u8, 0, 0, 0, 0, 0, 10, 0, 0, 0,
-            0, 0, 0, 0, 244, 48, 244, 48, 0, 0, 0, 0, 0, 122,
-            200, 64, 0, 0, 0, 0, 192, 17, 10, 65, 0, 0, 1, 0,
-            0, 0, 7, 0, 0, 0, 40, 0, 0, 0, 130, 37, 130, 37,
-            0, 0, 0, 0, 0, 193, 194, 64, 0, 0, 0, 0, 48, 36,
-            10, 65, 0, 0] as &[u8];
+        let event_bytes = &[2u8, 0, 0, 0, 0, 0, 10, 0, 0,
+                            0, 0, 0, 0, 0, 244, 48, 244,
+                            48, 0, 0, 0, 0, 0, 122, 200,
+                            64, 0, 0, 0, 0, 192, 17, 10,
+                            65, 0, 0, 1, 0, 0, 0, 7, 0, 0,
+                            0, 40, 0, 0, 0, 130, 37, 130,
+                            37, 0, 0, 0, 0, 0, 193, 194,
+                            64, 0, 0, 0, 0, 48, 36, 10, 65,
+                            0, 0] as &[u8];
 
         // Read in event from byte array
         let mut bytes = event_bytes;
@@ -718,12 +707,14 @@ mod tests {
 
     #[test]
     fn read_write_run() {
-        let run_bytes = &[1u8, 0, 0, 0, 2, 0, 0, 0, 0, 0, 10,
-            0, 0, 0, 0, 0, 0, 0, 244, 48, 244, 48, 0, 0, 0,
-            0, 0, 122, 200, 64, 0, 0, 0, 0, 192, 17, 10, 65,
-            0, 0, 1, 0, 0, 0, 7, 0, 0, 0, 40, 0, 0, 0, 130,
-            37, 130, 37, 0, 0, 0, 0, 0, 193, 194, 64, 0, 0,
-            0, 0, 48, 36, 10, 65, 0, 0] as &[u8];
+        let run_bytes = &[1u8, 0, 0, 0, 2, 0, 0, 0, 0, 0,
+                          10, 0, 0, 0, 0, 0, 0, 0, 244,
+                          48, 244, 48, 0, 0, 0, 0, 0, 122,
+                          200, 64, 0, 0, 0, 0, 192, 17,
+                          10, 65, 0, 0, 1, 0, 0, 0, 7, 0,
+                          0, 0, 40, 0, 0, 0, 130, 37, 130,
+                          37, 0, 0, 0, 0, 0, 193, 194, 64,
+                          0, 0, 0, 0, 48, 36, 10, 65, 0, 0] as &[u8];
 
         // Read in run from byte array
         let mut bytes = run_bytes;
@@ -772,12 +763,11 @@ mod tests {
 
     #[test]
     fn read_write_hist_1d_bin() {
-        let hist_bytes = &[3u8, 0, 0, 0,
-                0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0, 0, 0, 8, 64,
-                2, 0, 0, 0, 0, 0, 0, 0,
-                1, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0, 0, 0, 0, 0] as &[u8];
+        let hist_bytes = &[3u8, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                           0, 0, 0, 0, 0, 0, 0, 0, 8, 64,
+                           2, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0,
+                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                           0, 0] as &[u8];
 
         // Read in hit from byte array
         let mut bytes = hist_bytes;
@@ -809,7 +799,8 @@ mod tests {
         let _ = bytes.read_to_hist_2d_txt(&mut h1);
 
         // Make sure it was read correctly
-        let h2 = Hist2d::with_counts(2usize, 0f64, 4f64, 2usize, 0f64, 2f64, vec![2, 1, 0, 4]).unwrap();
+        let h2 = Hist2d::with_counts(2usize, 0f64, 4f64, 2usize, 0f64, 2f64, vec![2, 1, 0, 4])
+                     .unwrap();
         assert_eq!(h1, h2);
 
         // Make sure there's nothing left over in `bytes`
@@ -826,23 +817,18 @@ mod tests {
 
     #[test]
     fn read_write_hist_2d_bin() {
-        let hist_bytes = &[2u8, 0, 0, 0,
-                0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0, 0, 0, 16, 64,
-                2, 0, 0, 0,
-                0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0, 0, 0, 0, 64,
-                2, 0, 0, 0, 0, 0, 0, 0,
-                1, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0, 0, 0, 0, 0,
-                4, 0, 0, 0, 0, 0, 0, 0] as &[u8];
+        let hist_bytes = &[2u8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16, 64, 2,
+                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 64, 2, 0, 0,
+                           0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4,
+                           0, 0, 0, 0, 0, 0, 0] as &[u8];
 
         // Read in hit from byte array
         let mut bytes = hist_bytes;
         let h1 = bytes.read_hist_2d_bin().unwrap();
 
         // Make sure it was read correctly
-        let h2 = Hist2d::with_counts(2usize, 0f64, 4f64, 2usize, 0f64, 2f64, vec![2, 1, 0, 4]).unwrap();
+        let h2 = Hist2d::with_counts(2usize, 0f64, 4f64, 2usize, 0f64, 2f64, vec![2, 1, 0, 4])
+                     .unwrap();
         assert_eq!(h1, h2);
 
         // Make sure there's nothing left over in `bytes`

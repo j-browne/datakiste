@@ -42,15 +42,11 @@ pub struct Cut2dPoly {
 
 impl Cut2dPoly {
     pub fn new() -> Cut2dPoly {
-        Cut2dPoly {
-            verts: vec![],
-        }
+        Cut2dPoly { verts: vec![] }
     }
 
     pub fn from_verts(verts: Vec<(f64, f64)>) -> Cut2dPoly {
-        Cut2dPoly {
-            verts: verts,
-        }
+        Cut2dPoly { verts: verts }
     }
 }
 
@@ -67,7 +63,7 @@ impl Cut2d for Cut2dPoly {
             let y2 = self.verts[i].1;
 
             if (((y2 < y) && (y1 >= y)) || ((y1 < y) && (y2 >= y))) &&
-                ((x2 + (y - y2) * (x1 - x2) / (y1 - y2)) < x) {
+               ((x2 + (y - y2) * (x1 - x2) / (y1 - y2)) < x) {
                 inside = !inside;
             }
 
@@ -157,9 +153,15 @@ mod tests {
 
     #[test]
     fn poly_contains() {
-        let c = Cut2dPoly::from_verts(vec![(0f64, -1f64), (2f64, -1f64), (4f64, 1f64),
-                                           (3f64, 1f64), (2f64, 1f64), (1f64, 0f64),
-                                           (0f64, 1f64), (-1f64, 1f64), (-2f64, 1f64)]);
+        let c = Cut2dPoly::from_verts(vec![(0f64, -1f64),
+                                           (2f64, -1f64),
+                                           (4f64, 1f64),
+                                           (3f64, 1f64),
+                                           (2f64, 1f64),
+                                           (1f64, 0f64),
+                                           (0f64, 1f64),
+                                           (-1f64, 1f64),
+                                           (-2f64, 1f64)]);
 
         assert!(!c.contains(-3f64, -2f64));
         assert!(!c.contains(-3f64, -1f64));
@@ -251,25 +253,70 @@ mod tests {
     #[test]
     fn poly_contains_rand() {
         // Make sure the order and direction of the points doesn't matter
-        let cs = vec![
-            Cut2dPoly::from_verts(vec![(1f64, 1f64), (1f64, -1f64), (-1f64, -1f64), (-1f64, 1f64), (0f64, 1f64)]),
-            Cut2dPoly::from_verts(vec![(1f64, -1f64), (-1f64, -1f64), (-1f64, 1f64), (0f64, 1f64), (1f64, 1f64)]),
-            Cut2dPoly::from_verts(vec![(-1f64, -1f64), (-1f64, 1f64), (0f64, 1f64), (1f64, 1f64), (1f64, -1f64)]),
-            Cut2dPoly::from_verts(vec![(-1f64, 1f64), (0f64, 1f64), (1f64, 1f64), (1f64, -1f64), (-1f64, -1f64)]),
-            Cut2dPoly::from_verts(vec![(0f64, 1f64), (1f64, 1f64), (1f64, -1f64), (-1f64, -1f64), (-1f64, 1f64)]),
-            Cut2dPoly::from_verts(vec![(0f64, 1f64), (-1f64, 1f64), (-1f64, -1f64), (1f64, -1f64), (1f64, 1f64)]),
-            Cut2dPoly::from_verts(vec![(-1f64, 1f64), (-1f64, -1f64), (1f64, -1f64), (1f64, 1f64), (0f64, 1f64)]),
-            Cut2dPoly::from_verts(vec![(-1f64, -1f64), (1f64, -1f64), (1f64, 1f64), (0f64, 1f64), (-1f64, 1f64)]),
-            Cut2dPoly::from_verts(vec![(1f64, -1f64), (1f64, 1f64), (0f64, 1f64), (-1f64, 1f64), (-1f64, -1f64)]),
-            Cut2dPoly::from_verts(vec![(1f64, 1f64), (0f64, 1f64), (-1f64, 1f64), (-1f64, -1f64), (1f64, -1f64)])];
+        let cs = vec![Cut2dPoly::from_verts(vec![(1f64, 1f64),
+                                                 (1f64, -1f64),
+                                                 (-1f64, -1f64),
+                                                 (-1f64, 1f64),
+                                                 (0f64, 1f64)]),
+                      Cut2dPoly::from_verts(vec![(1f64, -1f64),
+                                                 (-1f64, -1f64),
+                                                 (-1f64, 1f64),
+                                                 (0f64, 1f64),
+                                                 (1f64, 1f64)]),
+                      Cut2dPoly::from_verts(vec![(-1f64, -1f64),
+                                                 (-1f64, 1f64),
+                                                 (0f64, 1f64),
+                                                 (1f64, 1f64),
+                                                 (1f64, -1f64)]),
+                      Cut2dPoly::from_verts(vec![(-1f64, 1f64),
+                                                 (0f64, 1f64),
+                                                 (1f64, 1f64),
+                                                 (1f64, -1f64),
+                                                 (-1f64, -1f64)]),
+                      Cut2dPoly::from_verts(vec![(0f64, 1f64),
+                                                 (1f64, 1f64),
+                                                 (1f64, -1f64),
+                                                 (-1f64, -1f64),
+                                                 (-1f64, 1f64)]),
+                      Cut2dPoly::from_verts(vec![(0f64, 1f64),
+                                                 (-1f64, 1f64),
+                                                 (-1f64, -1f64),
+                                                 (1f64, -1f64),
+                                                 (1f64, 1f64)]),
+                      Cut2dPoly::from_verts(vec![(-1f64, 1f64),
+                                                 (-1f64, -1f64),
+                                                 (1f64, -1f64),
+                                                 (1f64, 1f64),
+                                                 (0f64, 1f64)]),
+                      Cut2dPoly::from_verts(vec![(-1f64, -1f64),
+                                                 (1f64, -1f64),
+                                                 (1f64, 1f64),
+                                                 (0f64, 1f64),
+                                                 (-1f64, 1f64)]),
+                      Cut2dPoly::from_verts(vec![(1f64, -1f64),
+                                                 (1f64, 1f64),
+                                                 (0f64, 1f64),
+                                                 (-1f64, 1f64),
+                                                 (-1f64, -1f64)]),
+                      Cut2dPoly::from_verts(vec![(1f64, 1f64),
+                                                 (0f64, 1f64),
+                                                 (-1f64, 1f64),
+                                                 (-1f64, -1f64),
+                                                 (1f64, -1f64)])];
 
         let mut rng = rand::thread_rng();
 
         for c in cs {
             println!("cut: {:?}", c);
 
-            let mut xs: Vec<f64> = rng.gen_iter::<f64>().map(|x| x * 4f64 - 2f64).take(100).collect();
-            let mut ys: Vec<f64> = rng.gen_iter::<f64>().map(|x| x * 4f64 - 2f64).take(100).collect();
+            let mut xs: Vec<f64> = rng.gen_iter::<f64>()
+                                      .map(|x| x * 4f64 - 2f64)
+                                      .take(100)
+                                      .collect();
+            let mut ys: Vec<f64> = rng.gen_iter::<f64>()
+                                      .map(|x| x * 4f64 - 2f64)
+                                      .take(100)
+                                      .collect();
 
             // Make sure horizontal and vertical lines are fine
             xs.push(1f64);

@@ -45,7 +45,7 @@ impl Detector for BB10F {
 
     fn contains_daq(&self, id: (u16, u16, u16, u16)) -> bool {
         (id.0 == self.start.0) && (id.1 == self.start.1) && (id.2 == self.start.2) &&
-           ((id.3 >= self.start.3) && (id.3 < self.start.3 + self.num_chans))
+        ((id.3 >= self.start.3) && (id.3 < self.start.3 + self.num_chans))
     }
 
     fn daq_to_det(&self, id: (u16, u16, u16, u16)) -> Option<u16> {
@@ -96,7 +96,7 @@ impl Detector for BB15B {
 
     fn contains_daq(&self, id: (u16, u16, u16, u16)) -> bool {
         (id.0 == self.start.0) && (id.1 == self.start.1) && (id.2 == self.start.2) &&
-           ((id.3 >= self.start.3) && (id.3 < self.start.3 + self.num_chans))
+        ((id.3 >= self.start.3) && (id.3 < self.start.3 + self.num_chans))
     }
 
     fn daq_to_det(&self, id: (u16, u16, u16, u16)) -> Option<u16> {
@@ -152,7 +152,7 @@ impl Detector for BB15F {
 
     fn contains_daq(&self, id: (u16, u16, u16, u16)) -> bool {
         (id.0 == self.start.0) && (id.1 == self.start.1) &&
-           ((id.2 >= self.start.2) && (id.2 < self.start.2 + 4))
+        ((id.2 >= self.start.2) && (id.2 < self.start.2 + 4))
     }
 
     fn daq_to_det(&self, id: (u16, u16, u16, u16)) -> Option<u16> {
@@ -209,7 +209,7 @@ impl Detector for HABANERO {
 
     fn contains_daq(&self, id: (u16, u16, u16, u16)) -> bool {
         (id.0 == self.start.0) && (id.1 == self.start.1) &&
-           ((id.2 >= self.start.2) && (id.2 < self.start.2 + 5))
+        ((id.2 >= self.start.2) && (id.2 < self.start.2 + 5))
     }
 
     fn daq_to_det(&self, id: (u16, u16, u16, u16)) -> Option<u16> {
@@ -261,7 +261,7 @@ impl Detector for HAGRID {
 
     fn contains_daq(&self, id: (u16, u16, u16, u16)) -> bool {
         (id.0 == self.start.0) && (id.1 == self.start.1) && (id.2 == self.start.2) &&
-           ((id.3 >= self.start.3) && (id.3 < self.start.3 + self.num_chans))
+        ((id.3 >= self.start.3) && (id.3 < self.start.3 + self.num_chans))
     }
 
     fn daq_to_det(&self, id: (u16, u16, u16, u16)) -> Option<u16> {
@@ -363,7 +363,7 @@ impl Detector for PSICXY {
 
     fn contains_daq(&self, id: (u16, u16, u16, u16)) -> bool {
         (id.0 == self.start.0) && (id.1 == self.start.1) &&
-           ((id.2 >= self.start.2) && (id.2 < self.start.2 + 2))
+        ((id.2 >= self.start.2) && (id.2 < self.start.2 + 2))
     }
 
     fn daq_to_det(&self, id: (u16, u16, u16, u16)) -> Option<u16> {
@@ -520,7 +520,7 @@ impl Detector for QQQ5B {
 
     fn contains_daq(&self, id: (u16, u16, u16, u16)) -> bool {
         (id.0 == self.start.0) && (id.1 == self.start.1) && (id.2 == self.start.2) &&
-           ((id.3 >= self.start.3) && (id.3 < self.start.3 + self.num_chans))
+        ((id.3 >= self.start.3) && (id.3 < self.start.3 + self.num_chans))
     }
 
     fn daq_to_det(&self, id: (u16, u16, u16, u16)) -> Option<u16> {
@@ -576,7 +576,7 @@ impl Detector for QQQ5F {
 
     fn contains_daq(&self, id: (u16, u16, u16, u16)) -> bool {
         (id.0 == self.start.0) && (id.1 == self.start.1) &&
-           ((id.2 >= self.start.2) && (id.2 < self.start.2 + 2))
+        ((id.2 >= self.start.2) && (id.2 < self.start.2 + 2))
     }
 
     fn daq_to_det(&self, id: (u16, u16, u16, u16)) -> Option<u16> {
@@ -632,9 +632,7 @@ impl Detector for YY1F {
     }
 
     fn contains_daq(&self, id: (u16, u16, u16, u16)) -> bool {
-        (id.0 == self.start.0) &&
-            (id.1 == self.start.1) &&
-            (id.2 == self.start.2)
+        (id.0 == self.start.0) && (id.1 == self.start.1) && (id.2 == self.start.2)
     }
 
     fn daq_to_det(&self, id: (u16, u16, u16, u16)) -> Option<u16> {

@@ -13,4 +13,3 @@ macro_rules! warn {
         let _ = writeln!(&mut ::std::io::stderr(), $($arg)*);
     }
 }
-
