@@ -360,8 +360,7 @@ pub trait WriteDkTxt: Write {
     fn write_hist_1d_txt(&mut self, h: &Hist1d) -> io::Result<()> {
         let axis = h.x_axis();
         for bin in 0..axis.bins {
-            // FIXME: use a function call
-            let x = ((bin as f64) + 0.5) * axis.bin_width() + axis.min;
+            let x = axis.val_at_bin_mid(bin);
             let y = h.counts_at_bin(bin).unwrap();
             let _ = try!(writeln!(self, "{}\t{}", x, y));
         }
@@ -373,10 +372,8 @@ pub trait WriteDkTxt: Write {
         let y_axis = h.y_axis();
         for bin_x in 0..x_axis.bins {
             for bin_y in 0..y_axis.bins {
-                // FIXME: use a function call
-                let x = ((bin_x as f64) + 0.5) * x_axis.bin_width() + x_axis.min;
-                // FIXME: use a function call
-                let y = ((bin_y as f64) + 0.5) * y_axis.bin_width() + y_axis.min;
+                let x = x_axis.val_at_bin_mid(bin_x);
+                let y = y_axis.val_at_bin_mid(bin_y);
                 let z = h.counts_at_bin(bin_x, bin_y).unwrap();
                 let _ = try!(writeln!(self, "{}\t{}\t{}", x, y, z));
             }
