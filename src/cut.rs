@@ -35,7 +35,7 @@ impl Cut2d for Cut2dCirc {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct Cut2dPoly {
     verts: Vec<(f64, f64)>,
 }
@@ -66,10 +66,9 @@ impl Cut2d for Cut2dPoly {
             let y1 = self.verts[j].1;
             let y2 = self.verts[i].1;
 
-            if ((y2 < y) && (y1 >= y)) || ((y1 < y) && (y2 >= y)) {
-                if (x2 + (y - y2) * (x1 - x2) / (y1 - y2)) < x {
-                    inside = !inside;
-                }
+            if (((y2 < y) && (y1 >= y)) || ((y1 < y) && (y2 >= y))) &&
+                ((x2 + (y - y2) * (x1 - x2) / (y1 - y2)) < x) {
+                inside = !inside;
             }
 
             j = i;

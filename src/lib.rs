@@ -180,9 +180,9 @@ pub trait WriteDkBin: WriteBytesExt {
     ///
     /// # Examples
     fn write_run_bin(&mut self, r: &Run) -> io::Result<()> {
-        let _ = try!(self.write_u32::<LittleEndian>(r.events.len() as u32));
+        try!(self.write_u32::<LittleEndian>(r.events.len() as u32));
         for e in &r.events {
-            let _ = try!(self.write_event_bin(&e));
+            try!(self.write_event_bin(&e));
         }
         Ok(())
     }
@@ -195,9 +195,9 @@ pub trait WriteDkBin: WriteBytesExt {
     ///
     /// # Examples
     fn write_event_bin(&mut self, e: &Event) -> io::Result<()> {
-        let _ = try!(self.write_u16::<LittleEndian>(e.hits.len() as u16));
+        try!(self.write_u16::<LittleEndian>(e.hits.len() as u16));
         for h in &e.hits {
-            let _ = try!(self.write_hit_bin(&h));
+            try!(self.write_hit_bin(&h));
         }
         Ok(())
     }
@@ -217,19 +217,19 @@ pub trait WriteDkBin: WriteBytesExt {
     ///
     /// # Examples
     fn write_hit_bin(&mut self, h: &Hit) -> io::Result<()> {
-        let _ = try!(self.write_u16::<LittleEndian>(h.daqid.0));
-        let _ = try!(self.write_u16::<LittleEndian>(h.daqid.1));
-        let _ = try!(self.write_u16::<LittleEndian>(h.daqid.2));
-        let _ = try!(self.write_u16::<LittleEndian>(h.daqid.3));
-        let _ = try!(self.write_u16::<LittleEndian>(h.detid.0));
-        let _ = try!(self.write_u16::<LittleEndian>(h.detid.1));
-        let _ = try!(self.write_u16::<LittleEndian>(h.rawval));
-        let _ = try!(self.write_u16::<LittleEndian>(h.value));
-        let _ = try!(self.write_f64::<LittleEndian>(h.energy));
-        let _ = try!(self.write_f64::<LittleEndian>(h.time));
-        let _ = try!(self.write_u16::<LittleEndian>(h.trace.len() as u16));
+        try!(self.write_u16::<LittleEndian>(h.daqid.0));
+        try!(self.write_u16::<LittleEndian>(h.daqid.1));
+        try!(self.write_u16::<LittleEndian>(h.daqid.2));
+        try!(self.write_u16::<LittleEndian>(h.daqid.3));
+        try!(self.write_u16::<LittleEndian>(h.detid.0));
+        try!(self.write_u16::<LittleEndian>(h.detid.1));
+        try!(self.write_u16::<LittleEndian>(h.rawval));
+        try!(self.write_u16::<LittleEndian>(h.value));
+        try!(self.write_f64::<LittleEndian>(h.energy));
+        try!(self.write_f64::<LittleEndian>(h.time));
+        try!(self.write_u16::<LittleEndian>(h.trace.len() as u16));
         for i in &h.trace {
-            let _ = try!(self.write_u16::<LittleEndian>(*i));
+            try!(self.write_u16::<LittleEndian>(*i));
         }
         Ok(())
     }
@@ -245,12 +245,12 @@ pub trait WriteDkBin: WriteBytesExt {
     /// # Examples
     fn write_hist_1d_bin(&mut self, h: &Hist1d) -> io::Result<()> {
         let axis = h.x_axis();
-        let _ = try!(self.write_u32::<LittleEndian>(axis.bins as u32));
-        let _ = try!(self.write_f64::<LittleEndian>(axis.min));
-        let _ = try!(self.write_f64::<LittleEndian>(axis.max));
+        try!(self.write_u32::<LittleEndian>(axis.bins as u32));
+        try!(self.write_f64::<LittleEndian>(axis.min));
+        try!(self.write_f64::<LittleEndian>(axis.max));
         for bin in 0..axis.bins {
             let c = h.counts_at_bin(bin).unwrap();
-            let _ = try!(self.write_u64::<LittleEndian>(*c));
+            try!(self.write_u64::<LittleEndian>(*c));
         }
         Ok(())
     }
@@ -271,18 +271,18 @@ pub trait WriteDkBin: WriteBytesExt {
         let x_axis = h.x_axis();
         let y_axis = h.y_axis();
 
-        let _ = try!(self.write_u32::<LittleEndian>(x_axis.bins as u32));
-        let _ = try!(self.write_f64::<LittleEndian>(x_axis.min));
-        let _ = try!(self.write_f64::<LittleEndian>(x_axis.max));
+        try!(self.write_u32::<LittleEndian>(x_axis.bins as u32));
+        try!(self.write_f64::<LittleEndian>(x_axis.min));
+        try!(self.write_f64::<LittleEndian>(x_axis.max));
 
-        let _ = try!(self.write_u32::<LittleEndian>(y_axis.bins as u32));
-        let _ = try!(self.write_f64::<LittleEndian>(y_axis.min));
-        let _ = try!(self.write_f64::<LittleEndian>(y_axis.max));
+        try!(self.write_u32::<LittleEndian>(y_axis.bins as u32));
+        try!(self.write_f64::<LittleEndian>(y_axis.min));
+        try!(self.write_f64::<LittleEndian>(y_axis.max));
 
         for bin_x in 0..x_axis.bins {
             for bin_y in 0..y_axis.bins {
                 let c = h.counts_at_bin(bin_x, bin_y).unwrap();
-                let _ = try!(self.write_u64::<LittleEndian>(*c));
+                try!(self.write_u64::<LittleEndian>(*c));
             }
         }
         Ok(())
@@ -372,7 +372,7 @@ pub trait WriteDkTxt: Write {
         for bin in 0..axis.bins {
             let x = axis.val_at_bin_mid(bin);
             let y = h.counts_at_bin(bin).unwrap();
-            let _ = try!(writeln!(self, "{}\t{}", x, y));
+            try!(writeln!(self, "{}\t{}", x, y));
         }
         Ok(())
     }
@@ -385,9 +385,9 @@ pub trait WriteDkTxt: Write {
                 let x = x_axis.val_at_bin_mid(bin_x);
                 let y = y_axis.val_at_bin_mid(bin_y);
                 let z = h.counts_at_bin(bin_x, bin_y).unwrap();
-                let _ = try!(writeln!(self, "{}\t{}\t{}", x, y, z));
+                try!(writeln!(self, "{}\t{}\t{}", x, y, z));
             }
-            let _ = try!(writeln!(self, ""));
+            try!(writeln!(self, ""));
         }
         Ok(())
     }
@@ -422,16 +422,16 @@ pub struct Event {
 
 impl Event {
     pub fn apply_det(&mut self,
-        all_dets: &Vec<Box<Detector>>,
+        all_dets: &[Box<Detector>],
         daq_det_map: &HashMap<(u16, u16, u16, u16), (u16, u16)>) {
         for ref mut h in &mut self.hits {
-            h.apply_det(&all_dets, &daq_det_map);
+            h.apply_det(all_dets, daq_det_map);
         }
     }
 
     pub fn apply_calib(&mut self, calib: &HashMap<(u16, u16, u16, u16), (f64, f64)>) {
         for ref mut h in &mut self.hits {
-            h.apply_calib(&calib);
+            h.apply_calib(calib);
         }
     }
 }
@@ -452,10 +452,10 @@ pub struct Hit {
 
 impl Hit {
     pub fn apply_det(&mut self,
-        all_dets: &Vec<Box<Detector>>,
+        all_dets: &[Box<Detector>],
         daq_det_map: &HashMap<(u16, u16, u16, u16), (u16, u16)>) {
         self.detid = match daq_det_map.get(&self.daqid) {
-            Some(x) => x.clone(),
+            Some(x) => *x,
             None => (0, 0),
         };
         let idx = self.detid.0 as usize;
@@ -467,7 +467,7 @@ impl Hit {
 
     pub fn apply_calib(&mut self, calib: &HashMap<(u16, u16, u16, u16), (f64, f64)>) {
         let (o, s) = match calib.get(&self.daqid) {
-            Some(x) => x.clone(),
+            Some(x) => *x,
             None => (0f64, 1f64),
         };
         self.energy = s * (self.value as f64) + o;
@@ -491,7 +491,7 @@ pub fn get_dets(file: File) -> Vec<Box<Detector>> {
     dets
 }
 
-pub fn get_id_map(dets: &Vec<Box<Detector>>) -> HashMap<(u16, u16, u16, u16), (u16, u16)> {
+pub fn get_id_map(dets: &[Box<Detector>]) -> HashMap<(u16, u16, u16, u16), (u16, u16)> {
     let mut map = HashMap::<(u16, u16, u16, u16), (u16, u16)>::new();
     // Loop through the detectors, creating the daq id to det id map
     for (di, d) in dets.iter().enumerate() {
@@ -523,30 +523,26 @@ pub fn get_id_map(dets: &Vec<Box<Detector>>) -> HashMap<(u16, u16, u16, u16), (u
 // FIXME: This is very hacky
 // TODO: It's possible that a detector might have different requirements,
 // so use a macro and put it in class?
-fn line_to_det(line: &String) -> Option<Box<Detector>> {
+fn line_to_det(line: &str) -> Option<Box<Detector>> {
     let l: Vec<_> = line.split_whitespace().collect();
 
-    if l.len() == 0 {
-        // Empty line
-        None
-    } else if l[0].starts_with("#") {
-        // Comment
-        None
-    } else if l.len() < 6 {
+    if l.is_empty() || // Empty line
+        l[0].starts_with('#') || // Comment
+        l.len() < 6 {
         None
     } else {
         let t = l[0].to_string();
         let n = l[1].to_string();
         let mut id_vec = Vec::<u16>::new();
-        for i in 2..6 {
-            if let Ok(num) = l[i].parse::<u16>() {
+        for v in l.iter().take(6).skip(2) {
+            if let Ok(num) = v.parse::<u16>() {
                 id_vec.push(num);
             } else {
                 return None;
             }
         }
         let id = (id_vec[0], id_vec[1], id_vec[2], id_vec[3]);
-        let d: Option<Box<Detector>> = match &t as &str {
+        match &t as &str {
             "BB10_F" => Some(Box::new(BB10F::new(id, n))),
             "BB15_B" => Some(Box::new(BB15B::new(id, n))),
             "BB15_F" => Some(Box::new(BB15F::new(id, n))),
@@ -563,8 +559,7 @@ fn line_to_det(line: &String) -> Option<Box<Detector>> {
                 warn!("Unrecognized detector type `{}`", t);
                 None
             }
-        };
-        d
+        }
     }
 }
 

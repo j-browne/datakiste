@@ -1,3 +1,5 @@
+use std::mem;
+
 #[derive(PartialEq, Debug, Clone)]
 pub struct HistAxis {
     pub bins: usize,
@@ -8,12 +10,10 @@ pub struct HistAxis {
 impl HistAxis {
     fn new(bins: usize, min: f64, max: f64) -> Option<HistAxis> {
         // swap min and max
-        let mut min = min.clone();
-        let mut max = max.clone();
+        let mut min = min;
+        let mut max = max;
         if min > max {
-            let tmp = min;
-            min = max;
-            max = tmp;
+            mem::swap(&mut min, &mut max);
         }
 
         // must have > 0 bins
@@ -33,13 +33,11 @@ impl HistAxis {
     }
 
     pub fn bin_at_val(&self, v: f64) -> usize {
-        let bin = match (v - self.min) / self.bin_width() {
+        match (v - self.min) / self.bin_width() {
             a if a < 0f64 => 0usize,
             a if a > ((self.bins - 1) as f64) => self.bins - 1,
             a => a.floor() as usize,
-        };
-
-        bin
+        }
     }
 
     pub fn val_at_bin_mid(&self, bin: usize) -> f64 {
