@@ -1,7 +1,13 @@
+/// An interface for cuts in 1D histograms
+///
+///
 pub trait Cut1d {
     fn contains(&self, x: f64) -> bool;
 }
 
+/// An interface for cuts in 2D histograms
+///
+///
 pub trait Cut2d {
     fn contains(&self, x: f64, y: f64) -> bool;
 }

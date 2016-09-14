@@ -16,12 +16,12 @@ pub use hist::*;
 mod cut;
 pub use cut::*;
 
-/// An interface for reading datakiste binary data.
+/// An interface for reading datakiste binary data
 ///
 /// Anything that implements `byteorder::ReadBytesExt`
-/// will get a default implementation of `ReadDkBin`
+/// will get a default implementation of `ReadDkBin`.
 pub trait ReadDkBin: ReadBytesExt {
-    /// Reads in binary run data.
+    /// Reads in binary run data
     ///
     /// # Format
     /// * `n_events: u32`
@@ -40,7 +40,7 @@ pub trait ReadDkBin: ReadBytesExt {
         Ok(Run { events: v })
     }
 
-    /// Reads in binary event data.
+    /// Reads in binary event data
     ///
     /// # Format
     /// * `n_hits: u16`
@@ -61,7 +61,7 @@ pub trait ReadDkBin: ReadBytesExt {
         Ok(Event { hits: v })
     }
 
-    /// Reads in binary hit data.
+    /// Reads in binary hit data
     ///
     /// # Format
     /// * `daqid: (u16, u16, u16, u16)`
@@ -105,7 +105,7 @@ pub trait ReadDkBin: ReadBytesExt {
         })
     }
 
-    /// Reads in binary 1d-histogram data.
+    /// Reads in binary 1d-histogram data
     ///
     /// # Format
     /// * `bins: u32 `
@@ -131,7 +131,7 @@ pub trait ReadDkBin: ReadBytesExt {
         }
     }
 
-    /// Reads in binary 2d-histogram data.
+    /// Reads in binary 2d-histogram data
     ///
     /// # Format
     /// * `x_bins: u32 `
@@ -167,12 +167,12 @@ pub trait ReadDkBin: ReadBytesExt {
     }
 }
 
-/// An interface for writing datakiste binary data.
+/// An interface for writing datakiste binary data
 ///
 /// Anything that implements `byteorder::WriteBytesExt`
-/// will get a default implementation of `WriteDkBin`
+/// will get a default implementation of `WriteDkBin`.
 pub trait WriteDkBin: WriteBytesExt {
-    /// Writes out binary run data.
+    /// Writes out binary run data
     ///
     /// # Format
     /// * `n_events: u32`
@@ -187,7 +187,7 @@ pub trait WriteDkBin: WriteBytesExt {
         Ok(())
     }
 
-    /// Writes out binary event data.
+    /// Writes out binary event data
     ///
     /// # Format
     /// * `n_hits: u16`
@@ -202,7 +202,7 @@ pub trait WriteDkBin: WriteBytesExt {
         Ok(())
     }
 
-    /// Writes out binary hit data.
+    /// Writes out binary hit data
     ///
     /// # Format
     /// * `daqid: (u16, u16, u16, u16)`
@@ -234,7 +234,7 @@ pub trait WriteDkBin: WriteBytesExt {
         Ok(())
     }
 
-    /// Writes out binary 1d-histogram data.
+    /// Writes out binary 1D histogram data
     ///
     /// # Format
     /// * `bins: u32 `
@@ -255,7 +255,7 @@ pub trait WriteDkBin: WriteBytesExt {
         Ok(())
     }
 
-    /// Writes out binary 2d-histogram data.
+    /// Writes out binary 2D histogram data
     ///
     /// # Format
     /// * `x_bins: u32 `
@@ -289,11 +289,16 @@ pub trait WriteDkBin: WriteBytesExt {
     }
 }
 
-/// An interface for reading datakiste text data.
+/// An interface for reading datakiste text data
 ///
 /// Anything that implements `std::io::Read`
-/// will get a default implementation of `ReadDkTxt`
+/// will get a default implementation of `ReadDkTxt`.
 pub trait ReadDkTxt: Read {
+    /// Writes out text 1D histogram data
+    ///
+    /// # Format
+    ///
+    /// # Examples
     fn read_to_hist_1d_txt(&mut self, h: &mut Hist1d) -> io::Result<()> {
         let b = BufReader::new(self);
         for line in b.lines() {
@@ -320,6 +325,11 @@ pub trait ReadDkTxt: Read {
         Ok(())
     }
 
+    /// Writes out text 2D histogram data
+    ///
+    /// # Format
+    ///
+    /// # Examples
     fn read_to_hist_2d_txt(&mut self, h: &mut Hist2d) -> io::Result<()> {
         let b = BufReader::new(self);
         for line in b.lines() {
@@ -352,10 +362,10 @@ pub trait ReadDkTxt: Read {
     }
 }
 
-/// An interface for writing datakiste text data.
+/// An interface for writing datakiste text data
 ///
 /// Anything that implements `std::io::Write`
-/// will get a default implementation of `WriteDkTxt`
+/// will get a default implementation of `WriteDkTxt`.
 pub trait WriteDkTxt: Write {
     fn write_hist_1d_txt(&mut self, h: &Hist1d) -> io::Result<()> {
         let axis = h.x_axis();
@@ -392,7 +402,7 @@ impl<W: Write> WriteDkTxt for W {}
 
 /// A type that hold the data from an experimental run
 ///
-/// A `Run` holds a sequence of `Event`s
+/// A `Run` holds a sequence of `Event`s.
 ///
 /// # Examples
 #[derive(Debug, Clone)]
@@ -402,7 +412,7 @@ pub struct Run {
 
 /// A type that holds an experimental event
 ///
-/// An `Event` holds a sequence of `Hit`s
+/// An `Event` holds a sequence of `Hit`s.
 ///
 /// # Examples
 #[derive(Debug, Clone)]
