@@ -63,37 +63,31 @@ pub struct Hist1d {
 
 impl Hist1d {
     pub fn new(bins: usize, min: f64, max: f64) -> Option<Hist1d> {
-        let x_axis = HistAxis::new(bins, min, max);
-
-        let mut counts = Vec::<u64>::with_capacity(bins);
-        for _ in 0..bins {
-            counts.push(0u64);
-        }
-
-        if x_axis.is_none() {
-            None
-        } else {
-            Some(Hist1d {
-                x_axis: x_axis.unwrap(),
-                counts: counts,
-            })
+        match HistAxis::new(bins, min, max) {
+            Some(x_axis) => {
+                let counts = vec![0u64; bins];
+                Some(Hist1d {
+                    x_axis: x_axis,
+                    counts: counts,
+                })
+            }
+            _ => None,
         }
     }
 
     pub fn with_counts(bins: usize, min: f64, max: f64, counts: Vec<u64>) -> Option<Hist1d> {
         if bins != counts.len() {
-            return None;
-        }
-
-        let x_axis = HistAxis::new(bins, min, max);
-
-        if x_axis.is_none() {
             None
         } else {
-            Some(Hist1d {
-                x_axis: x_axis.unwrap(),
-                counts: counts,
-            })
+            match HistAxis::new(bins, min, max) {
+                Some(x_axis) => {
+                    Some(Hist1d {
+                        x_axis: x_axis,
+                        counts: counts,
+                    })
+                }
+                _ => None,
+            }
         }
     }
 
@@ -154,41 +148,33 @@ pub struct Hist2d {
 
 impl Hist2d {
     pub fn new(bins_x: usize, min_x: f64, max_x: f64, bins_y: usize, min_y: f64, max_y: f64) -> Option<Hist2d> {
-        let x_axis = HistAxis::new(bins_x, min_x, max_x);
-        let y_axis = HistAxis::new(bins_y, min_y, max_y);
-
-        let mut counts = Vec::<u64>::with_capacity(bins_x * bins_y);
-        for _ in 0..(bins_x * bins_y) {
-            counts.push(0u64);
-        }
-
-        if x_axis.is_none() || y_axis.is_none() {
-            None
-        } else {
-            Some(Hist2d {
-                x_axis: x_axis.unwrap(),
-                y_axis: y_axis.unwrap(),
-                counts: counts,
-            })
+        match (HistAxis::new(bins_x, min_x, max_x), HistAxis::new(bins_y, min_y, max_y)) {
+            (Some(x_axis), Some(y_axis)) => {
+                let counts = vec![0u64; bins_x * bins_y];
+                Some(Hist2d {
+                    x_axis: x_axis,
+                    y_axis: y_axis,
+                    counts: counts,
+                })
+            }
+            _ => None,
         }
     }
 
     pub fn with_counts(bins_x: usize, min_x: f64, max_x: f64, bins_y: usize, min_y: f64, max_y: f64, counts: Vec<u64>) -> Option<Hist2d> {
         if bins_x * bins_y != counts.len() {
-            return None;
-        }
-
-        let x_axis = HistAxis::new(bins_x, min_x, max_x);
-        let y_axis = HistAxis::new(bins_y, min_y, max_y);
-
-        if x_axis.is_none() || y_axis.is_none() {
             None
         } else {
-            Some(Hist2d {
-                x_axis: x_axis.unwrap(),
-                y_axis: y_axis.unwrap(),
-                counts: counts,
-            })
+            match (HistAxis::new(bins_x, min_x, max_x), HistAxis::new(bins_y, min_y, max_y)) {
+                (Some(x_axis), Some(y_axis)) => {
+                    Some(Hist2d {
+                        x_axis: x_axis,
+                        y_axis: y_axis,
+                        counts: counts,
+                    })
+                }
+                _ => None,
+            }
         }
     }
 
