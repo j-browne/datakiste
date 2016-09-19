@@ -1,15 +1,16 @@
 //!
 
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
+use std::borrow::Cow;
 use std::io::{self, Read, Write, BufReader, BufRead};
 use super::{Run, Event, Hit};
 use super::hist::{Hist1d, Hist2d};
 
 ///
-pub enum DkItem {
-    Run(Run),
-    Hist1d(Hist1d),
-    Hist2d(Hist2d),
+pub enum DkItem<'a> {
+    Run(Cow<'a, Run>),
+    Hist1d(Cow<'a, Hist1d>),
+    Hist2d(Cow<'a, Hist2d>),
 }
 
 ///
@@ -28,9 +29,9 @@ pub trait ReadDkBin: ReadBytesExt {
     fn read_dk_bin(&mut self) -> io::Result<(String, DkItem)> {
         let name = try!(self.read_string_bin());
         match try!(self.read_type_bin()) {
-            DkType::Run => Ok((name, DkItem::Run(try!(self.read_run_bin())))),
-            DkType::Hist1d => Ok((name, DkItem::Hist1d(try!(self.read_hist_1d_bin())))),
-            DkType::Hist2d => Ok((name, DkItem::Hist2d(try!(self.read_hist_2d_bin())))),
+            DkType::Run => Ok((name, DkItem::Run(Cow::Owned(try!(self.read_run_bin()))))),
+            DkType::Hist1d => Ok((name, DkItem::Hist1d(Cow::Owned(try!(self.read_hist_1d_bin()))))),
+            DkType::Hist2d => Ok((name, DkItem::Hist2d(Cow::Owned(try!(self.read_hist_2d_bin()))))),
         }
     }
 
