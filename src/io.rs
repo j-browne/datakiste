@@ -5,11 +5,46 @@ use std::io::{self, Read, Write, BufReader, BufRead};
 use super::{Run, Event, Hit};
 use super::hist::{Hist1d, Hist2d};
 
+///
+pub enum DkItem {
+    Run(Run),
+    Hist1d(Hist1d),
+    Hist2d(Hist2d),
+}
+
+///
+pub enum DkType {
+    Run,
+    Hist1d,
+    Hist2d,
+}
+
 /// An interface for reading datakiste binary data
 ///
 /// Anything that implements `byteorder::ReadBytesExt`
 /// will get a default implementation of `ReadDkBin`.
 pub trait ReadDkBin: ReadBytesExt {
+    ///
+    fn read_dk_bin(&mut self) -> io::Result<(String, DkItem)> {
+        let name = try!(self.read_string_bin());
+        match try!(self.read_type_bin()) {
+            DkType::Run => Ok((name, DkItem::Run(try!(self.read_run_bin())))),
+            DkType::Hist1d => Ok((name, DkItem::Hist1d(try!(self.read_hist_1d_bin())))),
+            DkType::Hist2d => Ok((name, DkItem::Hist2d(try!(self.read_hist_2d_bin())))),
+        }
+    }
+
+    ///
+    fn read_type_bin(&mut self) -> io::Result<DkType> {
+        let t = try!(self.read_u8());
+        match t {
+            0 => Ok(DkType::Run),
+            1 => Ok(DkType::Hist1d),
+            2 => Ok(DkType::Hist2d),
+            _ => Err(io::Error::new(io::ErrorKind::Other, "Error creating DkType")),
+        }
+    }
+
     /// Reads in a string
     ///
     /// # Format
@@ -180,6 +215,44 @@ pub trait ReadDkBin: ReadBytesExt {
 /// Anything that implements `byteorder::WriteBytesExt`
 /// will get a default implementation of `WriteDkBin`.
 pub trait WriteDkBin: WriteBytesExt {
+    ///
+    fn write_dk_bin(&mut self, name: &str, item: DkItem) -> io::Result<()> {
+        try!(self.write_string_bin(name));
+        match item {
+            DkItem::Run(r) => {
+                try!(self.write_type_bin(DkType::Run));
+                try!(self.write_run_bin(&r));
+            }
+            DkItem::Hist1d(h) => {
+                try!(self.write_type_bin(DkType::Hist1d));
+                try!(self.write_hist_1d_bin(&h));
+            }
+            DkItem::Hist2d(h) => {
+                try!(self.write_type_bin(DkType::Hist2d));
+                try!(self.write_hist_2d_bin(&h));
+            }
+        }
+        Ok(())
+    }
+
+    ///
+    fn write_type_bin(&mut self, t: DkType) -> io::Result<()> {
+        let t: u8 = match t {
+            DkType::Run => 0,
+            DkType::Hist1d => 1,
+            DkType::Hist2d => 2,
+        };
+        try!(self.write_u8(t));
+        Ok(())
+    }
+
+    ///
+    fn write_string_bin(&mut self, s: &str) -> io::Result<()> {
+        try!(self.write_u8(s.len() as u8));
+        try!(self.write_all(s.as_bytes()));
+        Ok(())
+    }
+
     /// Writes out binary run data
     ///
     /// # Format
