@@ -7,6 +7,7 @@ use super::{Run, Event, Hit};
 use super::hist::{Hist1d, Hist2d};
 
 ///
+#[derive(Clone, Debug)]
 pub enum DkItem<'a> {
     Run(Cow<'a, Run>),
     Hist1d(Cow<'a, Hist1d>),
@@ -26,7 +27,7 @@ pub enum DkType {
 /// will get a default implementation of `ReadDkBin`.
 pub trait ReadDkBin: ReadBytesExt {
     ///
-    fn read_dk_bin(&mut self) -> io::Result<(String, DkItem)> {
+    fn read_dk_bin(&mut self) -> io::Result<(String, DkItem<'static>)> {
         let name = try!(self.read_string_bin());
         match try!(self.read_type_bin()) {
             DkType::Run => Ok((name, DkItem::Run(Cow::Owned(try!(self.read_run_bin()))))),
