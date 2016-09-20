@@ -72,10 +72,12 @@ impl Hit {
             None => (0, 0),
         };
         let idx = self.detid.0 as usize;
-        self.value = match idx {
-            _ if idx > 0 => all_dets[idx - 1].val_corr(self.detid.1, self.rawval),
-            _ => self.rawval,
+        self.value = if idx > 0 {
+            all_dets[idx - 1].val_corr(self.detid.1, self.rawval)
+        } else {
+            self.rawval
         };
+        self.energy = self.value as f64;
     }
 
     pub fn apply_calib(&mut self, calib: &HashMap<(u16, u16, u16, u16), (f64, f64)>) {
@@ -83,7 +85,7 @@ impl Hit {
             Some(x) => *x,
             None => (0f64, 1f64),
         };
-        self.energy = s * (self.value as f64) + o;
+        self.energy = s * self.energy + o;
     }
 }
 
