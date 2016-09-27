@@ -5,6 +5,4 @@ authors = ["Justin Browne <brownej@nscl.msu.edu>"]
 
 [dependencies]
 byteorder = "0.5.2"
-
-[dev-dependencies]
 rand = "0.3.14"

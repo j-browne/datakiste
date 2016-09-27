@@ -1,4 +1,8 @@
+extern crate rand;
+
 use std::mem;
+use self::rand::distributions::{IndependentSample, Range};
+
 
 #[derive(PartialEq, Debug, Clone)]
 pub struct HistAxis {
@@ -123,8 +127,21 @@ impl Hist1d {
         for bin in 0..other.x_axis.bins {
             // TODO: use iterator?
             let v = other.x_axis.val_at_bin_mid(bin);
-            let c = other.counts[bin]; // FIXME
-            self.fill_at_val_with_counts(v, c);
+            let c = other.counts_at_bin(bin).unwrap();
+            self.fill_at_val_with_counts(v, *c);
+        }
+    }
+
+    pub fn add_fuzz(&mut self, other: &Hist1d) {
+        let mut rng = rand::thread_rng();
+        for bin in 0..other.x_axis.bins {
+            // TODO: use iterator?
+            let range = Range::new(other.x_axis.val_at_bin_min(bin), other.x_axis.val_at_bin_max(bin));
+
+            let c = other.counts_at_bin(bin).unwrap();
+            for _ in 0..(*c) {
+                self.fill_at_val(range.ind_sample(&mut rng));
+            }
         }
     }
 
@@ -135,6 +152,12 @@ impl Hist1d {
     pub fn counts_at_val(&self, val: f64) -> Option<&u64> {
         let bin = self.x_axis.bin_at_val(val);
         self.counts.get(bin)
+    }
+
+    pub fn clear(&mut self) {
+        for c in &mut self.counts {
+            *c = 0u64;
+        }
     }
 }
 
@@ -245,6 +268,22 @@ impl Hist2d {
         }
     }
 
+    pub fn add_fuzz(&mut self, other: &Hist2d) {
+        let mut rng = rand::thread_rng();
+        // TODO: iterator?
+        for bin_x in 0..other.x_axis.bins {
+            for bin_y in 0..other.y_axis.bins {
+                let range_x = Range::new(other.x_axis.val_at_bin_min(bin_x), other.x_axis.val_at_bin_max(bin_x));
+                let range_y = Range::new(other.y_axis.val_at_bin_min(bin_y), other.y_axis.val_at_bin_max(bin_y));
+
+                let d = other.counts_at_bin(bin_x, bin_y).unwrap();
+                for _ in 0..(*d) {
+                    self.fill_at_val(range_x.ind_sample(&mut rng), range_y.ind_sample(&mut rng));
+                }
+            }
+        }
+    }
+
     pub fn counts_at_bin(&self, bin_x: usize, bin_y: usize) -> Option<&u64> {
         let bin = self.combined_bin(bin_x, bin_y);
         self.counts.get(bin)
@@ -255,6 +294,12 @@ impl Hist2d {
         let bin_y = self.y_axis.bin_at_val(val_y);
         let bin = self.combined_bin(bin_x, bin_y);
         self.counts.get(bin)
+    }
+
+    pub fn clear(&mut self) {
+        for c in &mut self.counts {
+            *c = 0u64;
+        }
     }
 }
 
