@@ -13,6 +13,30 @@ pub trait Cut2d {
 }
 
 #[derive(Debug, Clone)]
+pub struct Cut1dLin {
+    min: f64,
+    max: f64,
+}
+
+impl Cut1dLin {
+    pub fn new(x1: f64, x2: f64) -> Cut1dLin {
+        let min = f64::min(x1, x2);
+        let max = f64::max(x1, x2);
+
+        Cut1dLin {
+            min: min,
+            max: max,
+        }
+    }
+}
+
+impl Cut1d for Cut1dLin {
+    fn contains(&self, x: f64) -> bool {
+        (x > self.min) && (x < self.max)
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct Cut2dCirc {
     x: f64,
     y: f64,

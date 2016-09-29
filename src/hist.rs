@@ -1,7 +1,11 @@
+// TODO: Documentation
+// TODO: Create list of what to document
+
 extern crate rand;
 
 use std::mem;
 use self::rand::distributions::{IndependentSample, Range};
+use cut::{Cut1d, Cut2d};
 
 
 #[derive(PartialEq, Debug, Clone)]
@@ -159,6 +163,17 @@ impl Hist1d {
             *c = 0u64;
         }
     }
+
+    pub fn integrate(&self, cut: &Cut1d) -> u64 {
+        let mut sum = 0u64;
+        let axis = self.x_axis();
+        for bin in 0..(axis.bins) {
+            if cut.contains(axis.val_at_bin_mid(bin)) {
+                sum += self.counts[bin];
+            }
+        }
+        sum
+    }
 }
 
 #[derive(PartialEq, Debug, Clone)]
@@ -300,6 +315,20 @@ impl Hist2d {
         for c in &mut self.counts {
             *c = 0u64;
         }
+    }
+
+    pub fn integrate(&self, cut: &Cut2d) -> u64 {
+        let mut sum = 0u64;
+        let x_axis = self.x_axis();
+        let y_axis = self.y_axis();
+        for bin_x in 0..(x_axis.bins) {
+            for bin_y in 0..(y_axis.bins) {
+                if cut.contains(x_axis.val_at_bin_mid(bin_x), y_axis.val_at_bin_mid(bin_y)) {
+                    sum += self.counts[self.combined_bin(bin_x, bin_y)];
+                }
+            }
+        }
+        sum
     }
 }
 
