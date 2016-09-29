@@ -3,8 +3,8 @@
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use std::borrow::Cow;
 use std::io::{self, Read, Write, BufReader, BufRead};
-use super::{Run, Event, Hit};
-use super::hist::{Hist1d, Hist2d};
+use {Run, Event, Hit};
+use hist::{Hist1d, Hist2d};
 
 ///
 #[derive(Clone, Debug)]
