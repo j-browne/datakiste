@@ -330,6 +330,28 @@ impl Hist2d {
         }
         sum
     }
+
+    pub fn apply_cut(&self, cut: &Cut2d) -> Hist2d {
+        let x_axis = self.x_axis();
+        let y_axis = self.y_axis();
+
+        let mut counts = vec![0u64; x_axis.bins * y_axis.bins];
+
+        for bin_x in 0..(x_axis.bins) {
+            for bin_y in 0..(y_axis.bins) {
+                if cut.contains(x_axis.val_at_bin_mid(bin_x), y_axis.val_at_bin_mid(bin_y)) {
+                    let bin = self.combined_bin(bin_x, bin_y);
+                    counts[bin] = self.counts[bin];
+                }
+            }
+        }
+
+        Hist2d {
+            x_axis: x_axis.clone(),
+            y_axis: y_axis.clone(),
+            counts: counts,
+        }
+    }
 }
 
 #[cfg(test)]
