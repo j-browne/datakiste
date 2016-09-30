@@ -218,20 +218,20 @@ pub trait ReadDkBin: ReadBytesExt {
 /// will get a default implementation of `WriteDkBin`.
 pub trait WriteDkBin: WriteBytesExt {
     ///
-    fn write_dk_bin(&mut self, name: &str, item: DkItem) -> io::Result<()> {
+    fn write_dk_bin(&mut self, name: &str, item: &DkItem) -> io::Result<()> {
         try!(self.write_string_bin(name));
-        match item {
-            DkItem::Run(r) => {
+        match *item {
+            DkItem::Run(ref r) => {
                 try!(self.write_type_bin(DkType::Run));
-                try!(self.write_run_bin(&r));
+                try!(self.write_run_bin(r));
             }
-            DkItem::Hist1d(h) => {
+            DkItem::Hist1d(ref h) => {
                 try!(self.write_type_bin(DkType::Hist1d));
-                try!(self.write_hist_1d_bin(&h));
+                try!(self.write_hist_1d_bin(h));
             }
-            DkItem::Hist2d(h) => {
+            DkItem::Hist2d(ref h) => {
                 try!(self.write_type_bin(DkType::Hist2d));
-                try!(self.write_hist_2d_bin(&h));
+                try!(self.write_hist_2d_bin(h));
             }
         }
         Ok(())
