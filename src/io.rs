@@ -14,6 +14,32 @@ pub enum DkItem<'a> {
     Hist2d(Cow<'a, Hist2d>),
 }
 
+impl<'a> DkItem<'a> {
+    pub fn into_run(self) -> Option<Cow<'a, Run>> {
+        if let DkItem::Run(r) = self {
+            Some(r)
+        } else {
+            None
+        }
+    }
+
+    pub fn into_hist_1d(self) -> Option<Cow<'a, Hist1d>> {
+        if let DkItem::Hist1d(h) = self {
+            Some(h)
+        } else {
+            None
+        }
+    }
+
+    pub fn into_hist_2d(self) -> Option<Cow<'a, Hist2d>> {
+        if let DkItem::Hist2d(h) = self {
+            Some(h)
+        } else {
+            None
+        }
+    }
+}
+
 ///
 pub enum DkType {
     Run,
