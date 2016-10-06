@@ -1,6 +1,4 @@
 //! A library for analyzing nuclear physics data
-#![feature(try_from)]
-
 extern crate byteorder;
 
 #[macro_use]pub mod logging;

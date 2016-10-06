@@ -5,7 +5,6 @@ use std::borrow::Cow;
 use std::io::{self, Read, Write, BufReader, BufRead};
 use {Run, Event, Hit};
 use hist::{Hist1d, Hist2d};
-use std::convert::TryFrom;
 
 ///
 #[derive(Clone, Debug)]
@@ -15,38 +14,28 @@ pub enum DkItem<'a> {
     Hist2d(Cow<'a, Hist2d>),
 }
 
-impl<'a> TryFrom<DkItem<'a>> for Cow<'a, Run> {
-    type Err = ();
-
-    fn try_from(item: DkItem<'a>) -> Result<Cow<'a, Run>, Self::Err> {
-        if let DkItem::Run(r) = item {
-            Ok(r)
+impl<'a> DkItem<'a> {
+    pub fn into_run(self) -> Option<Cow<'a, Run>> {
+        if let DkItem::Run(r) = self {
+            Some(r)
         } else {
-            Err(())
+            None
         }
     }
-}
 
-impl<'a> TryFrom<DkItem<'a>> for Cow<'a, Hist1d> {
-    type Err = ();
-
-    fn try_from(item: DkItem<'a>) -> Result<Cow<'a, Hist1d>, Self::Err> {
-        if let DkItem::Hist1d(h) = item {
-            Ok(h)
+    pub fn into_hist_1d(self) -> Option<Cow<'a, Hist1d>> {
+        if let DkItem::Hist1d(h) = self {
+            Some(h)
         } else {
-            Err(())
+            None
         }
     }
-}
 
-impl<'a> TryFrom<DkItem<'a>> for Cow<'a, Hist2d> {
-    type Err = ();
-
-    fn try_from(item: DkItem<'a>) -> Result<Cow<'a, Hist2d>, Self::Err> {
-        if let DkItem::Hist2d(h) = item {
-            Ok(h)
+    pub fn into_hist_2d(self) -> Option<Cow<'a, Hist2d>> {
+        if let DkItem::Hist2d(h) = self {
+            Some(h)
         } else {
-            Err(())
+            None
         }
     }
 }
