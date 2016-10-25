@@ -549,7 +549,7 @@ pub trait WriteDkTxt: Write {
         Ok(())
     }
 
-    fn write_cut_2d_poly(&mut self, c: &Cut2dPoly) -> io::Result<()> {
+    fn write_cut_2d_poly_txt(&mut self, c: &Cut2dPoly) -> io::Result<()> {
         for v in c.verts() {
             try!(writeln!(self, "{}\t{}", v.0, v.1));
         }
