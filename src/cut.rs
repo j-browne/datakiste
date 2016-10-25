@@ -72,6 +72,10 @@ impl Cut2dPoly {
     pub fn from_verts(verts: Vec<(f64, f64)>) -> Cut2dPoly {
         Cut2dPoly { verts: verts }
     }
+
+    pub fn verts(&self) -> &Vec<(f64, f64)> {
+        return &self.verts;
+    }
 }
 
 impl Cut2d for Cut2dPoly {

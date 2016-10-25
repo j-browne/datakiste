@@ -5,6 +5,7 @@ use std::borrow::Cow;
 use std::io::{self, Read, Write, BufReader, BufRead};
 use {Run, Event, Hit};
 use hist::{Hist1d, Hist2d};
+use cut::Cut2dPoly;
 
 ///
 #[derive(Clone, Debug)]
@@ -545,6 +546,17 @@ pub trait WriteDkTxt: Write {
             }
             try!(writeln!(self, ""));
         }
+        Ok(())
+    }
+
+    fn write_cut_2d_poly(&mut self, c: &Cut2dPoly) -> io::Result<()> {
+        for v in c.verts() {
+            try!(writeln!(self, "{}\t{}", v.0, v.1));
+        }
+        if let Some(v) = c.verts().first() {
+            try!(writeln!(self, "{}\t{}", v.0, v.1));
+        }
+        try!(writeln!(self, ""));
         Ok(())
     }
 }
