@@ -74,7 +74,7 @@ impl Cut2dPoly {
     }
 
     pub fn verts(&self) -> &Vec<(f64, f64)> {
-        return &self.verts;
+        &self.verts
     }
 }
 

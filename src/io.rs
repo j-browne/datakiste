@@ -17,7 +17,7 @@ pub enum DkItem<'a> {
 
 impl<'a> DkItem<'a> {
     pub fn as_run(&self) -> Option<&Run> {
-        if let &DkItem::Run(ref r) = self {
+        if let DkItem::Run(ref r) = *self {
             Some(r)
         } else {
             None
@@ -25,7 +25,7 @@ impl<'a> DkItem<'a> {
     }
 
     pub fn as_run_mut(&mut self) -> Option<&mut Run> {
-        if let &mut DkItem::Run(ref mut r) = self {
+        if let DkItem::Run(ref mut r) = *self {
             Some(r.to_mut())
         } else {
             None
@@ -41,7 +41,7 @@ impl<'a> DkItem<'a> {
     }
 
     pub fn as_hist_1d(&self) -> Option<&Hist1d> {
-        if let &DkItem::Hist1d(ref h) = self {
+        if let DkItem::Hist1d(ref h) = *self {
             Some(h)
         } else {
             None
@@ -49,7 +49,7 @@ impl<'a> DkItem<'a> {
     }
 
     pub fn as_hist_1d_mut(&mut self) -> Option<&mut Hist1d> {
-        if let &mut DkItem::Hist1d(ref mut h) = self {
+        if let DkItem::Hist1d(ref mut h) = *self {
             Some(h.to_mut())
         } else {
             None
@@ -64,7 +64,7 @@ impl<'a> DkItem<'a> {
         }
     }
     pub fn as_hist_2d(&self) -> Option<&Hist2d> {
-        if let &DkItem::Hist2d(ref h) = self {
+        if let DkItem::Hist2d(ref h) = *self {
             Some(h)
         } else {
             None
@@ -72,7 +72,7 @@ impl<'a> DkItem<'a> {
     }
 
     pub fn as_hist_2d_mut(&mut self) -> Option<&mut Hist2d> {
-        if let &mut DkItem::Hist2d(ref mut h) = self {
+        if let DkItem::Hist2d(ref mut h) = *self {
             Some(h.to_mut())
         } else {
             None
