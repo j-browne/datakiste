@@ -13,6 +13,12 @@ pub mod detector;
 pub mod hist;
 pub mod io;
 
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+pub struct DaqId(u16, u16, u16, u16);
+
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+pub struct DetId(u16, u16);
+
 /// A type that hold the data from an experimental run
 ///
 /// A `Run` holds a sequence of `Event`s.
@@ -36,13 +42,13 @@ pub struct Event {
 impl Event {
     pub fn apply_det(&mut self,
                      all_dets: &[Box<Detector>],
-                     daq_det_map: &HashMap<(u16, u16, u16, u16), (u16, u16)>) {
+                     daq_det_map: &HashMap<DaqId, DetId>) {
         for ref mut h in &mut self.hits {
             h.apply_det(all_dets, daq_det_map);
         }
     }
 
-    pub fn apply_calib(&mut self, calib: &HashMap<(u16, u16, u16, u16), (f64, f64)>) {
+    pub fn apply_calib(&mut self, calib: &HashMap<DaqId, (f64, f64)>) {
         for ref mut h in &mut self.hits {
             h.apply_calib(calib);
         }
@@ -54,8 +60,8 @@ impl Event {
 /// # Examples
 #[derive(Debug, Clone)]
 pub struct Hit {
-    pub daqid: (u16, u16, u16, u16),
-    pub detid: (u16, u16),
+    pub daqid: DaqId,
+    pub detid: DetId,
     pub rawval: u16,
     pub value: u16,
     pub energy: f64,
@@ -66,10 +72,10 @@ pub struct Hit {
 impl Hit {
     pub fn apply_det(&mut self,
                      all_dets: &[Box<Detector>],
-                     daq_det_map: &HashMap<(u16, u16, u16, u16), (u16, u16)>) {
+                     daq_det_map: &HashMap<DaqId, DetId>) {
         self.detid = match daq_det_map.get(&self.daqid) {
-            Some(x) => *x,
-            None => (0, 0),
+            Some(x) => x.clone(),
+            None => DetId(0, 0),
         };
         let idx = self.detid.0 as usize;
         self.value = if idx > 0 {
@@ -80,7 +86,7 @@ impl Hit {
         self.energy = self.value as f64;
     }
 
-    pub fn apply_calib(&mut self, calib: &HashMap<(u16, u16, u16, u16), (f64, f64)>) {
+    pub fn apply_calib(&mut self, calib: &HashMap<DaqId, (f64, f64)>) {
         let (o, s) = match calib.get(&self.daqid) {
             Some(x) => *x,
             None => (0f64, 1f64),

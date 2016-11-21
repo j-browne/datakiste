@@ -3,7 +3,7 @@
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use std::borrow::Cow;
 use std::io::{self, Read, Write, BufReader, BufRead};
-use {Run, Event, Hit};
+use {DaqId, DetId, Run, Event, Hit};
 use hist::{Hist1d, Hist2d};
 use cut::Cut2dPoly;
 
@@ -214,8 +214,8 @@ pub trait ReadDkBin: ReadBytesExt {
         }
 
         Ok(Hit {
-            daqid: (so, cr, sl, ch),
-            detid: (di, dc),
+            daqid: DaqId(so, cr, sl, ch),
+            detid: DetId(di, dc),
             rawval: rv,
             value: val,
             energy: en,
