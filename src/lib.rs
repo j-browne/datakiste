@@ -14,10 +14,10 @@ pub mod hist;
 pub mod io;
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
-pub struct DaqId(u16, u16, u16, u16);
+pub struct DaqId(pub u16, pub u16, pub u16, pub u16);
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
-pub struct DetId(u16, u16);
+pub struct DetId(pub u16, pub u16);
 
 /// A type that hold the data from an experimental run
 ///
