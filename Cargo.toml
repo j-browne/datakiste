@@ -1,6 +1,6 @@
 [package]
 name = "datakiste"
-version = "0.5.0"
+version = "0.6.0"
 authors = ["Justin Browne <brownej@nscl.msu.edu>"]
 
 [dependencies]
