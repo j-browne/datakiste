@@ -1,4 +1,5 @@
 use std::fmt::Debug;
+use DaqId;
 
 pub trait Detector: Debug {
     fn name(&self) -> String;
@@ -7,20 +8,20 @@ pub trait Detector: Debug {
     fn val_corr(&self, detch: u16, val: u16) -> u16 {
         val
     }
-    fn contains_daq(&self, id: (u16, u16, u16, u16)) -> bool;
-    fn daq_to_det(&self, id: (u16, u16, u16, u16)) -> Option<u16>;
-    fn det_to_daq(&self, detch: u16) -> Option<(u16, u16, u16, u16)>;
+    fn contains_daq(&self, id: DaqId) -> bool;
+    fn daq_to_det(&self, id: DaqId) -> Option<u16>;
+    fn det_to_daq(&self, detch: u16) -> Option<DaqId>;
 }
 
 #[derive(Debug)]
 pub struct BB10F {
     name: String,
-    start: (u16, u16, u16, u16),
+    start: DaqId,
     num_chans: u16,
 }
 
 impl BB10F {
-    pub fn new(id: (u16, u16, u16, u16), n: String) -> BB10F {
+    pub fn new(id: DaqId, n: String) -> BB10F {
         BB10F {
             start: id,
             name: n,
@@ -43,12 +44,12 @@ impl Detector for BB10F {
         16383 - val
     }
 
-    fn contains_daq(&self, id: (u16, u16, u16, u16)) -> bool {
+    fn contains_daq(&self, id: DaqId) -> bool {
         (id.0 == self.start.0) && (id.1 == self.start.1) && (id.2 == self.start.2) &&
         ((id.3 >= self.start.3) && (id.3 < self.start.3 + self.num_chans))
     }
 
-    fn daq_to_det(&self, id: (u16, u16, u16, u16)) -> Option<u16> {
+    fn daq_to_det(&self, id: DaqId) -> Option<u16> {
         if !self.contains_daq(id) {
             None
         } else {
@@ -56,7 +57,7 @@ impl Detector for BB10F {
         }
     }
 
-    fn det_to_daq(&self, detch: u16) -> Option<(u16, u16, u16, u16)> {
+    fn det_to_daq(&self, detch: u16) -> Option<DaqId> {
         if detch < self.num_chans {
             let mut id = self.start;
             id.3 += detch;
@@ -71,12 +72,12 @@ impl Detector for BB10F {
 #[derive(Debug)]
 pub struct BB15B {
     name: String,
-    start: (u16, u16, u16, u16),
+    start: DaqId,
     num_chans: u16,
 }
 
 impl BB15B {
-    pub fn new(id: (u16, u16, u16, u16), n: String) -> BB15B {
+    pub fn new(id: DaqId, n: String) -> BB15B {
         BB15B {
             start: id,
             name: n,
@@ -94,12 +95,12 @@ impl Detector for BB15B {
         self.num_chans
     }
 
-    fn contains_daq(&self, id: (u16, u16, u16, u16)) -> bool {
+    fn contains_daq(&self, id: DaqId) -> bool {
         (id.0 == self.start.0) && (id.1 == self.start.1) && (id.2 == self.start.2) &&
         ((id.3 >= self.start.3) && (id.3 < self.start.3 + self.num_chans))
     }
 
-    fn daq_to_det(&self, id: (u16, u16, u16, u16)) -> Option<u16> {
+    fn daq_to_det(&self, id: DaqId) -> Option<u16> {
         if !self.contains_daq(id) {
             None
         } else {
@@ -107,7 +108,7 @@ impl Detector for BB15B {
         }
     }
 
-    fn det_to_daq(&self, detch: u16) -> Option<(u16, u16, u16, u16)> {
+    fn det_to_daq(&self, detch: u16) -> Option<DaqId> {
         if detch < self.num_chans {
             let mut id = self.start;
             id.3 += detch;
@@ -122,12 +123,12 @@ impl Detector for BB15B {
 #[derive(Debug)]
 pub struct BB15F {
     name: String,
-    start: (u16, u16, u16, u16),
+    start: DaqId,
     num_chans: u16,
 }
 
 impl BB15F {
-    pub fn new(id: (u16, u16, u16, u16), n: String) -> BB15F {
+    pub fn new(id: DaqId, n: String) -> BB15F {
         BB15F {
             start: id,
             name: n,
@@ -150,12 +151,12 @@ impl Detector for BB15F {
         16383 - val
     }
 
-    fn contains_daq(&self, id: (u16, u16, u16, u16)) -> bool {
+    fn contains_daq(&self, id: DaqId) -> bool {
         (id.0 == self.start.0) && (id.1 == self.start.1) &&
         ((id.2 >= self.start.2) && (id.2 < self.start.2 + 4))
     }
 
-    fn daq_to_det(&self, id: (u16, u16, u16, u16)) -> Option<u16> {
+    fn daq_to_det(&self, id: DaqId) -> Option<u16> {
         if !self.contains_daq(id) {
             None
         } else if (id.2 - self.start.2) % 2 == 0 {
@@ -165,7 +166,7 @@ impl Detector for BB15F {
         }
     }
 
-    fn det_to_daq(&self, detch: u16) -> Option<(u16, u16, u16, u16)> {
+    fn det_to_daq(&self, detch: u16) -> Option<DaqId> {
         if detch < self.num_chans {
             let mut id = self.start;
             id.2 += detch / 16;
@@ -184,12 +185,12 @@ impl Detector for BB15F {
 #[derive(Debug)]
 pub struct HABANERO {
     name: String,
-    start: (u16, u16, u16, u16),
+    start: DaqId,
     num_chans: u16,
 }
 
 impl HABANERO {
-    pub fn new(id: (u16, u16, u16, u16), n: String) -> HABANERO {
+    pub fn new(id: DaqId, n: String) -> HABANERO {
         HABANERO {
             start: id,
             name: n,
@@ -207,12 +208,12 @@ impl Detector for HABANERO {
         self.num_chans
     }
 
-    fn contains_daq(&self, id: (u16, u16, u16, u16)) -> bool {
+    fn contains_daq(&self, id: DaqId) -> bool {
         (id.0 == self.start.0) && (id.1 == self.start.1) &&
         ((id.2 >= self.start.2) && (id.2 < self.start.2 + 5))
     }
 
-    fn daq_to_det(&self, id: (u16, u16, u16, u16)) -> Option<u16> {
+    fn daq_to_det(&self, id: DaqId) -> Option<u16> {
         if !self.contains_daq(id) {
             None
         } else {
@@ -220,7 +221,7 @@ impl Detector for HABANERO {
         }
     }
 
-    fn det_to_daq(&self, detch: u16) -> Option<(u16, u16, u16, u16)> {
+    fn det_to_daq(&self, detch: u16) -> Option<DaqId> {
         if detch < self.num_chans {
             let mut id = self.start;
             id.2 += detch / 16;
@@ -236,12 +237,12 @@ impl Detector for HABANERO {
 #[derive(Debug)]
 pub struct HAGRID {
     name: String,
-    start: (u16, u16, u16, u16),
+    start: DaqId,
     num_chans: u16,
 }
 
 impl HAGRID {
-    pub fn new(id: (u16, u16, u16, u16), n: String) -> HAGRID {
+    pub fn new(id: DaqId, n: String) -> HAGRID {
         HAGRID {
             start: id,
             name: n,
@@ -259,12 +260,12 @@ impl Detector for HAGRID {
         self.num_chans
     }
 
-    fn contains_daq(&self, id: (u16, u16, u16, u16)) -> bool {
+    fn contains_daq(&self, id: DaqId) -> bool {
         (id.0 == self.start.0) && (id.1 == self.start.1) && (id.2 == self.start.2) &&
         ((id.3 >= self.start.3) && (id.3 < self.start.3 + self.num_chans))
     }
 
-    fn daq_to_det(&self, id: (u16, u16, u16, u16)) -> Option<u16> {
+    fn daq_to_det(&self, id: DaqId) -> Option<u16> {
         if !self.contains_daq(id) {
             None
         } else {
@@ -272,7 +273,7 @@ impl Detector for HAGRID {
         }
     }
 
-    fn det_to_daq(&self, detch: u16) -> Option<(u16, u16, u16, u16)> {
+    fn det_to_daq(&self, detch: u16) -> Option<DaqId> {
         if detch < self.num_chans {
             let mut id = self.start;
             id.3 += detch;
@@ -287,12 +288,12 @@ impl Detector for HAGRID {
 #[derive(Debug)]
 pub struct PSICE {
     name: String,
-    start: (u16, u16, u16, u16),
+    start: DaqId,
     num_chans: u16,
 }
 
 impl PSICE {
-    pub fn new(id: (u16, u16, u16, u16), n: String) -> PSICE {
+    pub fn new(id: DaqId, n: String) -> PSICE {
         PSICE {
             start: id,
             name: n,
@@ -310,11 +311,11 @@ impl Detector for PSICE {
         self.num_chans
     }
 
-    fn contains_daq(&self, id: (u16, u16, u16, u16)) -> bool {
+    fn contains_daq(&self, id: DaqId) -> bool {
         id == self.start
     }
 
-    fn daq_to_det(&self, id: (u16, u16, u16, u16)) -> Option<u16> {
+    fn daq_to_det(&self, id: DaqId) -> Option<u16> {
         if !self.contains_daq(id) {
             None
         } else {
@@ -322,7 +323,7 @@ impl Detector for PSICE {
         }
     }
 
-    fn det_to_daq(&self, detch: u16) -> Option<(u16, u16, u16, u16)> {
+    fn det_to_daq(&self, detch: u16) -> Option<DaqId> {
         if detch < self.num_chans {
             let mut id = self.start;
             id.2 += detch / 16;
@@ -338,12 +339,12 @@ impl Detector for PSICE {
 #[derive(Debug)]
 pub struct PSICXY {
     name: String,
-    start: (u16, u16, u16, u16),
+    start: DaqId,
     num_chans: u16,
 }
 
 impl PSICXY {
-    pub fn new(id: (u16, u16, u16, u16), n: String) -> PSICXY {
+    pub fn new(id: DaqId, n: String) -> PSICXY {
         PSICXY {
             start: id,
             name: n,
@@ -361,12 +362,12 @@ impl Detector for PSICXY {
         self.num_chans
     }
 
-    fn contains_daq(&self, id: (u16, u16, u16, u16)) -> bool {
+    fn contains_daq(&self, id: DaqId) -> bool {
         (id.0 == self.start.0) && (id.1 == self.start.1) &&
         ((id.2 >= self.start.2) && (id.2 < self.start.2 + 2))
     }
 
-    fn daq_to_det(&self, id: (u16, u16, u16, u16)) -> Option<u16> {
+    fn daq_to_det(&self, id: DaqId) -> Option<u16> {
         if !self.contains_daq(id) {
             None
         } else {
@@ -374,7 +375,7 @@ impl Detector for PSICXY {
         }
     }
 
-    fn det_to_daq(&self, detch: u16) -> Option<(u16, u16, u16, u16)> {
+    fn det_to_daq(&self, detch: u16) -> Option<DaqId> {
         if detch < self.num_chans {
             let mut id = self.start;
             id.2 += detch / 16;
@@ -390,12 +391,12 @@ impl Detector for PSICXY {
 #[derive(Debug)]
 pub struct QQQ3B {
     name: String,
-    start: (u16, u16, u16, u16),
+    start: DaqId,
     num_chans: u16,
 }
 
 impl QQQ3B {
-    pub fn new(id: (u16, u16, u16, u16), n: String) -> QQQ3B {
+    pub fn new(id: DaqId, n: String) -> QQQ3B {
         QQQ3B {
             start: id,
             name: n,
@@ -413,11 +414,11 @@ impl Detector for QQQ3B {
         self.num_chans
     }
 
-    fn contains_daq(&self, id: (u16, u16, u16, u16)) -> bool {
+    fn contains_daq(&self, id: DaqId) -> bool {
         (id.0 == self.start.0) && (id.1 == self.start.1) && (id.2 == self.start.2)
     }
 
-    fn daq_to_det(&self, id: (u16, u16, u16, u16)) -> Option<u16> {
+    fn daq_to_det(&self, id: DaqId) -> Option<u16> {
         if !self.contains_daq(id) {
             None
         } else {
@@ -425,7 +426,7 @@ impl Detector for QQQ3B {
         }
     }
 
-    fn det_to_daq(&self, detch: u16) -> Option<(u16, u16, u16, u16)> {
+    fn det_to_daq(&self, detch: u16) -> Option<DaqId> {
         if detch < self.num_chans {
             let mut id = self.start;
             id.3 += detch;
@@ -440,12 +441,12 @@ impl Detector for QQQ3B {
 #[derive(Debug)]
 pub struct QQQ3F {
     name: String,
-    start: (u16, u16, u16, u16),
+    start: DaqId,
     num_chans: u16,
 }
 
 impl QQQ3F {
-    pub fn new(id: (u16, u16, u16, u16), n: String) -> QQQ3F {
+    pub fn new(id: DaqId, n: String) -> QQQ3F {
         QQQ3F {
             start: id,
             name: n,
@@ -468,11 +469,11 @@ impl Detector for QQQ3F {
         16383 - val
     }
 
-    fn contains_daq(&self, id: (u16, u16, u16, u16)) -> bool {
+    fn contains_daq(&self, id: DaqId) -> bool {
         (id.0 == self.start.0) && (id.1 == self.start.1) && (id.2 == self.start.2)
     }
 
-    fn daq_to_det(&self, id: (u16, u16, u16, u16)) -> Option<u16> {
+    fn daq_to_det(&self, id: DaqId) -> Option<u16> {
         if !self.contains_daq(id) {
             None
         } else {
@@ -480,7 +481,7 @@ impl Detector for QQQ3F {
         }
     }
 
-    fn det_to_daq(&self, detch: u16) -> Option<(u16, u16, u16, u16)> {
+    fn det_to_daq(&self, detch: u16) -> Option<DaqId> {
         if detch < self.num_chans {
             let mut id = self.start;
             id.3 += detch;
@@ -495,12 +496,12 @@ impl Detector for QQQ3F {
 #[derive(Debug)]
 pub struct QQQ5B {
     name: String,
-    start: (u16, u16, u16, u16),
+    start: DaqId,
     num_chans: u16,
 }
 
 impl QQQ5B {
-    pub fn new(id: (u16, u16, u16, u16), n: String) -> QQQ5B {
+    pub fn new(id: DaqId, n: String) -> QQQ5B {
         QQQ5B {
             start: id,
             name: n,
@@ -518,12 +519,12 @@ impl Detector for QQQ5B {
         self.num_chans
     }
 
-    fn contains_daq(&self, id: (u16, u16, u16, u16)) -> bool {
+    fn contains_daq(&self, id: DaqId) -> bool {
         (id.0 == self.start.0) && (id.1 == self.start.1) && (id.2 == self.start.2) &&
         ((id.3 >= self.start.3) && (id.3 < self.start.3 + self.num_chans))
     }
 
-    fn daq_to_det(&self, id: (u16, u16, u16, u16)) -> Option<u16> {
+    fn daq_to_det(&self, id: DaqId) -> Option<u16> {
         if !self.contains_daq(id) {
             None
         } else {
@@ -531,7 +532,7 @@ impl Detector for QQQ5B {
         }
     }
 
-    fn det_to_daq(&self, detch: u16) -> Option<(u16, u16, u16, u16)> {
+    fn det_to_daq(&self, detch: u16) -> Option<DaqId> {
         if detch < self.num_chans {
             let mut id = self.start;
             id.3 += detch;
@@ -546,12 +547,12 @@ impl Detector for QQQ5B {
 #[derive(Debug)]
 pub struct QQQ5F {
     name: String,
-    start: (u16, u16, u16, u16),
+    start: DaqId,
     num_chans: u16,
 }
 
 impl QQQ5F {
-    pub fn new(id: (u16, u16, u16, u16), n: String) -> QQQ5F {
+    pub fn new(id: DaqId, n: String) -> QQQ5F {
         QQQ5F {
             start: id,
             name: n,
@@ -574,12 +575,12 @@ impl Detector for QQQ5F {
         16383 - val
     }
 
-    fn contains_daq(&self, id: (u16, u16, u16, u16)) -> bool {
+    fn contains_daq(&self, id: DaqId) -> bool {
         (id.0 == self.start.0) && (id.1 == self.start.1) &&
         ((id.2 >= self.start.2) && (id.2 < self.start.2 + 2))
     }
 
-    fn daq_to_det(&self, id: (u16, u16, u16, u16)) -> Option<u16> {
+    fn daq_to_det(&self, id: DaqId) -> Option<u16> {
         if !self.contains_daq(id) {
             None
         } else {
@@ -587,7 +588,7 @@ impl Detector for QQQ5F {
         }
     }
 
-    fn det_to_daq(&self, detch: u16) -> Option<(u16, u16, u16, u16)> {
+    fn det_to_daq(&self, detch: u16) -> Option<DaqId> {
         if detch < self.num_chans {
             let mut id = self.start;
             id.2 += detch / 16;
@@ -603,12 +604,12 @@ impl Detector for QQQ5F {
 #[derive(Debug)]
 pub struct YY1F {
     name: String,
-    start: (u16, u16, u16, u16),
+    start: DaqId,
     num_chans: u16,
 }
 
 impl YY1F {
-    pub fn new(id: (u16, u16, u16, u16), n: String) -> YY1F {
+    pub fn new(id: DaqId, n: String) -> YY1F {
         YY1F {
             start: id,
             name: n,
@@ -631,11 +632,11 @@ impl Detector for YY1F {
         16383 - val
     }
 
-    fn contains_daq(&self, id: (u16, u16, u16, u16)) -> bool {
+    fn contains_daq(&self, id: DaqId) -> bool {
         (id.0 == self.start.0) && (id.1 == self.start.1) && (id.2 == self.start.2)
     }
 
-    fn daq_to_det(&self, id: (u16, u16, u16, u16)) -> Option<u16> {
+    fn daq_to_det(&self, id: DaqId) -> Option<u16> {
         if !self.contains_daq(id) {
             None
         } else {
@@ -643,7 +644,7 @@ impl Detector for YY1F {
         }
     }
 
-    fn det_to_daq(&self, detch: u16) -> Option<(u16, u16, u16, u16)> {
+    fn det_to_daq(&self, detch: u16) -> Option<DaqId> {
         if detch < self.num_chans {
             let mut id = self.start;
             id.3 += detch;

@@ -13,10 +13,10 @@ pub mod detector;
 pub mod hist;
 pub mod io;
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Copy, Debug, Clone, Eq, PartialEq, Hash)]
 pub struct DaqId(pub u16, pub u16, pub u16, pub u16);
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Copy, Debug, Clone, Eq, PartialEq, Hash)]
 pub struct DetId(pub u16, pub u16);
 
 /// A type that hold the data from an experimental run
@@ -74,7 +74,7 @@ impl Hit {
                      all_dets: &[Box<Detector>],
                      daq_det_map: &HashMap<DaqId, DetId>) {
         self.detid = match daq_det_map.get(&self.daqid) {
-            Some(x) => x.clone(),
+            Some(x) => *x,
             None => DetId(0, 0),
         };
         let idx = self.detid.0 as usize;
@@ -111,14 +111,14 @@ pub fn get_dets(file: File) -> Vec<Box<Detector>> {
     dets
 }
 
-pub fn get_id_map(dets: &[Box<Detector>]) -> HashMap<(u16, u16, u16, u16), (u16, u16)> {
-    let mut map = HashMap::<(u16, u16, u16, u16), (u16, u16)>::new();
+pub fn get_id_map(dets: &[Box<Detector>]) -> HashMap<DaqId, DetId> {
+    let mut map = HashMap::<DaqId, DetId>::new();
     // Loop through the detectors, creating the daq id to det id map
     for (di, d) in dets.iter().enumerate() {
         let di = (di as u16) + 1;
         for dc in 0..d.num_chans() {
             if let Some(daq_id) = d.det_to_daq(dc) {
-                let v = map.insert(daq_id, (di, dc));
+                let v = map.insert(daq_id, DetId(di, dc));
                 if v.is_some() {
                     let v = v.unwrap();
                     warn!("Daq ID ({}, {}, {}, {}) is already used.\
@@ -154,7 +154,7 @@ fn line_to_det(line: &str) -> Option<Box<Detector>> {
                 return None;
             }
         }
-        let id = (id_vec[0], id_vec[1], id_vec[2], id_vec[3]);
+        let id = DaqId(id_vec[0], id_vec[1], id_vec[2], id_vec[3]);
         match &t as &str {
             "BB10_F" => Some(Box::new(BB10F::new(id, n))),
             "BB15_B" => Some(Box::new(BB15B::new(id, n))),
@@ -179,9 +179,9 @@ fn line_to_det(line: &str) -> Option<Box<Detector>> {
 
 // calibrate stuff
 //
-pub fn get_cal_map(file: File) -> HashMap<(u16, u16, u16, u16), (f64, f64)> {
+pub fn get_cal_map(file: File) -> HashMap<DaqId, (f64, f64)> {
     // FIXME: &mut ?
-    let mut map = HashMap::<(u16, u16, u16, u16), (f64, f64)>::new();
+    let mut map = HashMap::<DaqId, (f64, f64)>::new();
     // Read in the calibration file
     let r = BufReader::new(file);
     for l in r.lines() {
@@ -191,10 +191,10 @@ pub fn get_cal_map(file: File) -> HashMap<(u16, u16, u16, u16), (f64, f64)> {
             warn!("Error parsing a line in the calib file."); //FIXME
         } else {
             // FIXME: handle unwraps
-            let id = (x[0].parse::<u16>().unwrap(),
-                      x[1].parse::<u16>().unwrap(),
-                      x[2].parse::<u16>().unwrap(),
-                      x[3].parse::<u16>().unwrap());
+            let id = DaqId(x[0].parse::<u16>().unwrap(),
+                           x[1].parse::<u16>().unwrap(),
+                           x[2].parse::<u16>().unwrap(),
+                           x[3].parse::<u16>().unwrap());
             let o = x[4].parse::<f64>().unwrap();
             let s = x[5].parse::<f64>().unwrap();
 
