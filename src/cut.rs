@@ -28,6 +28,14 @@ impl Cut1dLin {
             max: max,
         }
     }
+
+    pub fn min(&self) -> f64 {
+        self.min
+    }
+
+    pub fn max(&self) -> f64 {
+        self.max
+    }
 }
 
 impl Cut1d for Cut1dLin {
@@ -50,6 +58,18 @@ impl Cut2dCirc {
             y: y,
             r: r.abs(),
         }
+    }
+
+    pub fn x(&self) -> f64 {
+        self.x
+    }
+
+    pub fn y(&self) -> f64 {
+        self.y
+    }
+
+    pub fn r(&self) -> f64 {
+        self.r
     }
 }
 
@@ -123,6 +143,22 @@ impl Cut2dRect {
             xmax: xmax,
             ymax: ymax,
         }
+    }
+
+    pub fn xmin(&self) -> f64 {
+        self.xmin
+    }
+
+    pub fn ymin(&self) -> f64 {
+        self.ymin
+    }
+
+    pub fn xmax(&self) -> f64 {
+        self.xmax
+    }
+
+    pub fn ymax(&self) -> f64 {
+        self.ymax
     }
 }
 

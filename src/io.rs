@@ -5,7 +5,7 @@ use std::borrow::Cow;
 use std::io::{self, Read, Write, BufReader, BufRead};
 use {DaqId, DetId, Run, Event, Hit};
 use hist::{Hist1d, Hist2d};
-use cut::Cut2dPoly;
+use cut::{Cut1dLin, Cut2dCirc, Cut2dRect, Cut2dPoly};
 
 ///
 #[derive(Clone, Debug)]
@@ -13,6 +13,10 @@ pub enum DkItem<'a> {
     Run(Cow<'a, Run>),
     Hist1d(Cow<'a, Hist1d>),
     Hist2d(Cow<'a, Hist2d>),
+    Cut1dLin(Cow<'a, Cut1dLin>),
+    Cut2dCirc(Cow<'a, Cut2dCirc>),
+    Cut2dRect(Cow<'a, Cut2dRect>),
+    Cut2dPoly(Cow<'a, Cut2dPoly>),
 }
 
 impl<'a> DkItem<'a> {
@@ -93,6 +97,10 @@ pub enum DkType {
     Run,
     Hist1d,
     Hist2d,
+    Cut1dLin,
+    Cut2dCirc,
+    Cut2dRect,
+    Cut2dPoly,
 }
 
 /// An interface for reading datakiste binary data
@@ -104,9 +112,13 @@ pub trait ReadDkBin: ReadBytesExt {
     fn read_dk_bin(&mut self) -> io::Result<(String, DkItem<'static>)> {
         let name = try!(self.read_string_bin());
         match try!(self.read_type_bin()) {
-            DkType::Run => Ok((name, DkItem::Run(Cow::Owned(try!(self.read_run_bin()))))),
-            DkType::Hist1d => Ok((name, DkItem::Hist1d(Cow::Owned(try!(self.read_hist_1d_bin()))))),
-            DkType::Hist2d => Ok((name, DkItem::Hist2d(Cow::Owned(try!(self.read_hist_2d_bin()))))),
+            DkType::Run => Ok((name, DkItem::Run(Cow::Owned(self.read_run_bin()?)))),
+            DkType::Hist1d => Ok((name, DkItem::Hist1d(Cow::Owned(self.read_hist_1d_bin()?)))),
+            DkType::Hist2d => Ok((name, DkItem::Hist2d(Cow::Owned(self.read_hist_2d_bin()?)))),
+            DkType::Cut1dLin => Ok((name, DkItem::Cut1dLin(Cow::Owned(self.read_cut_1d_lin_bin()?)))),
+            DkType::Cut2dCirc => Ok((name, DkItem::Cut2dCirc(Cow::Owned(self.read_cut_2d_circ_bin()?)))),
+            DkType::Cut2dRect => Ok((name, DkItem::Cut2dRect(Cow::Owned(self.read_cut_2d_rect_bin()?)))),
+            DkType::Cut2dPoly => Ok((name, DkItem::Cut2dPoly(Cow::Owned(self.read_cut_2d_poly_bin()?)))),
         }
     }
 
@@ -117,6 +129,10 @@ pub trait ReadDkBin: ReadBytesExt {
             0 => Ok(DkType::Run),
             1 => Ok(DkType::Hist1d),
             2 => Ok(DkType::Hist2d),
+            32 => Ok(DkType::Cut1dLin),
+            40 => Ok(DkType::Cut2dCirc),
+            41 => Ok(DkType::Cut2dRect),
+            42 => Ok(DkType::Cut2dPoly),
             _ => Err(io::Error::new(io::ErrorKind::Other, "Error creating DkType")),
         }
     }
@@ -284,6 +300,74 @@ pub trait ReadDkBin: ReadBytesExt {
             None => Err(io::Error::new(io::ErrorKind::Other, "Error creating Hist2d")),
         }
     }
+
+    /// Reads in binary Cut1dLin
+    ///
+    /// # Format
+    /// * `min: f64`
+    /// * `max: f64`
+    ///
+    /// # Examples
+    fn read_cut_1d_lin_bin(&mut self) -> io::Result<Cut1dLin> {
+        let min = self.read_f64::<LittleEndian>()?;
+        let max = self.read_f64::<LittleEndian>()?;
+
+        Ok(Cut1dLin::new(min, max))
+    }
+
+    /// Reads in binary Cut2dCirc
+    ///
+    /// # Format
+    /// * `x: f64`
+    /// * `y: f64`
+    /// * `r: f64`
+    ///
+    /// # Examples
+    fn read_cut_2d_circ_bin(&mut self) -> io::Result<Cut2dCirc> {
+        let x = self.read_f64::<LittleEndian>()?;
+        let y = self.read_f64::<LittleEndian>()?;
+        let r = self.read_f64::<LittleEndian>()?;
+
+        Ok(Cut2dCirc::new(x, y, r))
+    }
+
+    /// Reads in binary Cut2dRect
+    ///
+    /// # Format
+    /// * `xmin: f64`
+    /// * `ymin: f64`
+    /// * `xmax: f64`
+    /// * `ymax: f64`
+    ///
+    /// # Examples
+    fn read_cut_2d_rect_bin(&mut self) -> io::Result<Cut2dRect> {
+        let x1 = self.read_f64::<LittleEndian>()?;
+        let y1 = self.read_f64::<LittleEndian>()?;
+        let x2 = self.read_f64::<LittleEndian>()?;
+        let y2 = self.read_f64::<LittleEndian>()?;
+
+        Ok(Cut2dRect::new(x1, y1, x2, y2))
+    }
+
+    /// Reads in binary Cut2dPoly
+    ///
+    /// # Format
+    /// * `n_verts: u16`
+    /// * `verts: n_verts * (f64, f64)`
+    ///
+    /// # Examples
+    fn read_cut_2d_poly_bin(&mut self) -> io::Result<Cut2dPoly> {
+        let n_verts = self.read_u16::<LittleEndian>()? as usize;
+
+        let mut v = Vec::<(f64, f64)>::with_capacity(n_verts);
+        for _ in 0..n_verts {
+            let x = self.read_f64::<LittleEndian>()?;
+            let y = self.read_f64::<LittleEndian>()?;
+            v.push((x, y));
+        }
+
+        Ok(Cut2dPoly::from_verts(v))
+    }
 }
 
 /// An interface for writing datakiste binary data
@@ -307,6 +391,22 @@ pub trait WriteDkBin: WriteBytesExt {
                 try!(self.write_type_bin(DkType::Hist2d));
                 try!(self.write_hist_2d_bin(h));
             }
+            DkItem::Cut1dLin(ref c) => {
+                try!(self.write_type_bin(DkType::Cut1dLin));
+                try!(self.write_cut_1d_lin_bin(c));
+            }
+            DkItem::Cut2dCirc(ref c) => {
+                try!(self.write_type_bin(DkType::Cut2dCirc));
+                try!(self.write_cut_2d_circ_bin(c));
+            }
+            DkItem::Cut2dRect(ref c) => {
+                try!(self.write_type_bin(DkType::Cut2dRect));
+                try!(self.write_cut_2d_rect_bin(c));
+            }
+            DkItem::Cut2dPoly(ref c) => {
+                try!(self.write_type_bin(DkType::Cut2dPoly));
+                try!(self.write_cut_2d_poly_bin(c));
+            }
         }
         Ok(())
     }
@@ -317,6 +417,10 @@ pub trait WriteDkBin: WriteBytesExt {
             DkType::Run => 0,
             DkType::Hist1d => 1,
             DkType::Hist2d => 2,
+            DkType::Cut1dLin => 32,
+            DkType::Cut2dCirc => 40,
+            DkType::Cut2dRect => 41,
+            DkType::Cut2dPoly => 42,
         };
         try!(self.write_u8(t));
         Ok(())
@@ -394,7 +498,7 @@ pub trait WriteDkBin: WriteBytesExt {
     /// Writes out binary 1D histogram data
     ///
     /// # Format
-    /// * `bins: u32 `
+    /// * `bins: u32`
     /// * `min: f64`
     /// * `max: f64`
     /// * `counts: bins * u64`
@@ -415,10 +519,10 @@ pub trait WriteDkBin: WriteBytesExt {
     /// Writes out binary 2D histogram data
     ///
     /// # Format
-    /// * `x_bins: u32 `
+    /// * `x_bins: u32`
     /// * `x_min: f64`
     /// * `x_max: f64`
-    /// * `y_bins: u32 `
+    /// * `y_bins: u32`
     /// * `y_min: f64`
     /// * `y_max: f64`
     /// * `counts: x_bins * y_bins * u64`
@@ -441,6 +545,68 @@ pub trait WriteDkBin: WriteBytesExt {
                 let c = h.counts_at_bin(bin_x, bin_y).unwrap();
                 try!(self.write_u64::<LittleEndian>(*c));
             }
+        }
+        Ok(())
+    }
+
+    /// Writes out binary Cut1dLin
+    ///
+    /// # Format
+    /// * `min: f64`
+    /// * `max: f64`
+    ///
+    /// # Examples
+    fn write_cut_1d_lin_bin(&mut self, c: &Cut1dLin) -> io::Result<()> {
+        self.write_f64::<LittleEndian>(c.min())?;
+        self.write_f64::<LittleEndian>(c.max())?;
+        Ok(())
+    }
+
+    /// Writes out binary Cut2dCirc
+    ///
+    /// # Format
+    /// * `x: f64`
+    /// * `y: f64`
+    /// * `r: f64`
+    ///
+    /// # Examples
+    fn write_cut_2d_circ_bin(&mut self, c: &Cut2dCirc) -> io::Result<()> {
+        self.write_f64::<LittleEndian>(c.x())?;
+        self.write_f64::<LittleEndian>(c.y())?;
+        self.write_f64::<LittleEndian>(c.r())?;
+        Ok(())
+    }
+
+    /// Writes out binary Cut2dRect
+    ///
+    /// # Format
+    /// * `xmin: f64`
+    /// * `ymin: f64`
+    /// * `xmax: f64`
+    /// * `ymax: f64 `
+    ///
+    /// # Examples
+    fn write_cut_2d_rect_bin(&mut self, c: &Cut2dRect) -> io::Result<()> {
+        self.write_f64::<LittleEndian>(c.xmin())?;
+        self.write_f64::<LittleEndian>(c.ymin())?;
+        self.write_f64::<LittleEndian>(c.xmax())?;
+        self.write_f64::<LittleEndian>(c.ymax())?;
+        Ok(())
+    }
+
+    /// Writes out binary Cut2dPoly
+    ///
+    /// # Format
+    /// * `n_verts: u16`
+    /// * `verts: n_verts * (f64, f64)`
+    ///
+    /// # Examples
+    fn write_cut_2d_poly_bin(&mut self, c: &Cut2dPoly) -> io::Result<()> {
+        let verts = c.verts();
+        self.write_u16::<LittleEndian>(verts.len() as u16)?;
+        for v in verts {
+            self.write_f64::<LittleEndian>(v.0)?;
+            self.write_f64::<LittleEndian>(v.1)?;
         }
         Ok(())
     }
