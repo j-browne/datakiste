@@ -150,10 +150,7 @@ pub trait ReadDkBin: ReadBytesExt {
         let mut bytes = vec![0u8; n_bytes];
         let _ = self.read_exact(&mut bytes);
 
-        match String::from_utf8(bytes) {
-            Ok(s) => Ok(s),
-            _ => Err(io::Error::new(io::ErrorKind::Other, "Error creating String")),
-        }
+        String::from_utf8(bytes).or(Err(io::Error::new(io::ErrorKind::Other, "Error creating String")))
     }
 
     /// Reads in binary run data
