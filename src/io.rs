@@ -110,8 +110,8 @@ pub enum DkType {
 pub trait ReadDkBin: ReadBytesExt {
     ///
     fn read_dk_bin(&mut self) -> io::Result<(String, DkItem<'static>)> {
-        let name = try!(self.read_string_bin());
-        match try!(self.read_type_bin()) {
+        let name = self.read_string_bin()?;
+        match self.read_type_bin()? {
             DkType::Run => Ok((name, DkItem::Run(Cow::Owned(self.read_run_bin()?)))),
             DkType::Hist1d => Ok((name, DkItem::Hist1d(Cow::Owned(self.read_hist_1d_bin()?)))),
             DkType::Hist2d => Ok((name, DkItem::Hist2d(Cow::Owned(self.read_hist_2d_bin()?)))),
@@ -124,7 +124,7 @@ pub trait ReadDkBin: ReadBytesExt {
 
     ///
     fn read_type_bin(&mut self) -> io::Result<DkType> {
-        let t = try!(self.read_u8());
+        let t = self.read_u8()?;
         match t {
             0 => Ok(DkType::Run),
             1 => Ok(DkType::Hist1d),
@@ -145,7 +145,7 @@ pub trait ReadDkBin: ReadBytesExt {
     ///
     /// # Examples
     fn read_string_bin(&mut self) -> io::Result<String> {
-        let n_bytes = try!(self.read_u8()) as usize;
+        let n_bytes = self.read_u8()? as usize;
 
         let mut bytes = vec![0u8; n_bytes];
         let _ = self.read_exact(&mut bytes);
@@ -164,11 +164,11 @@ pub trait ReadDkBin: ReadBytesExt {
     ///
     /// # Examples
     fn read_run_bin(&mut self) -> io::Result<Run> {
-        let n_events = try!(self.read_u32::<LittleEndian>()) as usize;
+        let n_events = self.read_u32::<LittleEndian>()? as usize;
 
         let mut v = Vec::<Event>::with_capacity(n_events);
         for _ in 0..n_events {
-            let e = try!(self.read_event_bin());
+            let e = self.read_event_bin()?;
             v.push(e);
         }
 
@@ -185,11 +185,11 @@ pub trait ReadDkBin: ReadBytesExt {
     fn read_event_bin(&mut self) -> io::Result<Event> {
         // FIXME: If there's a bad event, skip to next event.
         // Currently, it fucks up the rest of the file.
-        let n_hits = try!(self.read_u16::<LittleEndian>()) as usize;
+        let n_hits = self.read_u16::<LittleEndian>()? as usize;
 
         let mut v = Vec::<Hit>::with_capacity(n_hits);
         for _ in 0..n_hits {
-            let h = try!(self.read_hit_bin());
+            let h = self.read_hit_bin()?;
             v.push(h);
         }
 
@@ -211,21 +211,21 @@ pub trait ReadDkBin: ReadBytesExt {
     ///
     /// # Examples
     fn read_hit_bin(&mut self) -> io::Result<Hit> {
-        let so = try!(self.read_u16::<LittleEndian>());
-        let cr = try!(self.read_u16::<LittleEndian>());
-        let sl = try!(self.read_u16::<LittleEndian>());
-        let ch = try!(self.read_u16::<LittleEndian>());
-        let di = try!(self.read_u16::<LittleEndian>());
-        let dc = try!(self.read_u16::<LittleEndian>());
-        let rv = try!(self.read_u16::<LittleEndian>());
-        let val = try!(self.read_u16::<LittleEndian>());
-        let en = try!(self.read_f64::<LittleEndian>());
-        let t = try!(self.read_f64::<LittleEndian>());
-        let tr_size = try!(self.read_u16::<LittleEndian>()) as usize;
+        let so = self.read_u16::<LittleEndian>()?;
+        let cr = self.read_u16::<LittleEndian>()?;
+        let sl = self.read_u16::<LittleEndian>()?;
+        let ch = self.read_u16::<LittleEndian>()?;
+        let di = self.read_u16::<LittleEndian>()?;
+        let dc = self.read_u16::<LittleEndian>()?;
+        let rv = self.read_u16::<LittleEndian>()?;
+        let val = self.read_u16::<LittleEndian>()?;
+        let en = self.read_f64::<LittleEndian>()?;
+        let t = self.read_f64::<LittleEndian>()?;
+        let tr_size = self.read_u16::<LittleEndian>()? as usize;
 
         let mut tr = Vec::<u16>::with_capacity(tr_size);
         for _ in 0..tr_size {
-            let y = try!(self.read_u16::<LittleEndian>());
+            let y = self.read_u16::<LittleEndian>()?;
             tr.push(y);
         }
 
@@ -250,13 +250,13 @@ pub trait ReadDkBin: ReadBytesExt {
     ///
     /// # Examples
     fn read_hist_1d_bin(&mut self) -> io::Result<Hist1d> {
-        let bins = try!(self.read_u32::<LittleEndian>()) as usize;
-        let min = try!(self.read_f64::<LittleEndian>());
-        let max = try!(self.read_f64::<LittleEndian>());
+        let bins = self.read_u32::<LittleEndian>()? as usize;
+        let min = self.read_f64::<LittleEndian>()?;
+        let max = self.read_f64::<LittleEndian>()?;
 
         let mut v = Vec::<u64>::with_capacity(bins);
         for _ in 0..bins {
-            let c = try!(self.read_u64::<LittleEndian>());
+            let c = self.read_u64::<LittleEndian>()?;
             v.push(c);
         }
 
@@ -279,18 +279,18 @@ pub trait ReadDkBin: ReadBytesExt {
     ///
     /// # Examples
     fn read_hist_2d_bin(&mut self) -> io::Result<Hist2d> {
-        let x_bins = try!(self.read_u32::<LittleEndian>()) as usize;
-        let x_min = try!(self.read_f64::<LittleEndian>());
-        let x_max = try!(self.read_f64::<LittleEndian>());
+        let x_bins = self.read_u32::<LittleEndian>()? as usize;
+        let x_min = self.read_f64::<LittleEndian>()?;
+        let x_max = self.read_f64::<LittleEndian>()?;
 
-        let y_bins = try!(self.read_u32::<LittleEndian>()) as usize;
-        let y_min = try!(self.read_f64::<LittleEndian>());
-        let y_max = try!(self.read_f64::<LittleEndian>());
+        let y_bins = self.read_u32::<LittleEndian>()? as usize;
+        let y_min = self.read_f64::<LittleEndian>()?;
+        let y_max = self.read_f64::<LittleEndian>()?;
 
         let mut v = Vec::<u64>::with_capacity(x_bins * y_bins);
         for _ in 0..x_bins {
             for _ in 0..y_bins {
-                let c = try!(self.read_u64::<LittleEndian>());
+                let c = self.read_u64::<LittleEndian>()?;
                 v.push(c);
             }
         }
@@ -377,35 +377,35 @@ pub trait ReadDkBin: ReadBytesExt {
 pub trait WriteDkBin: WriteBytesExt {
     ///
     fn write_dk_bin(&mut self, name: &str, item: &DkItem) -> io::Result<()> {
-        try!(self.write_string_bin(name));
+        self.write_string_bin(name)?;
         match *item {
             DkItem::Run(ref r) => {
-                try!(self.write_type_bin(DkType::Run));
-                try!(self.write_run_bin(r));
+                self.write_type_bin(DkType::Run)?;
+                self.write_run_bin(r)?;
             }
             DkItem::Hist1d(ref h) => {
-                try!(self.write_type_bin(DkType::Hist1d));
-                try!(self.write_hist_1d_bin(h));
+                self.write_type_bin(DkType::Hist1d)?;
+                self.write_hist_1d_bin(h)?;
             }
             DkItem::Hist2d(ref h) => {
-                try!(self.write_type_bin(DkType::Hist2d));
-                try!(self.write_hist_2d_bin(h));
+                self.write_type_bin(DkType::Hist2d)?;
+                self.write_hist_2d_bin(h)?;
             }
             DkItem::Cut1dLin(ref c) => {
-                try!(self.write_type_bin(DkType::Cut1dLin));
-                try!(self.write_cut_1d_lin_bin(c));
+                self.write_type_bin(DkType::Cut1dLin)?;
+                self.write_cut_1d_lin_bin(c)?;
             }
             DkItem::Cut2dCirc(ref c) => {
-                try!(self.write_type_bin(DkType::Cut2dCirc));
-                try!(self.write_cut_2d_circ_bin(c));
+                self.write_type_bin(DkType::Cut2dCirc)?;
+                self.write_cut_2d_circ_bin(c)?;
             }
             DkItem::Cut2dRect(ref c) => {
-                try!(self.write_type_bin(DkType::Cut2dRect));
-                try!(self.write_cut_2d_rect_bin(c));
+                self.write_type_bin(DkType::Cut2dRect)?;
+                self.write_cut_2d_rect_bin(c)?;
             }
             DkItem::Cut2dPoly(ref c) => {
-                try!(self.write_type_bin(DkType::Cut2dPoly));
-                try!(self.write_cut_2d_poly_bin(c));
+                self.write_type_bin(DkType::Cut2dPoly)?;
+                self.write_cut_2d_poly_bin(c)?;
             }
         }
         Ok(())
@@ -422,14 +422,14 @@ pub trait WriteDkBin: WriteBytesExt {
             DkType::Cut2dRect => 41,
             DkType::Cut2dPoly => 42,
         };
-        try!(self.write_u8(t));
+        self.write_u8(t)?;
         Ok(())
     }
 
     ///
     fn write_string_bin(&mut self, s: &str) -> io::Result<()> {
-        try!(self.write_u8(s.len() as u8));
-        try!(self.write_all(s.as_bytes()));
+        self.write_u8(s.len() as u8)?;
+        self.write_all(s.as_bytes())?;
         Ok(())
     }
 
@@ -441,9 +441,9 @@ pub trait WriteDkBin: WriteBytesExt {
     ///
     /// # Examples
     fn write_run_bin(&mut self, r: &Run) -> io::Result<()> {
-        try!(self.write_u32::<LittleEndian>(r.events.len() as u32));
+        self.write_u32::<LittleEndian>(r.events.len() as u32)?;
         for e in &r.events {
-            try!(self.write_event_bin(&e));
+            self.write_event_bin(&e)?;
         }
         Ok(())
     }
@@ -456,9 +456,9 @@ pub trait WriteDkBin: WriteBytesExt {
     ///
     /// # Examples
     fn write_event_bin(&mut self, e: &Event) -> io::Result<()> {
-        try!(self.write_u16::<LittleEndian>(e.hits.len() as u16));
+        self.write_u16::<LittleEndian>(e.hits.len() as u16)?;
         for h in &e.hits {
-            try!(self.write_hit_bin(&h));
+            self.write_hit_bin(&h)?;
         }
         Ok(())
     }
@@ -478,19 +478,19 @@ pub trait WriteDkBin: WriteBytesExt {
     ///
     /// # Examples
     fn write_hit_bin(&mut self, h: &Hit) -> io::Result<()> {
-        try!(self.write_u16::<LittleEndian>(h.daqid.0));
-        try!(self.write_u16::<LittleEndian>(h.daqid.1));
-        try!(self.write_u16::<LittleEndian>(h.daqid.2));
-        try!(self.write_u16::<LittleEndian>(h.daqid.3));
-        try!(self.write_u16::<LittleEndian>(h.detid.0));
-        try!(self.write_u16::<LittleEndian>(h.detid.1));
-        try!(self.write_u16::<LittleEndian>(h.rawval));
-        try!(self.write_u16::<LittleEndian>(h.value));
-        try!(self.write_f64::<LittleEndian>(h.energy));
-        try!(self.write_f64::<LittleEndian>(h.time));
-        try!(self.write_u16::<LittleEndian>(h.trace.len() as u16));
+        self.write_u16::<LittleEndian>(h.daqid.0)?;
+        self.write_u16::<LittleEndian>(h.daqid.1)?;
+        self.write_u16::<LittleEndian>(h.daqid.2)?;
+        self.write_u16::<LittleEndian>(h.daqid.3)?;
+        self.write_u16::<LittleEndian>(h.detid.0)?;
+        self.write_u16::<LittleEndian>(h.detid.1)?;
+        self.write_u16::<LittleEndian>(h.rawval)?;
+        self.write_u16::<LittleEndian>(h.value)?;
+        self.write_f64::<LittleEndian>(h.energy)?;
+        self.write_f64::<LittleEndian>(h.time)?;
+        self.write_u16::<LittleEndian>(h.trace.len() as u16)?;
         for i in &h.trace {
-            try!(self.write_u16::<LittleEndian>(*i));
+            self.write_u16::<LittleEndian>(*i)?;
         }
         Ok(())
     }
@@ -506,12 +506,12 @@ pub trait WriteDkBin: WriteBytesExt {
     /// # Examples
     fn write_hist_1d_bin(&mut self, h: &Hist1d) -> io::Result<()> {
         let axis = h.x_axis();
-        try!(self.write_u32::<LittleEndian>(axis.bins as u32));
-        try!(self.write_f64::<LittleEndian>(axis.min));
-        try!(self.write_f64::<LittleEndian>(axis.max));
+        self.write_u32::<LittleEndian>(axis.bins as u32)?;
+        self.write_f64::<LittleEndian>(axis.min)?;
+        self.write_f64::<LittleEndian>(axis.max)?;
         for bin in 0..axis.bins {
             let c = h.counts_at_bin(bin).unwrap();
-            try!(self.write_u64::<LittleEndian>(*c));
+            self.write_u64::<LittleEndian>(*c)?;
         }
         Ok(())
     }
@@ -532,18 +532,18 @@ pub trait WriteDkBin: WriteBytesExt {
         let x_axis = h.x_axis();
         let y_axis = h.y_axis();
 
-        try!(self.write_u32::<LittleEndian>(x_axis.bins as u32));
-        try!(self.write_f64::<LittleEndian>(x_axis.min));
-        try!(self.write_f64::<LittleEndian>(x_axis.max));
+        self.write_u32::<LittleEndian>(x_axis.bins as u32)?;
+        self.write_f64::<LittleEndian>(x_axis.min)?;
+        self.write_f64::<LittleEndian>(x_axis.max)?;
 
-        try!(self.write_u32::<LittleEndian>(y_axis.bins as u32));
-        try!(self.write_f64::<LittleEndian>(y_axis.min));
-        try!(self.write_f64::<LittleEndian>(y_axis.max));
+        self.write_u32::<LittleEndian>(y_axis.bins as u32)?;
+        self.write_f64::<LittleEndian>(y_axis.min)?;
+        self.write_f64::<LittleEndian>(y_axis.max)?;
 
         for bin_x in 0..x_axis.bins {
             for bin_y in 0..y_axis.bins {
                 let c = h.counts_at_bin(bin_x, bin_y).unwrap();
-                try!(self.write_u64::<LittleEndian>(*c));
+                self.write_u64::<LittleEndian>(*c)?;
             }
         }
         Ok(())
@@ -625,7 +625,7 @@ pub trait ReadDkTxt: Read {
     fn read_to_hist_1d_txt(&mut self, h: &mut Hist1d) -> io::Result<()> {
         let b = BufReader::new(self);
         for line in b.lines() {
-            let l = try!(line);
+            let l = line?;
             let l: Vec<_> = l.split_whitespace().collect();
 
             if l.len() < 2 {
@@ -656,7 +656,7 @@ pub trait ReadDkTxt: Read {
     fn read_to_hist_2d_txt(&mut self, h: &mut Hist2d) -> io::Result<()> {
         let b = BufReader::new(self);
         for line in b.lines() {
-            let l = try!(line);
+            let l = line?;
             let l: Vec<_> = l.split_whitespace().collect();
 
             if l.len() < 3 {
@@ -695,7 +695,7 @@ pub trait WriteDkTxt: Write {
         for bin in 0..axis.bins {
             let x = axis.val_at_bin_mid(bin);
             let y = h.counts_at_bin(bin).unwrap();
-            try!(writeln!(self, "{}\t{}", x, y));
+            writeln!(self, "{}\t{}", x, y)?;
         }
         Ok(())
     }
@@ -708,21 +708,21 @@ pub trait WriteDkTxt: Write {
                 let x = x_axis.val_at_bin_mid(bin_x);
                 let y = y_axis.val_at_bin_mid(bin_y);
                 let z = h.counts_at_bin(bin_x, bin_y).unwrap();
-                try!(writeln!(self, "{}\t{}\t{}", x, y, z));
+                writeln!(self, "{}\t{}\t{}", x, y, z)?;
             }
-            try!(writeln!(self, ""));
+            writeln!(self, "")?;
         }
         Ok(())
     }
 
     fn write_cut_2d_poly_txt(&mut self, c: &Cut2dPoly) -> io::Result<()> {
         for v in c.verts() {
-            try!(writeln!(self, "{}\t{}", v.0, v.1));
+            writeln!(self, "{}\t{}", v.0, v.1)?;
         }
         if let Some(v) = c.verts().first() {
-            try!(writeln!(self, "{}\t{}", v.0, v.1));
+            writeln!(self, "{}\t{}", v.0, v.1)?;
         }
-        try!(writeln!(self, ""));
+        writeln!(self, "")?;
         Ok(())
     }
 }
