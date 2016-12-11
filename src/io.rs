@@ -5,7 +5,7 @@ use std::borrow::Cow;
 use std::io::{self, Read, Write, BufReader, BufRead};
 use {DaqId, DetId, Run, Event, Hit};
 use hist::{Hist1d, Hist2d};
-use cut::{Cut1dLin, Cut2dCirc, Cut2dRect, Cut2dPoly};
+use cut::{Cut1d, Cut1dLin, Cut2d, Cut2dCirc, Cut2dRect, Cut2dPoly};
 
 ///
 #[derive(Clone, Debug)]
@@ -67,6 +67,7 @@ impl<'a> DkItem<'a> {
             None
         }
     }
+
     pub fn as_hist_2d(&self) -> Option<&Hist2d> {
         if let DkItem::Hist2d(ref h) = *self {
             Some(h)
@@ -88,6 +89,22 @@ impl<'a> DkItem<'a> {
             Some(h.into_owned())
         } else {
             None
+        }
+    }
+
+    pub fn as_cut_1d(&self) -> Option<&Cut1d> {
+        match *self {
+            DkItem::Cut1dLin(ref c) => Some(c.as_ref()),
+            _ => None,
+        }
+    }
+
+    pub fn as_cut_2d(&self) -> Option<&Cut2d> {
+        match *self {
+            DkItem::Cut2dCirc(ref c) => Some(c.as_ref()),
+            DkItem::Cut2dRect(ref c) => Some(c.as_ref()),
+            DkItem::Cut2dPoly(ref c) => Some(c.as_ref()),
+            _ => None,
         }
     }
 }
