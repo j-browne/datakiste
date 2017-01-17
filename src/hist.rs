@@ -85,6 +85,24 @@ pub struct Hist1d {
 }
 
 impl Hist1d {
+    /// Constructs a new `Hist1d`, with `HistAxis` parameters.
+    ///
+    /// The parameters are passed to `HistAxis::new` of the only axis.
+    /// `counts` is initialized with a `Vec<u64>` of `0`s.
+    ///
+    /// If the supplied parameters are invalid, `None` is returned.
+    ///
+    /// # Examples
+    /// ```
+    /// # use datakiste::hist::Hist1d;
+    /// let mut hist = Hist1d::new(100usize, 0f64, 100f64).unwrap();
+    /// ```
+    ///
+    /// ```
+    /// # use datakiste::hist::Hist1d;
+    /// let mut hist = Hist1d::new(0usize, 0f64, 100f64);
+    /// assert_eq!(hist, None);
+    /// ```
     pub fn new(bins: usize, min: f64, max: f64) -> Option<Hist1d> {
         match HistAxis::new(bins, min, max) {
             Some(x_axis) => {
@@ -98,6 +116,25 @@ impl Hist1d {
         }
     }
 
+    /// Constructs a new `Hist1d`, with `HistAxis` parameters and data.
+    ///
+    /// The first three parameters are passed to `HistAxis::new` of the only axis.
+    /// `counts` is initialized with the `counts` parameter. `counts.len()` must
+    /// be equal to `bins`.
+    ///
+    /// If the supplied parameters are invalid, `None` is returned.
+    ///
+    /// # Examples
+    /// ```
+    /// # use datakiste::hist::Hist1d;
+    /// let mut hist = Hist1d::with_counts(100usize, 0f64, 100f64, vec![0u64; 100]).unwrap();
+    /// ```
+    ///
+    /// ```
+    /// # use datakiste::hist::Hist1d;
+    /// let mut hist = Hist1d::with_counts(100usize, 0f64, 100f64, vec![]);
+    /// assert_eq!(hist, None);
+    /// ```
     pub fn with_counts(bins: usize, min: f64, max: f64, counts: Vec<u64>) -> Option<Hist1d> {
         if bins != counts.len() {
             None
@@ -114,36 +151,47 @@ impl Hist1d {
         }
     }
 
+    /// Returns a clone of the x-axis.
     pub fn x_axis(&self) -> HistAxis {
         self.x_axis.clone()
     }
 
-    pub fn fill(&mut self, v: f64) {
-        self.fill_at_val(v);
+    /// Increment bin with value `val` by `1`.
+    pub fn fill(&mut self, val: f64) {
+        self.fill_at_val(val);
     }
 
-    pub fn fill_with_counts(&mut self, v: f64, c: u64) {
-        self.fill_at_val_with_counts(v, c);
+    /// Increment bin with value `val` by `counts`
+    pub fn fill_with_counts(&mut self, val: f64, counts: u64) {
+        self.fill_at_val_with_counts(val, counts);
     }
 
-    pub fn fill_at_val(&mut self, v: f64) {
-        self.fill_at_val_with_counts(v, 1u64);
+    /// Increment bin with value `val` by `1`.
+    pub fn fill_at_val(&mut self, val: f64) {
+        self.fill_at_val_with_counts(val, 1u64);
     }
 
-    pub fn fill_at_val_with_counts(&mut self, v: f64, c: u64) {
-        let bin = self.x_axis.bin_at_val(v);
+    /// Increment bin with value `val` by `counts`
+    pub fn fill_at_val_with_counts(&mut self, val: f64, counts: u64) {
+        let bin = self.x_axis.bin_at_val(val);
 
-        self.fill_at_bin_with_counts(bin, c);
+        self.fill_at_bin_with_counts(bin, counts);
     }
 
+    /// Increment bin with index `bin` by `1`
     pub fn fill_at_bin(&mut self, bin: usize) {
         self.fill_at_bin_with_counts(bin, 1u64);
     }
 
-    pub fn fill_at_bin_with_counts(&mut self, bin: usize, c: u64) {
-        self.counts[bin] += c; // FIXME
+    /// Increment bin with index `bin` by `counts`
+    pub fn fill_at_bin_with_counts(&mut self, bin: usize, counts: u64) {
+        self.counts[bin] += counts; // FIXME
     }
 
+    /// Add the counts from `other` to `self`.
+    ///
+    /// This assumes all counts in `other` are located at the middle
+    /// value of the bin.
     pub fn add(&mut self, other: &Hist1d) {
         for bin in 0..other.x_axis.bins {
             // TODO: use iterator?
@@ -153,6 +201,10 @@ impl Hist1d {
         }
     }
 
+    /// Add the counts from `other` to `self`.
+    ///
+    /// This assigns a uninformly-distributed random value in the
+    /// range of `[bin_min, bin_max)` for each count in `other`.
     pub fn add_fuzz(&mut self, other: &Hist1d) {
         let mut rng = rand::thread_rng();
         for bin in 0..other.x_axis.bins {
@@ -166,21 +218,25 @@ impl Hist1d {
         }
     }
 
+    /// Returns the counts in the bin with index `bin`.
     pub fn counts_at_bin(&self, bin: usize) -> Option<&u64> {
         self.counts.get(bin)
     }
 
+    /// Returns the counts in the bin that contains value `val`.
     pub fn counts_at_val(&self, val: f64) -> Option<&u64> {
         let bin = self.x_axis.bin_at_val(val);
         self.counts.get(bin)
     }
 
+    /// Sets the counts in all bins to `0`.
     pub fn clear(&mut self) {
         for c in &mut self.counts {
             *c = 0u64;
         }
     }
 
+    /// Returns the number of counts contained by `cut`.
     pub fn integrate(&self, cut: &Cut1d) -> u64 {
         let mut sum = 0u64;
         let axis = self.x_axis();
@@ -193,6 +249,9 @@ impl Hist1d {
     }
 }
 
+/// A type that describes a 2D histogram.
+///
+/// # Examples
 #[derive(PartialEq, Debug, Clone)]
 pub struct Hist2d {
     x_axis: HistAxis,
