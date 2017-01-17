@@ -8,6 +8,12 @@ use self::rand::distributions::{IndependentSample, Range};
 use cut::{Cut1d, Cut2d};
 
 
+/// A type that describes an axis for a histogram.
+///
+/// A histogram contains bins to hold data, and a `HistAxis` provides the
+/// functionality needed to determine the value that corresponds to a bin.
+///
+/// # Examples
 #[derive(PartialEq, Debug, Clone)]
 pub struct HistAxis {
     pub bins: usize,
@@ -16,10 +22,13 @@ pub struct HistAxis {
 }
 
 impl HistAxis {
+    /// Constructs a new `HistAxis`, with the supplied parameters.
+    ///
+    /// If the supplied parameters are invalid, `None` is returned.
     fn new(bins: usize, min: f64, max: f64) -> Option<HistAxis> {
-        // swap min and max
         let mut min = min;
         let mut max = max;
+        // swap min and max, if they are incorrectly ordered
         if min > max {
             mem::swap(&mut min, &mut max);
         }
@@ -36,31 +45,39 @@ impl HistAxis {
         }
     }
 
+    /// Returns the value width of the bins.
     pub fn bin_width(&self) -> f64 {
         (self.max - self.min) / (self.bins as f64)
     }
 
-    pub fn bin_at_val(&self, v: f64) -> usize {
-        match (v - self.min) / self.bin_width() {
+    /// Returns the bin index of the bin with value `val`.
+    pub fn bin_at_val(&self, val: f64) -> usize {
+        match (val - self.min) / self.bin_width() {
             a if a < 0f64 => 0usize,
             a if a > ((self.bins - 1) as f64) => self.bins - 1,
             a => a.floor() as usize,
         }
     }
 
+    /// Returns the value at the middle of the bin with index `bin`.
     pub fn val_at_bin_mid(&self, bin: usize) -> f64 {
         ((bin as f64) + 0.5) * self.bin_width() + self.min
     }
 
+    /// Returns the value at the beginning of the bin with index `bin`.
     pub fn val_at_bin_min(&self, bin: usize) -> f64 {
         (bin as f64) * self.bin_width() + self.min
     }
 
+    /// Returns the value at the end of the bin with index `bin`.
     pub fn val_at_bin_max(&self, bin: usize) -> f64 {
         ((bin + 1) as f64) * self.bin_width() + self.min
     }
 }
 
+/// A type that describes a 1D histogram.
+///
+/// # Examples
 #[derive(PartialEq, Debug, Clone)]
 pub struct Hist1d {
     x_axis: HistAxis,
