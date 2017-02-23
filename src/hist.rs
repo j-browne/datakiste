@@ -247,6 +247,10 @@ impl Hist1d {
         }
         sum
     }
+
+    pub fn counts(&self) -> &Vec<u64> {
+        &self.counts
+    }
 }
 
 /// A type that describes a 2D histogram.
@@ -428,6 +432,13 @@ impl Hist2d {
             counts: counts,
         }
     }
+
+    pub fn counts(&self) -> &Vec<u64> {
+        &self.counts
+    }
+}
+
+
 }
 
 #[cfg(test)]
