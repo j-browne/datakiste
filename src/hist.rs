@@ -247,6 +247,10 @@ impl Hist1d {
         }
         sum
     }
+
+    pub fn counts(&self) -> &Vec<u64> {
+        &self.counts
+    }
 }
 
 /// A type that describes a 2D histogram.
@@ -427,6 +431,42 @@ impl Hist2d {
             y_axis: y_axis.clone(),
             counts: counts,
         }
+    }
+
+    pub fn counts(&self) -> &Vec<u64> {
+        &self.counts
+    }
+}
+
+
+#[derive(Debug, Clone)]
+pub struct Points2d {
+    points: Vec<(f64, f64)>,
+}
+
+impl Points2d {
+    pub fn new() -> Points2d {
+        Points2d {
+            points: Vec::new(),
+        }
+    }
+
+    pub fn with_points(points: Vec<(f64, f64)>) -> Points2d {
+        Points2d {
+            points: points
+        }
+    }
+
+    pub fn add(&mut self, other: &mut Points2d) {
+        self.points.append(&mut other.points);
+    }
+
+    pub fn push(&mut self, x: f64, y: f64) {
+        self.points.push((x, y));
+    }
+
+    pub fn points(&self) -> &Vec<(f64, f64)> {
+        &self.points
     }
 }
 
