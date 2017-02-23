@@ -4,7 +4,7 @@ use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use std::borrow::Cow;
 use std::io::{self, Read, Write, BufReader, BufRead};
 use {DaqId, DetId, Run, Event, Hit};
-use hist::{Hist1d, Hist2d};
+use hist::{Hist1d, Hist2d, Points2d};
 use cut::{Cut1d, Cut1dLin, Cut2d, Cut2dCirc, Cut2dRect, Cut2dPoly};
 
 ///
@@ -13,6 +13,7 @@ pub enum DkItem<'a> {
     Run(Cow<'a, Run>),
     Hist1d(Cow<'a, Hist1d>),
     Hist2d(Cow<'a, Hist2d>),
+    Points2d(Cow<'a, Points2d>),
     Cut1dLin(Cow<'a, Cut1dLin>),
     Cut2dCirc(Cow<'a, Cut2dCirc>),
     Cut2dRect(Cow<'a, Cut2dRect>),
@@ -40,6 +41,18 @@ impl<'a> From<Hist2d> for DkItem<'a> {
 impl<'a> From<&'a Hist2d> for DkItem<'a> {
     fn from(h: &'a Hist2d) -> DkItem<'a> {
         DkItem::Hist2d(Cow::Borrowed(&h))
+    }
+}
+
+impl<'a> From<Points2d> for DkItem<'a> {
+    fn from(p: Points2d) -> DkItem<'a> {
+        DkItem::Points2d(Cow::Owned(p))
+    }
+}
+
+impl<'a> From<&'a Points2d> for DkItem<'a> {
+    fn from(p: &'a Points2d) -> DkItem<'a> {
+        DkItem::Points2d(Cow::Borrowed(&p))
     }
 }
 
@@ -164,6 +177,30 @@ impl<'a> DkItem<'a> {
         }
     }
 
+    pub fn as_points_2d(&self) -> Option<&Points2d> {
+        if let DkItem::Points2d(ref p) = *self {
+            Some(p)
+        } else {
+            None
+        }
+    }
+
+    pub fn as_points_2d_mut(&mut self) -> Option<&mut Points2d> {
+        if let DkItem::Points2d(ref mut p) = *self {
+            Some(p.to_mut())
+        } else {
+            None
+        }
+    }
+
+    pub fn into_points_2d(self) -> Option<Points2d> {
+        if let DkItem::Points2d(p) = self {
+            Some(p.into_owned())
+        } else {
+            None
+        }
+    }
+
     pub fn as_cut_1d(&self) -> Option<&Cut1d> {
         match *self {
             DkItem::Cut1dLin(ref c) => Some(c.as_ref()),
@@ -186,6 +223,7 @@ pub enum DkType {
     Run,
     Hist1d,
     Hist2d,
+    Points2d,
     Cut1dLin,
     Cut2dCirc,
     Cut2dRect,
@@ -204,6 +242,7 @@ pub trait ReadDkBin: ReadBytesExt {
             DkType::Run => Ok((name, DkItem::Run(Cow::Owned(self.read_run_bin()?)))),
             DkType::Hist1d => Ok((name, DkItem::Hist1d(Cow::Owned(self.read_hist_1d_bin()?)))),
             DkType::Hist2d => Ok((name, DkItem::Hist2d(Cow::Owned(self.read_hist_2d_bin()?)))),
+            DkType::Points2d => Ok((name, DkItem::Points2d(Cow::Owned(self.read_points_2d_bin()?)))),
             DkType::Cut1dLin => Ok((name, DkItem::Cut1dLin(Cow::Owned(self.read_cut_1d_lin_bin()?)))),
             DkType::Cut2dCirc => Ok((name, DkItem::Cut2dCirc(Cow::Owned(self.read_cut_2d_circ_bin()?)))),
             DkType::Cut2dRect => Ok((name, DkItem::Cut2dRect(Cow::Owned(self.read_cut_2d_rect_bin()?)))),
@@ -218,6 +257,7 @@ pub trait ReadDkBin: ReadBytesExt {
             0 => Ok(DkType::Run),
             1 => Ok(DkType::Hist1d),
             2 => Ok(DkType::Hist2d),
+            12 => Ok(DkType::Points2d),
             32 => Ok(DkType::Cut1dLin),
             40 => Ok(DkType::Cut2dCirc),
             41 => Ok(DkType::Cut2dRect),
@@ -387,6 +427,27 @@ pub trait ReadDkBin: ReadBytesExt {
         }
     }
 
+    /// Reads in binary 2d-points data
+    ///
+    /// # Format
+    /// * `n_points: u32`
+    /// * `points: n_points * (f64, f64)`
+    ///
+    /// # Examples
+    fn read_points_2d_bin(&mut self) -> io::Result<Points2d> {
+        let n_points = self.read_u32::<LittleEndian>()? as usize;
+
+        let mut points = Vec::<(f64, f64)>::with_capacity(n_points);
+        for _ in 0..n_points {
+            let x = self.read_f64::<LittleEndian>()?;
+            let y = self.read_f64::<LittleEndian>()?;
+            points.push((x, y));
+        }
+
+        let p = Points2d::with_points(points);
+        Ok(p)
+    }
+
     /// Reads in binary Cut1dLin
     ///
     /// # Format
@@ -477,6 +538,10 @@ pub trait WriteDkBin: WriteBytesExt {
                 self.write_type_bin(DkType::Hist2d)?;
                 self.write_hist_2d_bin(h)?;
             }
+            DkItem::Points2d(ref p) => {
+                self.write_type_bin(DkType::Points2d)?;
+                self.write_points_2d_bin(p)?;
+            }
             DkItem::Cut1dLin(ref c) => {
                 self.write_type_bin(DkType::Cut1dLin)?;
                 self.write_cut_1d_lin_bin(c)?;
@@ -503,6 +568,7 @@ pub trait WriteDkBin: WriteBytesExt {
             DkType::Run => 0,
             DkType::Hist1d => 1,
             DkType::Hist2d => 2,
+            DkType::Points2d => 12,
             DkType::Cut1dLin => 32,
             DkType::Cut2dCirc => 40,
             DkType::Cut2dRect => 41,
@@ -632,6 +698,26 @@ pub trait WriteDkBin: WriteBytesExt {
                 self.write_u64::<LittleEndian>(*c)?;
             }
         }
+        Ok(())
+    }
+
+    /// Writes out binary 2d-points data
+    ///
+    /// # Format
+    /// * `n_points: u32`
+    /// * `points: n_points * (f64, f64)`
+    ///
+    /// # Examples
+    fn write_points_2d_bin(&mut self, p: &Points2d) -> io::Result<()> {
+        let points = p.points();
+
+        self.write_u32::<LittleEndian>(points.len() as u32)?;
+
+        for p in points {
+            self.write_f64::<LittleEndian>(p.0)?;
+            self.write_f64::<LittleEndian>(p.1)?;
+        }
+
         Ok(())
     }
 
@@ -809,6 +895,13 @@ pub trait WriteDkTxt: Write {
             writeln!(self, "{}\t{}", v.0, v.1)?;
         }
         writeln!(self, "")?;
+        Ok(())
+    }
+
+    fn write_points_2d_txt(&mut self, p: &Points2d) -> io::Result<()> {
+        for point in p.points() {
+            writeln!(self, "{}\t{}", point.0, point.1)?;
+        }
         Ok(())
     }
 }
