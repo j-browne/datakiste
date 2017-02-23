@@ -19,6 +19,78 @@ pub enum DkItem<'a> {
     Cut2dPoly(Cow<'a, Cut2dPoly>),
 }
 
+impl<'a> From<Hist1d> for DkItem<'a> {
+    fn from(h: Hist1d) -> DkItem<'a> {
+        DkItem::Hist1d(Cow::Owned(h))
+    }
+}
+
+impl<'a> From<&'a Hist1d> for DkItem<'a> {
+    fn from(h: &'a Hist1d) -> DkItem<'a> {
+        DkItem::Hist1d(Cow::Borrowed(&h))
+    }
+}
+
+impl<'a> From<Hist2d> for DkItem<'a> {
+    fn from(h: Hist2d) -> DkItem<'a> {
+        DkItem::Hist2d(Cow::Owned(h))
+    }
+}
+
+impl<'a> From<&'a Hist2d> for DkItem<'a> {
+    fn from(h: &'a Hist2d) -> DkItem<'a> {
+        DkItem::Hist2d(Cow::Borrowed(&h))
+    }
+}
+
+impl<'a> From<Cut1dLin> for DkItem<'a> {
+    fn from(c: Cut1dLin) -> DkItem<'a> {
+        DkItem::Cut1dLin(Cow::Owned(c))
+    }
+}
+
+impl<'a> From<&'a Cut1dLin> for DkItem<'a> {
+    fn from(c: &'a Cut1dLin) -> DkItem<'a> {
+        DkItem::Cut1dLin(Cow::Borrowed(&c))
+    }
+}
+
+impl<'a> From<Cut2dCirc> for DkItem<'a> {
+    fn from(c: Cut2dCirc) -> DkItem<'a> {
+        DkItem::Cut2dCirc(Cow::Owned(c))
+    }
+}
+
+impl<'a> From<&'a Cut2dCirc> for DkItem<'a> {
+    fn from(c: &'a Cut2dCirc) -> DkItem<'a> {
+        DkItem::Cut2dCirc(Cow::Borrowed(&c))
+    }
+}
+
+impl<'a> From<Cut2dRect> for DkItem<'a> {
+    fn from(c: Cut2dRect) -> DkItem<'a> {
+        DkItem::Cut2dRect(Cow::Owned(c))
+    }
+}
+
+impl<'a> From<&'a Cut2dRect> for DkItem<'a> {
+    fn from(c: &'a Cut2dRect) -> DkItem<'a> {
+        DkItem::Cut2dRect(Cow::Borrowed(&c))
+    }
+}
+
+impl<'a> From<Cut2dPoly> for DkItem<'a> {
+    fn from(c: Cut2dPoly) -> DkItem<'a> {
+        DkItem::Cut2dPoly(Cow::Owned(c))
+    }
+}
+
+impl<'a> From<&'a Cut2dPoly> for DkItem<'a> {
+    fn from(c: &'a Cut2dPoly) -> DkItem<'a> {
+        DkItem::Cut2dPoly(Cow::Borrowed(&c))
+    }
+}
+
 impl<'a> DkItem<'a> {
     pub fn as_run(&self) -> Option<&Run> {
         if let DkItem::Run(ref r) = *self {
