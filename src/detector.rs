@@ -1,3 +1,4 @@
+//TODO: Display for detid, daqid, etc
 use std::fmt::Debug;
 use DaqId;
 

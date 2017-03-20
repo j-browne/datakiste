@@ -4,7 +4,7 @@ use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use std::borrow::Cow;
 use std::io::{self, Read, Write, BufReader, BufRead};
 use {DaqId, DetId, Run, Event, Hit};
-use hist::{Hist1d, Hist2d, Points2d};
+use hist::{Hist, Hist1d, Hist2d, Points2d};
 use cut::{Cut1d, Cut1dLin, Cut2d, Cut2dCirc, Cut2dRect, Cut2dPoly};
 
 ///
@@ -657,12 +657,11 @@ pub trait WriteDkBin: WriteBytesExt {
     ///
     /// # Examples
     fn write_hist_1d_bin(&mut self, h: &Hist1d) -> io::Result<()> {
-        let axis = h.x_axis();
-        self.write_u32::<LittleEndian>(axis.bins as u32)?;
-        self.write_f64::<LittleEndian>(axis.min)?;
-        self.write_f64::<LittleEndian>(axis.max)?;
-        for bin in 0..axis.bins {
-            let c = h.counts_at_bin(bin).unwrap();
+        let axes = h.axes();
+        self.write_u32::<LittleEndian>(axes.bins as u32)?;
+        self.write_f64::<LittleEndian>(axes.min)?;
+        self.write_f64::<LittleEndian>(axes.max)?;
+        for c in h.counts() {
             self.write_u64::<LittleEndian>(*c)?;
         }
         Ok(())
@@ -681,22 +680,18 @@ pub trait WriteDkBin: WriteBytesExt {
     ///
     /// # Examples
     fn write_hist_2d_bin(&mut self, h: &Hist2d) -> io::Result<()> {
-        let x_axis = h.x_axis();
-        let y_axis = h.y_axis();
+        let axes = h.axes();
 
-        self.write_u32::<LittleEndian>(x_axis.bins as u32)?;
-        self.write_f64::<LittleEndian>(x_axis.min)?;
-        self.write_f64::<LittleEndian>(x_axis.max)?;
+        self.write_u32::<LittleEndian>(axes.0.bins as u32)?;
+        self.write_f64::<LittleEndian>(axes.0.min)?;
+        self.write_f64::<LittleEndian>(axes.0.max)?;
 
-        self.write_u32::<LittleEndian>(y_axis.bins as u32)?;
-        self.write_f64::<LittleEndian>(y_axis.min)?;
-        self.write_f64::<LittleEndian>(y_axis.max)?;
+        self.write_u32::<LittleEndian>(axes.1.bins as u32)?;
+        self.write_f64::<LittleEndian>(axes.1.min)?;
+        self.write_f64::<LittleEndian>(axes.1.max)?;
 
-        for bin_x in 0..x_axis.bins {
-            for bin_y in 0..y_axis.bins {
-                let c = h.counts_at_bin(bin_x, bin_y).unwrap();
-                self.write_u64::<LittleEndian>(*c)?;
-            }
+        for c in h.counts() {
+            self.write_u64::<LittleEndian>(*c)?;
         }
         Ok(())
     }
@@ -851,7 +846,7 @@ pub trait ReadDkTxt: Read {
                 continue;
             }
 
-            h.fill_with_counts(x.unwrap(), y.unwrap(), z.unwrap());
+            h.fill_with_counts((x.unwrap(), y.unwrap()), z.unwrap());
         }
         Ok(())
     }
@@ -863,26 +858,21 @@ pub trait ReadDkTxt: Read {
 /// will get a default implementation of `WriteDkTxt`.
 pub trait WriteDkTxt: Write {
     fn write_hist_1d_txt(&mut self, h: &Hist1d) -> io::Result<()> {
-        let axis = h.x_axis();
-        for bin in 0..axis.bins {
-            let x = axis.val_at_bin_mid(bin);
-            let y = h.counts_at_bin(bin).unwrap();
-            writeln!(self, "{}\t{}", x, y)?;
+        for (idx, c) in h.counts().iter().enumerate() {
+            let val = h.val_at_idx(idx);
+            writeln!(self, "{}\t{}", val, c)?;
         }
         Ok(())
     }
 
     fn write_hist_2d_txt(&mut self, h: &Hist2d) -> io::Result<()> {
-        let x_axis = h.x_axis();
-        let y_axis = h.y_axis();
-        for bin_x in 0..x_axis.bins {
-            for bin_y in 0..y_axis.bins {
-                let x = x_axis.val_at_bin_mid(bin_x);
-                let y = y_axis.val_at_bin_mid(bin_y);
-                let z = h.counts_at_bin(bin_x, bin_y).unwrap();
-                writeln!(self, "{}\t{}\t{}", x, y, z)?;
+        let axes = h.axes();
+        for (idx, c) in h.counts().iter().enumerate() {
+            if (idx != 0) && (idx % axes.1.bins == 0) {
+                writeln!(self, "")?;
             }
-            writeln!(self, "")?;
+            let val = h.val_at_idx(idx);
+            writeln!(self, "{}\t{}\t{}", val.0, val.1, c)?;
         }
         Ok(())
     }
@@ -1114,7 +1104,7 @@ mod tests {
 
     #[test]
     fn read_write_hist_2d_txt() {
-        let hist_2d_txt = "1\t0.5\t2\n1\t1.5\t1\n\n3\t0.5\t0\n3\t1.5\t4\n\n";
+        let hist_2d_txt = "1\t0.5\t2\n1\t1.5\t1\n\n3\t0.5\t0\n3\t1.5\t4\n";
 
         // Read in hist from string
         let bytes = hist_2d_txt.to_string().into_bytes();
