@@ -12,6 +12,7 @@ pub mod cut;
 pub mod detector;
 pub mod hist;
 pub mod io;
+pub mod points;
 
 #[derive(Copy, Debug, Clone, Eq, PartialEq, Hash)]
 pub struct DaqId(pub u16, pub u16, pub u16, pub u16);

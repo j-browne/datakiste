@@ -4,8 +4,9 @@ use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use std::borrow::Cow;
 use std::io::{self, Read, Write, BufReader, BufRead};
 use {DaqId, DetId, Run, Event, Hit};
-use hist::{Hist, Hist1d, Hist2d, Points2d};
 use cut::{Cut1d, Cut1dLin, Cut2d, Cut2dCirc, Cut2dRect, Cut2dPoly};
+use hist::{Hist, Hist1d, Hist2d};
+use points::{Points, Points2d};
 
 ///
 #[derive(Clone, Debug)]
