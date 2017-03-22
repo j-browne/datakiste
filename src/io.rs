@@ -5,7 +5,7 @@ use std::borrow::Cow;
 use std::io::{self, Read, Write, BufReader, BufRead};
 use {DaqId, DetId, Run, Event, Hit};
 use cut::{Cut1d, Cut1dLin, Cut2d, Cut2dCirc, Cut2dRect, Cut2dPoly};
-use hist::{Hist, Hist1d, Hist2d};
+use hist::{Hist, Hist1d, Hist2d, Hist3d, Hist4d};
 use points::{Points, Points2d};
 
 ///
@@ -14,6 +14,8 @@ pub enum DkItem<'a> {
     Run(Cow<'a, Run>),
     Hist1d(Cow<'a, Hist1d>),
     Hist2d(Cow<'a, Hist2d>),
+    Hist3d(Cow<'a, Hist3d>),
+    Hist4d(Cow<'a, Hist4d>),
     Points2d(Cow<'a, Points2d>),
     Cut1dLin(Cow<'a, Cut1dLin>),
     Cut2dCirc(Cow<'a, Cut2dCirc>),
@@ -42,6 +44,30 @@ impl<'a> From<Hist2d> for DkItem<'a> {
 impl<'a> From<&'a Hist2d> for DkItem<'a> {
     fn from(h: &'a Hist2d) -> DkItem<'a> {
         DkItem::Hist2d(Cow::Borrowed(&h))
+    }
+}
+
+impl<'a> From<Hist3d> for DkItem<'a> {
+    fn from(h: Hist3d) -> DkItem<'a> {
+        DkItem::Hist3d(Cow::Owned(h))
+    }
+}
+
+impl<'a> From<&'a Hist3d> for DkItem<'a> {
+    fn from(h: &'a Hist3d) -> DkItem<'a> {
+        DkItem::Hist3d(Cow::Borrowed(&h))
+    }
+}
+
+impl<'a> From<Hist4d> for DkItem<'a> {
+    fn from(h: Hist4d) -> DkItem<'a> {
+        DkItem::Hist4d(Cow::Owned(h))
+    }
+}
+
+impl<'a> From<&'a Hist4d> for DkItem<'a> {
+    fn from(h: &'a Hist4d) -> DkItem<'a> {
+        DkItem::Hist4d(Cow::Borrowed(&h))
     }
 }
 
@@ -224,6 +250,8 @@ pub enum DkType {
     Run,
     Hist1d,
     Hist2d,
+    Hist3d,
+    Hist4d,
     Points2d,
     Cut1dLin,
     Cut2dCirc,
@@ -239,10 +267,12 @@ pub trait ReadDkBin: ReadBytesExt {
     ///
     fn read_dk_bin(&mut self) -> io::Result<(String, DkItem<'static>)> {
         let name = self.read_string_bin()?;
-        match self.read_type_bin()? {
+        match self.read_type_bin()? { //TODO: into()?
             DkType::Run => Ok((name, DkItem::Run(Cow::Owned(self.read_run_bin()?)))),
             DkType::Hist1d => Ok((name, DkItem::Hist1d(Cow::Owned(self.read_hist_1d_bin()?)))),
             DkType::Hist2d => Ok((name, DkItem::Hist2d(Cow::Owned(self.read_hist_2d_bin()?)))),
+            DkType::Hist3d => Ok((name, DkItem::Hist3d(Cow::Owned(self.read_hist_3d_bin()?)))),
+            DkType::Hist4d => Ok((name, DkItem::Hist4d(Cow::Owned(self.read_hist_4d_bin()?)))),
             DkType::Points2d => Ok((name, DkItem::Points2d(Cow::Owned(self.read_points_2d_bin()?)))),
             DkType::Cut1dLin => Ok((name, DkItem::Cut1dLin(Cow::Owned(self.read_cut_1d_lin_bin()?)))),
             DkType::Cut2dCirc => Ok((name, DkItem::Cut2dCirc(Cow::Owned(self.read_cut_2d_circ_bin()?)))),
@@ -377,17 +407,17 @@ pub trait ReadDkBin: ReadBytesExt {
     ///
     /// # Examples
     fn read_hist_1d_bin(&mut self) -> io::Result<Hist1d> {
-        let bins = self.read_u32::<LittleEndian>()? as usize;
-        let min = self.read_f64::<LittleEndian>()?;
-        let max = self.read_f64::<LittleEndian>()?;
+        let bins_0 = self.read_u32::<LittleEndian>()? as usize;
+        let min_0 = self.read_f64::<LittleEndian>()?;
+        let max_0 = self.read_f64::<LittleEndian>()?;
 
-        let mut v = Vec::<u64>::with_capacity(bins);
-        for _ in 0..bins {
+        let mut v = Vec::<u64>::with_capacity(bins_0);
+        for _ in 0..bins_0 {
             let c = self.read_u64::<LittleEndian>()?;
             v.push(c);
         }
 
-        match Hist1d::with_counts(bins, min, max, v) {
+        match Hist1d::with_counts(bins_0, min_0, max_0, v) {
             Some(h) => Ok(h),
             None => Err(io::Error::new(io::ErrorKind::Other, "Error creating Hist1d")),
         }
@@ -406,23 +436,84 @@ pub trait ReadDkBin: ReadBytesExt {
     ///
     /// # Examples
     fn read_hist_2d_bin(&mut self) -> io::Result<Hist2d> {
-        let x_bins = self.read_u32::<LittleEndian>()? as usize;
-        let x_min = self.read_f64::<LittleEndian>()?;
-        let x_max = self.read_f64::<LittleEndian>()?;
+        let bins_0 = self.read_u32::<LittleEndian>()? as usize;
+        let min_0 = self.read_f64::<LittleEndian>()?;
+        let max_0 = self.read_f64::<LittleEndian>()?;
 
-        let y_bins = self.read_u32::<LittleEndian>()? as usize;
-        let y_min = self.read_f64::<LittleEndian>()?;
-        let y_max = self.read_f64::<LittleEndian>()?;
+        let bins_1 = self.read_u32::<LittleEndian>()? as usize;
+        let min_1 = self.read_f64::<LittleEndian>()?;
+        let max_1 = self.read_f64::<LittleEndian>()?;
 
-        let mut v = Vec::<u64>::with_capacity(x_bins * y_bins);
-        for _ in 0..x_bins {
-            for _ in 0..y_bins {
-                let c = self.read_u64::<LittleEndian>()?;
-                v.push(c);
-            }
+        let mut v = Vec::<u64>::with_capacity(bins_0 * bins_1);
+        for _ in 0..(bins_0 * bins_1) {
+            let c = self.read_u64::<LittleEndian>()?;
+            v.push(c);
         }
 
-        match Hist2d::with_counts(x_bins, x_min, x_max, y_bins, y_min, y_max, v) {
+        match Hist2d::with_counts(bins_0, min_0, max_0,
+                                  bins_1, min_1, max_1,
+                                  v) {
+            Some(h) => Ok(h),
+            None => Err(io::Error::new(io::ErrorKind::Other, "Error creating Hist2d")),
+        }
+    }
+
+    fn read_hist_3d_bin(&mut self) -> io::Result<Hist3d> {
+        let bins_0 = self.read_u32::<LittleEndian>()? as usize;
+        let min_0 = self.read_f64::<LittleEndian>()?;
+        let max_0 = self.read_f64::<LittleEndian>()?;
+
+        let bins_1 = self.read_u32::<LittleEndian>()? as usize;
+        let min_1 = self.read_f64::<LittleEndian>()?;
+        let max_1 = self.read_f64::<LittleEndian>()?;
+
+        let bins_2 = self.read_u32::<LittleEndian>()? as usize;
+        let min_2 = self.read_f64::<LittleEndian>()?;
+        let max_2 = self.read_f64::<LittleEndian>()?;
+
+        let mut v = Vec::<u64>::with_capacity(bins_0 * bins_1 * bins_2);
+        for _ in 0..(bins_0 * bins_1 * bins_2) {
+            let c = self.read_u64::<LittleEndian>()?;
+            v.push(c);
+        }
+
+        match Hist3d::with_counts(bins_0, min_0, max_0,
+                                  bins_1, min_1, max_1,
+                                  bins_2, min_2, max_2,
+                                  v) {
+            Some(h) => Ok(h),
+            None => Err(io::Error::new(io::ErrorKind::Other, "Error creating Hist2d")),
+        }
+    }
+
+    fn read_hist_4d_bin(&mut self) -> io::Result<Hist4d> {
+        let bins_0 = self.read_u32::<LittleEndian>()? as usize;
+        let min_0 = self.read_f64::<LittleEndian>()?;
+        let max_0 = self.read_f64::<LittleEndian>()?;
+
+        let bins_1 = self.read_u32::<LittleEndian>()? as usize;
+        let min_1 = self.read_f64::<LittleEndian>()?;
+        let max_1 = self.read_f64::<LittleEndian>()?;
+
+        let bins_2 = self.read_u32::<LittleEndian>()? as usize;
+        let min_2 = self.read_f64::<LittleEndian>()?;
+        let max_2 = self.read_f64::<LittleEndian>()?;
+
+        let bins_3 = self.read_u32::<LittleEndian>()? as usize;
+        let min_3 = self.read_f64::<LittleEndian>()?;
+        let max_3 = self.read_f64::<LittleEndian>()?;
+
+        let mut v = Vec::<u64>::with_capacity(bins_0 * bins_1 * bins_2 * bins_3);
+        for _ in 0..(bins_0 * bins_1 * bins_2 * bins_3) {
+            let c = self.read_u64::<LittleEndian>()?;
+            v.push(c);
+        }
+
+        match Hist4d::with_counts(bins_0, min_0, max_0,
+                                  bins_1, min_1, max_1,
+                                  bins_2, min_2, max_2,
+                                  bins_3, min_3, max_3,
+                                  v) {
             Some(h) => Ok(h),
             None => Err(io::Error::new(io::ErrorKind::Other, "Error creating Hist2d")),
         }
@@ -539,6 +630,14 @@ pub trait WriteDkBin: WriteBytesExt {
                 self.write_type_bin(DkType::Hist2d)?;
                 self.write_hist_2d_bin(h)?;
             }
+            DkItem::Hist3d(ref h) => {
+                self.write_type_bin(DkType::Hist3d)?;
+                self.write_hist_3d_bin(h)?;
+            }
+            DkItem::Hist4d(ref h) => {
+                self.write_type_bin(DkType::Hist4d)?;
+                self.write_hist_4d_bin(h)?;
+            }
             DkItem::Points2d(ref p) => {
                 self.write_type_bin(DkType::Points2d)?;
                 self.write_points_2d_bin(p)?;
@@ -569,6 +668,8 @@ pub trait WriteDkBin: WriteBytesExt {
             DkType::Run => 0,
             DkType::Hist1d => 1,
             DkType::Hist2d => 2,
+            DkType::Hist3d => 3,
+            DkType::Hist4d => 4,
             DkType::Points2d => 12,
             DkType::Cut1dLin => 32,
             DkType::Cut2dCirc => 40,
@@ -690,6 +791,52 @@ pub trait WriteDkBin: WriteBytesExt {
         self.write_u32::<LittleEndian>(axes.1.bins as u32)?;
         self.write_f64::<LittleEndian>(axes.1.min)?;
         self.write_f64::<LittleEndian>(axes.1.max)?;
+
+        for c in h.counts() {
+            self.write_u64::<LittleEndian>(*c)?;
+        }
+        Ok(())
+    }
+
+    fn write_hist_3d_bin(&mut self, h: &Hist3d) -> io::Result<()> {
+        let axes = h.axes();
+
+        self.write_u32::<LittleEndian>(axes.0.bins as u32)?;
+        self.write_f64::<LittleEndian>(axes.0.min)?;
+        self.write_f64::<LittleEndian>(axes.0.max)?;
+
+        self.write_u32::<LittleEndian>(axes.1.bins as u32)?;
+        self.write_f64::<LittleEndian>(axes.1.min)?;
+        self.write_f64::<LittleEndian>(axes.1.max)?;
+
+        self.write_u32::<LittleEndian>(axes.2.bins as u32)?;
+        self.write_f64::<LittleEndian>(axes.2.min)?;
+        self.write_f64::<LittleEndian>(axes.2.max)?;
+
+        for c in h.counts() {
+            self.write_u64::<LittleEndian>(*c)?;
+        }
+        Ok(())
+    }
+    
+    fn write_hist_4d_bin(&mut self, h: &Hist4d) -> io::Result<()> {
+        let axes = h.axes();
+
+        self.write_u32::<LittleEndian>(axes.0.bins as u32)?;
+        self.write_f64::<LittleEndian>(axes.0.min)?;
+        self.write_f64::<LittleEndian>(axes.0.max)?;
+
+        self.write_u32::<LittleEndian>(axes.1.bins as u32)?;
+        self.write_f64::<LittleEndian>(axes.1.min)?;
+        self.write_f64::<LittleEndian>(axes.1.max)?;
+
+        self.write_u32::<LittleEndian>(axes.2.bins as u32)?;
+        self.write_f64::<LittleEndian>(axes.2.min)?;
+        self.write_f64::<LittleEndian>(axes.2.max)?;
+
+        self.write_u32::<LittleEndian>(axes.3.bins as u32)?;
+        self.write_f64::<LittleEndian>(axes.3.min)?;
+        self.write_f64::<LittleEndian>(axes.3.max)?;
 
         for c in h.counts() {
             self.write_u64::<LittleEndian>(*c)?;
@@ -874,6 +1021,22 @@ pub trait WriteDkTxt: Write {
             }
             let val = h.val_at_idx(idx);
             writeln!(self, "{}\t{}\t{}", val.0, val.1, c)?;
+        }
+        Ok(())
+    }
+
+    fn write_hist_3d_txt(&mut self, h: &Hist3d) -> io::Result<()> {
+        for (idx, c) in h.counts().iter().enumerate() {
+            let val = h.val_at_idx(idx);
+            writeln!(self, "{}\t{}\t{}\t{}", val.0, val.1, val.2, c)?;
+        }
+        Ok(())
+    }
+
+    fn write_hist_4d_txt(&mut self, h: &Hist4d) -> io::Result<()> {
+        for (idx, c) in h.counts().iter().enumerate() {
+            let val = h.val_at_idx(idx);
+            writeln!(self, "{}\t{}\t{}\t{}\t{}", val.0, val.1, val.2, val.3, c)?;
         }
         Ok(())
     }
