@@ -477,8 +477,8 @@ impl Hist for Hist3d {
 
     fn bin_at_idx(&self, mut idx: usize) -> Self::Bin {
         let mut bin: Self::Bin = (0, 0, 0);
-        bin.0 = idx / self.axes.1.bins;
-        idx %= self.axes.1.bins;
+        bin.0 = idx / (self.axes.1.bins * self.axes.2.bins);
+        idx %= (self.axes.1.bins * self.axes.2.bins);
         bin.1 = idx / self.axes.2.bins;
         idx %= self.axes.2.bins;
         bin.2 = idx;
@@ -604,10 +604,10 @@ impl Hist for Hist4d {
 
     fn bin_at_idx(&self, mut idx: usize) -> Self::Bin {
         let mut bin: Self::Bin = (0, 0, 0, 0);
-        bin.0 = idx / self.axes.1.bins;
-        idx %= self.axes.1.bins;
-        bin.1 = idx / self.axes.2.bins;
-        idx %= self.axes.2.bins;
+        bin.0 = idx / (self.axes.1.bins * self.axes.2.bins * self.axes.3.bins);
+        idx %= (self.axes.1.bins * self.axes.2.bins * self.axes.3.bins);
+        bin.1 = idx / (self.axes.2.bins * self.axes.3.bins);
+        idx %= (self.axes.2.bins * self.axes.3.bins);
         bin.2 = idx / self.axes.3.bins;
         idx %= self.axes.3.bins;
         bin.3 = idx;
