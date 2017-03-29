@@ -8,6 +8,9 @@ use cut::{Cut1d, Cut1dLin, Cut2d, Cut2dCirc, Cut2dRect, Cut2dPoly};
 use hist::{Hist, Hist1d, Hist2d, Hist3d, Hist4d};
 use points::{Points, Points2d};
 
+const DK_MAGIC_NUMBER: u64 = 0xE2A1_642A_ACB5_C4C9;
+const DK_VERSION: (u64, u64, u64) = (0, 1, 0);
+
 ///
 #[derive(Clone, Debug)]
 pub enum DkItem<'a> {
@@ -21,6 +24,18 @@ pub enum DkItem<'a> {
     Cut2dCirc(Cow<'a, Cut2dCirc>),
     Cut2dRect(Cow<'a, Cut2dRect>),
     Cut2dPoly(Cow<'a, Cut2dPoly>),
+}
+
+impl<'a> From<Run> for DkItem<'a> {
+    fn from(r: Run) -> DkItem<'a> {
+        DkItem::Run(Cow::Owned(r))
+    }
+}
+
+impl<'a> From<&'a Run> for DkItem<'a> {
+    fn from(r: &'a Run) -> DkItem<'a> {
+        DkItem::Run(Cow::Borrowed(&r))
+    }
 }
 
 impl<'a> From<Hist1d> for DkItem<'a> {
@@ -243,9 +258,25 @@ impl<'a> DkItem<'a> {
             _ => None,
         }
     }
+
+    pub fn dk_type(&self) -> DkType {
+        match *self {
+            DkItem::Run(_) => DkType::Run,
+            DkItem::Hist1d(_) => DkType::Hist1d,
+            DkItem::Hist2d(_) => DkType::Hist2d,
+            DkItem::Hist3d(_) => DkType::Hist3d,
+            DkItem::Hist4d(_) => DkType::Hist4d,
+            DkItem::Points2d(_) => DkType::Points2d,
+            DkItem::Cut1dLin(_) => DkType::Cut1dLin,
+            DkItem::Cut2dCirc(_) => DkType::Cut2dCirc,
+            DkItem::Cut2dRect(_) => DkType::Cut2dRect,
+            DkItem::Cut2dPoly(_) => DkType::Cut2dPoly,
+        }
+    }
 }
 
 ///
+#[derive(PartialEq, Eq, Debug, Clone, Copy)]
 pub enum DkType {
     Run,
     Hist1d,
@@ -264,20 +295,95 @@ pub enum DkType {
 /// Anything that implements `byteorder::ReadBytesExt`
 /// will get a default implementation of `ReadDkBin`.
 pub trait ReadDkBin: ReadBytesExt {
+    /// Reads in a whole datakiste file.
     ///
-    fn read_dk_bin(&mut self) -> io::Result<(String, DkItem<'static>)> {
+    /// # Examples
+    /// ```
+    /// use datakiste::io::ReadDkBin;
+    ///
+    /// let mut data: Vec<u8> = vec![];
+    /// data.append(&mut vec![0xC9, 0xC4, 0xB5, 0xAC, 0x2A, 0x64, 0xA1, 0xE2]); // Magic Number
+    /// data.append(&mut vec![0, 0, 0, 0, 0, 0, 0, 0,   // Version Number - Major
+    ///                       1, 0, 0, 0, 0, 0, 0, 0,   // Version Number - Minor
+    ///                       0, 0, 0, 0, 0, 0, 0, 0]); // Version Number - Patch
+    ///
+    /// let items = data.as_slice().read_dk_bin().unwrap();
+    /// assert!(items.is_empty());
+    /// ```
+    ///
+    /// ```
+    /// use datakiste::hist::{Hist, Hist1d};
+    /// use datakiste::io::ReadDkBin;
+    ///
+    /// let mut data: Vec<u8> = vec![];
+    /// data.append(&mut vec![0xC9, 0xC4, 0xB5, 0xAC, 0x2A, 0x64, 0xA1, 0xE2]); // Magic Number
+    /// data.append(&mut vec![0, 0, 0, 0, 0, 0, 0, 0]); // Version Number - Major
+    /// data.append(&mut vec![1, 0, 0, 0, 0, 0, 0, 0]); // Version Number - Minor
+    /// data.append(&mut vec![0, 0, 0, 0, 0, 0, 0, 0]); // Version Number - Patch
+    /// data.append(&mut vec![4]);                      // Item 1 - String - size
+    /// data.append(&mut vec![b'h', b'i', b's', b't']); // Item 1 - String - data
+    /// data.append(&mut vec![1]);                      // Item 1 - DkType
+    /// data.append(&mut vec![1, 0, 0, 0]);             // Item 1 - Hist1d - Axis - Bins
+    /// data.append(&mut vec![0, 0, 0, 0, 0, 0, 0, 0]); // Item 1 - Hist1d - Axis - Min
+    /// data.append(&mut vec![0, 0, 0, 0, 0, 0, 0, 0]); // Item 1 - Hist1d - data - Max
+    /// data.append(&mut vec![0, 0, 0, 0, 0, 0, 0, 0]); // Item 1 - Hist1d - data
+    ///
+    /// let items = data.as_slice().read_dk_bin().unwrap();
+    /// assert_eq!(items.len(), 1);
+    /// let ref i = items[0];
+    /// assert_eq!(i.0, "hist");
+    /// assert_eq!(*i.1.as_hist_1d().unwrap(), Hist1d::new(1, 0.0, 0.0).unwrap());
+    /// ```
+    fn read_dk_bin(&mut self) -> io::Result<Vec<(String, DkItem<'static>)>> {
+        let version = self.read_dk_version_bin()?;
+        if version != DK_VERSION {
+            Err(io::Error::new(io::ErrorKind::Other, "wrong datakiste file version"))
+        } else {
+            let mut v = Vec::new();
+            loop {
+                match self.read_dk_item_bin() {
+                    Ok(i) => {
+                        v.push(i);
+                    }
+                    Err(e) => {
+                        // FIXME: Differentiate between an expected and unexpected EOF
+                        if e.kind() == io::ErrorKind::UnexpectedEof {
+                            break;
+                        } else {
+                            return Err(e);
+                        }
+                    }
+                }
+            }
+            Ok(v)
+        }
+    }
+
+    fn read_dk_version_bin(&mut self) -> io::Result<(u64 , u64, u64)> {
+        let magic = self.read_u64::<LittleEndian>()?;
+
+        if magic != DK_MAGIC_NUMBER {
+            Err(io::Error::new(io::ErrorKind::Other, "tried to read a non-valid datakiste file"))
+        } else {
+            let version = (self.read_u64::<LittleEndian>()?, self.read_u64::<LittleEndian>()?, self.read_u64::<LittleEndian>()?);
+            Ok(version)
+        }
+    }
+
+    ///
+    fn read_dk_item_bin(&mut self) -> io::Result<(String, DkItem<'static>)> {
         let name = self.read_string_bin()?;
-        match self.read_type_bin()? { //TODO: into()?
-            DkType::Run => Ok((name, DkItem::Run(Cow::Owned(self.read_run_bin()?)))),
-            DkType::Hist1d => Ok((name, DkItem::Hist1d(Cow::Owned(self.read_hist_1d_bin()?)))),
-            DkType::Hist2d => Ok((name, DkItem::Hist2d(Cow::Owned(self.read_hist_2d_bin()?)))),
-            DkType::Hist3d => Ok((name, DkItem::Hist3d(Cow::Owned(self.read_hist_3d_bin()?)))),
-            DkType::Hist4d => Ok((name, DkItem::Hist4d(Cow::Owned(self.read_hist_4d_bin()?)))),
-            DkType::Points2d => Ok((name, DkItem::Points2d(Cow::Owned(self.read_points_2d_bin()?)))),
-            DkType::Cut1dLin => Ok((name, DkItem::Cut1dLin(Cow::Owned(self.read_cut_1d_lin_bin()?)))),
-            DkType::Cut2dCirc => Ok((name, DkItem::Cut2dCirc(Cow::Owned(self.read_cut_2d_circ_bin()?)))),
-            DkType::Cut2dRect => Ok((name, DkItem::Cut2dRect(Cow::Owned(self.read_cut_2d_rect_bin()?)))),
-            DkType::Cut2dPoly => Ok((name, DkItem::Cut2dPoly(Cow::Owned(self.read_cut_2d_poly_bin()?)))),
+        match self.read_type_bin()? {
+            DkType::Run => Ok((name, self.read_run_bin()?.into())),
+            DkType::Hist1d => Ok((name, self.read_hist_1d_bin()?.into())),
+            DkType::Hist2d => Ok((name, self.read_hist_2d_bin()?.into())),
+            DkType::Hist3d => Ok((name, self.read_hist_3d_bin()?.into())),
+            DkType::Hist4d => Ok((name, self.read_hist_4d_bin()?.into())),
+            DkType::Points2d => Ok((name, self.read_points_2d_bin()?.into())),
+            DkType::Cut1dLin => Ok((name, self.read_cut_1d_lin_bin()?.into())),
+            DkType::Cut2dCirc => Ok((name, self.read_cut_2d_circ_bin()?.into())),
+            DkType::Cut2dRect => Ok((name, self.read_cut_2d_rect_bin()?.into())),
+            DkType::Cut2dPoly => Ok((name, self.read_cut_2d_poly_bin()?.into())),
         }
     }
 
@@ -614,8 +720,24 @@ pub trait ReadDkBin: ReadBytesExt {
 /// Anything that implements `byteorder::WriteBytesExt`
 /// will get a default implementation of `WriteDkBin`.
 pub trait WriteDkBin: WriteBytesExt {
+    fn write_dk_bin<'a, I: Iterator<Item=(&'a String, &'a DkItem<'a>)> + Sized>(&mut self, it: I) -> io::Result<()> {
+        self.write_dk_version_bin(DK_VERSION)?;
+        for (n, i) in it {
+            self.write_dk_item_bin(&n, &i)?;
+        }
+        Ok(())
+    }
+    
+    fn write_dk_version_bin(&mut self, version: (u64, u64, u64)) -> io::Result<()> {
+        self.write_u64::<LittleEndian>(DK_MAGIC_NUMBER)?;
+        self.write_u64::<LittleEndian>(version.0)?;
+        self.write_u64::<LittleEndian>(version.1)?;
+        self.write_u64::<LittleEndian>(version.2)?;
+        Ok(())
+    }
+
     ///
-    fn write_dk_bin(&mut self, name: &str, item: &DkItem) -> io::Result<()> {
+    fn write_dk_item_bin(&mut self, name: &str, item: &DkItem) -> io::Result<()> {
         self.write_string_bin(name)?;
         match *item {
             DkItem::Run(ref r) => {
