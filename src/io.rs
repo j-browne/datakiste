@@ -31,7 +31,7 @@ impl<'a> From<Hist1d> for DkItem<'a> {
 
 impl<'a> From<&'a Hist1d> for DkItem<'a> {
     fn from(h: &'a Hist1d) -> DkItem<'a> {
-        DkItem::Hist1d(Cow::Borrowed(&h))
+        DkItem::Hist1d(Cow::Borrowed(h))
     }
 }
 
@@ -43,7 +43,7 @@ impl<'a> From<Hist2d> for DkItem<'a> {
 
 impl<'a> From<&'a Hist2d> for DkItem<'a> {
     fn from(h: &'a Hist2d) -> DkItem<'a> {
-        DkItem::Hist2d(Cow::Borrowed(&h))
+        DkItem::Hist2d(Cow::Borrowed(h))
     }
 }
 
@@ -55,7 +55,7 @@ impl<'a> From<Hist3d> for DkItem<'a> {
 
 impl<'a> From<&'a Hist3d> for DkItem<'a> {
     fn from(h: &'a Hist3d) -> DkItem<'a> {
-        DkItem::Hist3d(Cow::Borrowed(&h))
+        DkItem::Hist3d(Cow::Borrowed(h))
     }
 }
 
@@ -67,7 +67,7 @@ impl<'a> From<Hist4d> for DkItem<'a> {
 
 impl<'a> From<&'a Hist4d> for DkItem<'a> {
     fn from(h: &'a Hist4d) -> DkItem<'a> {
-        DkItem::Hist4d(Cow::Borrowed(&h))
+        DkItem::Hist4d(Cow::Borrowed(h))
     }
 }
 
@@ -79,7 +79,7 @@ impl<'a> From<Points2d> for DkItem<'a> {
 
 impl<'a> From<&'a Points2d> for DkItem<'a> {
     fn from(p: &'a Points2d) -> DkItem<'a> {
-        DkItem::Points2d(Cow::Borrowed(&p))
+        DkItem::Points2d(Cow::Borrowed(p))
     }
 }
 
@@ -91,7 +91,7 @@ impl<'a> From<Cut1dLin> for DkItem<'a> {
 
 impl<'a> From<&'a Cut1dLin> for DkItem<'a> {
     fn from(c: &'a Cut1dLin) -> DkItem<'a> {
-        DkItem::Cut1dLin(Cow::Borrowed(&c))
+        DkItem::Cut1dLin(Cow::Borrowed(c))
     }
 }
 
@@ -103,7 +103,7 @@ impl<'a> From<Cut2dCirc> for DkItem<'a> {
 
 impl<'a> From<&'a Cut2dCirc> for DkItem<'a> {
     fn from(c: &'a Cut2dCirc) -> DkItem<'a> {
-        DkItem::Cut2dCirc(Cow::Borrowed(&c))
+        DkItem::Cut2dCirc(Cow::Borrowed(c))
     }
 }
 
@@ -115,7 +115,7 @@ impl<'a> From<Cut2dRect> for DkItem<'a> {
 
 impl<'a> From<&'a Cut2dRect> for DkItem<'a> {
     fn from(c: &'a Cut2dRect) -> DkItem<'a> {
-        DkItem::Cut2dRect(Cow::Borrowed(&c))
+        DkItem::Cut2dRect(Cow::Borrowed(c))
     }
 }
 
@@ -127,7 +127,7 @@ impl<'a> From<Cut2dPoly> for DkItem<'a> {
 
 impl<'a> From<&'a Cut2dPoly> for DkItem<'a> {
     fn from(c: &'a Cut2dPoly) -> DkItem<'a> {
-        DkItem::Cut2dPoly(Cow::Borrowed(&c))
+        DkItem::Cut2dPoly(Cow::Borrowed(c))
     }
 }
 
@@ -310,7 +310,7 @@ pub trait ReadDkBin: ReadBytesExt {
         let mut bytes = vec![0u8; n_bytes];
         let _ = self.read_exact(&mut bytes);
 
-        String::from_utf8(bytes).or(Err(io::Error::new(io::ErrorKind::Other, "Error creating String")))
+        String::from_utf8(bytes).or_else(|_| Err(io::Error::new(io::ErrorKind::Other, "Error creating String")))
     }
 
     /// Reads in binary run data
@@ -697,7 +697,7 @@ pub trait WriteDkBin: WriteBytesExt {
     fn write_run_bin(&mut self, r: &Run) -> io::Result<()> {
         self.write_u32::<LittleEndian>(r.events.len() as u32)?;
         for e in &r.events {
-            self.write_event_bin(&e)?;
+            self.write_event_bin(e)?;
         }
         Ok(())
     }
@@ -712,7 +712,7 @@ pub trait WriteDkBin: WriteBytesExt {
     fn write_event_bin(&mut self, e: &Event) -> io::Result<()> {
         self.write_u16::<LittleEndian>(e.hits.len() as u16)?;
         for h in &e.hits {
-            self.write_hit_bin(&h)?;
+            self.write_hit_bin(h)?;
         }
         Ok(())
     }
