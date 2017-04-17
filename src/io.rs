@@ -6,7 +6,7 @@ use std::io::{self, Read, Write, BufReader, BufRead};
 use {DaqId, DetId, Run, Event, Hit};
 use cut::{Cut1d, Cut1dLin, Cut2d, Cut2dCirc, Cut2dRect, Cut2dPoly};
 use hist::{Hist, Hist1d, Hist2d, Hist3d, Hist4d};
-use points::{Points, Points2d};
+use points::{Points, Points1d, Points2d, Points3d, Points4d};
 
 const DK_MAGIC_NUMBER: u64 = 0xE2A1_642A_ACB5_C4C9;
 const DK_VERSION: (u64, u64, u64) = (0, 1, 0);
@@ -19,7 +19,10 @@ pub enum DkItem<'a> {
     Hist2d(Cow<'a, Hist2d>),
     Hist3d(Cow<'a, Hist3d>),
     Hist4d(Cow<'a, Hist4d>),
+    Points1d(Cow<'a, Points1d>),
     Points2d(Cow<'a, Points2d>),
+    Points3d(Cow<'a, Points3d>),
+    Points4d(Cow<'a, Points4d>),
     Cut1dLin(Cow<'a, Cut1dLin>),
     Cut2dCirc(Cow<'a, Cut2dCirc>),
     Cut2dRect(Cow<'a, Cut2dRect>),
@@ -86,6 +89,18 @@ impl<'a> From<&'a Hist4d> for DkItem<'a> {
     }
 }
 
+impl<'a> From<Points1d> for DkItem<'a> {
+    fn from(p: Points1d) -> DkItem<'a> {
+        DkItem::Points1d(Cow::Owned(p))
+    }
+}
+
+impl<'a> From<&'a Points1d> for DkItem<'a> {
+    fn from(p: &'a Points1d) -> DkItem<'a> {
+        DkItem::Points1d(Cow::Borrowed(p))
+    }
+}
+
 impl<'a> From<Points2d> for DkItem<'a> {
     fn from(p: Points2d) -> DkItem<'a> {
         DkItem::Points2d(Cow::Owned(p))
@@ -95,6 +110,30 @@ impl<'a> From<Points2d> for DkItem<'a> {
 impl<'a> From<&'a Points2d> for DkItem<'a> {
     fn from(p: &'a Points2d) -> DkItem<'a> {
         DkItem::Points2d(Cow::Borrowed(p))
+    }
+}
+
+impl<'a> From<Points3d> for DkItem<'a> {
+    fn from(p: Points3d) -> DkItem<'a> {
+        DkItem::Points3d(Cow::Owned(p))
+    }
+}
+
+impl<'a> From<&'a Points3d> for DkItem<'a> {
+    fn from(p: &'a Points3d) -> DkItem<'a> {
+        DkItem::Points3d(Cow::Borrowed(p))
+    }
+}
+
+impl<'a> From<Points4d> for DkItem<'a> {
+    fn from(p: Points4d) -> DkItem<'a> {
+        DkItem::Points4d(Cow::Owned(p))
+    }
+}
+
+impl<'a> From<&'a Points4d> for DkItem<'a> {
+    fn from(p: &'a Points4d) -> DkItem<'a> {
+        DkItem::Points4d(Cow::Borrowed(p))
     }
 }
 
@@ -219,6 +258,30 @@ impl<'a> DkItem<'a> {
         }
     }
 
+    pub fn as_points_1d(&self) -> Option<&Points1d> {
+        if let DkItem::Points1d(ref p) = *self {
+            Some(p)
+        } else {
+            None
+        }
+    }
+
+    pub fn as_points_1d_mut(&mut self) -> Option<&mut Points1d> {
+        if let DkItem::Points1d(ref mut p) = *self {
+            Some(p.to_mut())
+        } else {
+            None
+        }
+    }
+
+    pub fn into_points_1d(self) -> Option<Points1d> {
+        if let DkItem::Points1d(p) = self {
+            Some(p.into_owned())
+        } else {
+            None
+        }
+    }
+
     pub fn as_points_2d(&self) -> Option<&Points2d> {
         if let DkItem::Points2d(ref p) = *self {
             Some(p)
@@ -237,6 +300,54 @@ impl<'a> DkItem<'a> {
 
     pub fn into_points_2d(self) -> Option<Points2d> {
         if let DkItem::Points2d(p) = self {
+            Some(p.into_owned())
+        } else {
+            None
+        }
+    }
+
+    pub fn as_points_3d(&self) -> Option<&Points3d> {
+        if let DkItem::Points3d(ref p) = *self {
+            Some(p)
+        } else {
+            None
+        }
+    }
+
+    pub fn as_points_3d_mut(&mut self) -> Option<&mut Points3d> {
+        if let DkItem::Points3d(ref mut p) = *self {
+            Some(p.to_mut())
+        } else {
+            None
+        }
+    }
+
+    pub fn into_points_3d(self) -> Option<Points3d> {
+        if let DkItem::Points3d(p) = self {
+            Some(p.into_owned())
+        } else {
+            None
+        }
+    }
+
+    pub fn as_points_4d(&self) -> Option<&Points4d> {
+        if let DkItem::Points4d(ref p) = *self {
+            Some(p)
+        } else {
+            None
+        }
+    }
+
+    pub fn as_points_4d_mut(&mut self) -> Option<&mut Points4d> {
+        if let DkItem::Points4d(ref mut p) = *self {
+            Some(p.to_mut())
+        } else {
+            None
+        }
+    }
+
+    pub fn into_points_4d(self) -> Option<Points4d> {
+        if let DkItem::Points4d(p) = self {
             Some(p.into_owned())
         } else {
             None
@@ -266,7 +377,10 @@ impl<'a> DkItem<'a> {
             DkItem::Hist2d(_) => DkType::Hist2d,
             DkItem::Hist3d(_) => DkType::Hist3d,
             DkItem::Hist4d(_) => DkType::Hist4d,
+            DkItem::Points1d(_) => DkType::Points1d,
             DkItem::Points2d(_) => DkType::Points2d,
+            DkItem::Points3d(_) => DkType::Points3d,
+            DkItem::Points4d(_) => DkType::Points4d,
             DkItem::Cut1dLin(_) => DkType::Cut1dLin,
             DkItem::Cut2dCirc(_) => DkType::Cut2dCirc,
             DkItem::Cut2dRect(_) => DkType::Cut2dRect,
@@ -283,7 +397,10 @@ pub enum DkType {
     Hist2d,
     Hist3d,
     Hist4d,
+    Points1d,
     Points2d,
+    Points3d,
+    Points4d,
     Cut1dLin,
     Cut2dCirc,
     Cut2dRect,
@@ -379,7 +496,10 @@ pub trait ReadDkBin: ReadBytesExt {
             DkType::Hist2d => Ok((name, self.read_hist_2d_bin()?.into())),
             DkType::Hist3d => Ok((name, self.read_hist_3d_bin()?.into())),
             DkType::Hist4d => Ok((name, self.read_hist_4d_bin()?.into())),
+            DkType::Points1d => Ok((name, self.read_points_1d_bin()?.into())),
             DkType::Points2d => Ok((name, self.read_points_2d_bin()?.into())),
+            DkType::Points3d => Ok((name, self.read_points_3d_bin()?.into())),
+            DkType::Points4d => Ok((name, self.read_points_4d_bin()?.into())),
             DkType::Cut1dLin => Ok((name, self.read_cut_1d_lin_bin()?.into())),
             DkType::Cut2dCirc => Ok((name, self.read_cut_2d_circ_bin()?.into())),
             DkType::Cut2dRect => Ok((name, self.read_cut_2d_rect_bin()?.into())),
@@ -394,7 +514,10 @@ pub trait ReadDkBin: ReadBytesExt {
             0 => Ok(DkType::Run),
             1 => Ok(DkType::Hist1d),
             2 => Ok(DkType::Hist2d),
+            11 => Ok(DkType::Points1d),
             12 => Ok(DkType::Points2d),
+            13 => Ok(DkType::Points3d),
+            14 => Ok(DkType::Points4d),
             32 => Ok(DkType::Cut1dLin),
             40 => Ok(DkType::Cut2dCirc),
             41 => Ok(DkType::Cut2dRect),
@@ -625,6 +748,19 @@ pub trait ReadDkBin: ReadBytesExt {
         }
     }
 
+    fn read_points_1d_bin(&mut self) -> io::Result<Points1d> {
+        let n_points = self.read_u32::<LittleEndian>()? as usize;
+
+        let mut points = Vec::<f64>::with_capacity(n_points);
+        for _ in 0..n_points {
+            let v1 = self.read_f64::<LittleEndian>()?;
+            points.push(v1);
+        }
+
+        let p = Points1d::with_points(points);
+        Ok(p)
+    }
+
     /// Reads in binary 2d-points data
     ///
     /// # Format
@@ -637,12 +773,43 @@ pub trait ReadDkBin: ReadBytesExt {
 
         let mut points = Vec::<(f64, f64)>::new();
         for _ in 0..n_points {
-            let x = self.read_f64::<LittleEndian>()?;
-            let y = self.read_f64::<LittleEndian>()?;
-            points.push((x, y));
+            let v1 = self.read_f64::<LittleEndian>()?;
+            let v2 = self.read_f64::<LittleEndian>()?;
+            points.push((v1, v2));
         }
 
         let p = Points2d::with_points(points);
+        Ok(p)
+    }
+
+    fn read_points_3d_bin(&mut self) -> io::Result<Points3d> {
+        let n_points = self.read_u32::<LittleEndian>()? as usize;
+
+        let mut points = Vec::<(f64, f64, f64)>::with_capacity(n_points);
+        for _ in 0..n_points {
+            let v1 = self.read_f64::<LittleEndian>()?;
+            let v2 = self.read_f64::<LittleEndian>()?;
+            let v3 = self.read_f64::<LittleEndian>()?;
+            points.push((v1, v2, v3));
+        }
+
+        let p = Points3d::with_points(points);
+        Ok(p)
+    }
+
+    fn read_points_4d_bin(&mut self) -> io::Result<Points4d> {
+        let n_points = self.read_u32::<LittleEndian>()? as usize;
+
+        let mut points = Vec::<(f64, f64, f64, f64)>::with_capacity(n_points);
+        for _ in 0..n_points {
+            let v1 = self.read_f64::<LittleEndian>()?;
+            let v2 = self.read_f64::<LittleEndian>()?;
+            let v3 = self.read_f64::<LittleEndian>()?;
+            let v4 = self.read_f64::<LittleEndian>()?;
+            points.push((v1, v2, v3, v4));
+        }
+
+        let p = Points4d::with_points(points);
         Ok(p)
     }
 
@@ -760,9 +927,21 @@ pub trait WriteDkBin: WriteBytesExt {
                 self.write_type_bin(DkType::Hist4d)?;
                 self.write_hist_4d_bin(h)?;
             }
+            DkItem::Points1d(ref p) => {
+                self.write_type_bin(DkType::Points1d)?;
+                self.write_points_1d_bin(p)?;
+            }
             DkItem::Points2d(ref p) => {
                 self.write_type_bin(DkType::Points2d)?;
                 self.write_points_2d_bin(p)?;
+            }
+            DkItem::Points3d(ref p) => {
+                self.write_type_bin(DkType::Points3d)?;
+                self.write_points_3d_bin(p)?;
+            }
+            DkItem::Points4d(ref p) => {
+                self.write_type_bin(DkType::Points4d)?;
+                self.write_points_4d_bin(p)?;
             }
             DkItem::Cut1dLin(ref c) => {
                 self.write_type_bin(DkType::Cut1dLin)?;
@@ -792,7 +971,10 @@ pub trait WriteDkBin: WriteBytesExt {
             DkType::Hist2d => 2,
             DkType::Hist3d => 3,
             DkType::Hist4d => 4,
+            DkType::Points1d => 11,
             DkType::Points2d => 12,
+            DkType::Points3d => 13,
+            DkType::Points4d => 14,
             DkType::Cut1dLin => 32,
             DkType::Cut2dCirc => 40,
             DkType::Cut2dRect => 41,
@@ -966,6 +1148,18 @@ pub trait WriteDkBin: WriteBytesExt {
         Ok(())
     }
 
+    fn write_points_1d_bin(&mut self, p: &Points1d) -> io::Result<()> {
+        let points = p.points();
+
+        self.write_u32::<LittleEndian>(points.len() as u32)?;
+
+        for p in points {
+            self.write_f64::<LittleEndian>(*p)?;
+        }
+
+        Ok(())
+    }
+
     /// Writes out binary 2d-points data
     ///
     /// # Format
@@ -981,6 +1175,35 @@ pub trait WriteDkBin: WriteBytesExt {
         for p in points {
             self.write_f64::<LittleEndian>(p.0)?;
             self.write_f64::<LittleEndian>(p.1)?;
+        }
+
+        Ok(())
+    }
+
+    fn write_points_3d_bin(&mut self, p: &Points3d) -> io::Result<()> {
+        let points = p.points();
+
+        self.write_u32::<LittleEndian>(points.len() as u32)?;
+
+        for p in points {
+            self.write_f64::<LittleEndian>(p.0)?;
+            self.write_f64::<LittleEndian>(p.1)?;
+            self.write_f64::<LittleEndian>(p.2)?;
+        }
+
+        Ok(())
+    }
+
+    fn write_points_4d_bin(&mut self, p: &Points4d) -> io::Result<()> {
+        let points = p.points();
+
+        self.write_u32::<LittleEndian>(points.len() as u32)?;
+
+        for p in points {
+            self.write_f64::<LittleEndian>(p.0)?;
+            self.write_f64::<LittleEndian>(p.1)?;
+            self.write_f64::<LittleEndian>(p.2)?;
+            self.write_f64::<LittleEndian>(p.3)?;
         }
 
         Ok(())
@@ -1174,9 +1397,30 @@ pub trait WriteDkTxt: Write {
         Ok(())
     }
 
+    fn write_points_1d_txt(&mut self, p: &Points1d) -> io::Result<()> {
+        for point in p.points() {
+            writeln!(self, "{}", point)?;
+        }
+        Ok(())
+    }
+
     fn write_points_2d_txt(&mut self, p: &Points2d) -> io::Result<()> {
         for point in p.points() {
             writeln!(self, "{}\t{}", point.0, point.1)?;
+        }
+        Ok(())
+    }
+
+    fn write_points_3d_txt(&mut self, p: &Points3d) -> io::Result<()> {
+        for point in p.points() {
+            writeln!(self, "{}\t{}\t{}", point.0, point.1, point.2)?;
+        }
+        Ok(())
+    }
+
+    fn write_points_4d_txt(&mut self, p: &Points4d) -> io::Result<()> {
+        for point in p.points() {
+            writeln!(self, "{}\t{}\t{}\t{}", point.0, point.1, point.2, point.3)?;
         }
         Ok(())
     }
