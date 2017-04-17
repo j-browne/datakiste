@@ -429,7 +429,7 @@ pub trait ReadDkBin: ReadBytesExt {
     fn read_run_bin(&mut self) -> io::Result<Run> {
         let n_events = self.read_u32::<LittleEndian>()? as usize;
 
-        let mut v = Vec::<Event>::with_capacity(n_events);
+        let mut v = Vec::<Event>::new();
         for _ in 0..n_events {
             let e = self.read_event_bin()?;
             v.push(e);
@@ -450,7 +450,7 @@ pub trait ReadDkBin: ReadBytesExt {
         // Currently, it fucks up the rest of the file.
         let n_hits = self.read_u16::<LittleEndian>()? as usize;
 
-        let mut v = Vec::<Hit>::with_capacity(n_hits);
+        let mut v = Vec::<Hit>::new();
         for _ in 0..n_hits {
             let h = self.read_hit_bin()?;
             v.push(h);
@@ -486,7 +486,7 @@ pub trait ReadDkBin: ReadBytesExt {
         let t = self.read_f64::<LittleEndian>()?;
         let tr_size = self.read_u16::<LittleEndian>()? as usize;
 
-        let mut tr = Vec::<u16>::with_capacity(tr_size);
+        let mut tr = Vec::<u16>::new();
         for _ in 0..tr_size {
             let y = self.read_u16::<LittleEndian>()?;
             tr.push(y);
@@ -517,7 +517,7 @@ pub trait ReadDkBin: ReadBytesExt {
         let min_0 = self.read_f64::<LittleEndian>()?;
         let max_0 = self.read_f64::<LittleEndian>()?;
 
-        let mut v = Vec::<u64>::with_capacity(bins_0);
+        let mut v = Vec::<u64>::new();
         for _ in 0..bins_0 {
             let c = self.read_u64::<LittleEndian>()?;
             v.push(c);
@@ -550,7 +550,7 @@ pub trait ReadDkBin: ReadBytesExt {
         let min_1 = self.read_f64::<LittleEndian>()?;
         let max_1 = self.read_f64::<LittleEndian>()?;
 
-        let mut v = Vec::<u64>::with_capacity(bins_0 * bins_1);
+        let mut v = Vec::<u64>::new();
         for _ in 0..(bins_0 * bins_1) {
             let c = self.read_u64::<LittleEndian>()?;
             v.push(c);
@@ -577,7 +577,7 @@ pub trait ReadDkBin: ReadBytesExt {
         let min_2 = self.read_f64::<LittleEndian>()?;
         let max_2 = self.read_f64::<LittleEndian>()?;
 
-        let mut v = Vec::<u64>::with_capacity(bins_0 * bins_1 * bins_2);
+        let mut v = Vec::<u64>::new();
         for _ in 0..(bins_0 * bins_1 * bins_2) {
             let c = self.read_u64::<LittleEndian>()?;
             v.push(c);
@@ -609,7 +609,7 @@ pub trait ReadDkBin: ReadBytesExt {
         let min_3 = self.read_f64::<LittleEndian>()?;
         let max_3 = self.read_f64::<LittleEndian>()?;
 
-        let mut v = Vec::<u64>::with_capacity(bins_0 * bins_1 * bins_2 * bins_3);
+        let mut v = Vec::<u64>::new();
         for _ in 0..(bins_0 * bins_1 * bins_2 * bins_3) {
             let c = self.read_u64::<LittleEndian>()?;
             v.push(c);
@@ -635,7 +635,7 @@ pub trait ReadDkBin: ReadBytesExt {
     fn read_points_2d_bin(&mut self) -> io::Result<Points2d> {
         let n_points = self.read_u32::<LittleEndian>()? as usize;
 
-        let mut points = Vec::<(f64, f64)>::with_capacity(n_points);
+        let mut points = Vec::<(f64, f64)>::new();
         for _ in 0..n_points {
             let x = self.read_f64::<LittleEndian>()?;
             let y = self.read_f64::<LittleEndian>()?;
@@ -704,7 +704,7 @@ pub trait ReadDkBin: ReadBytesExt {
     fn read_cut_2d_poly_bin(&mut self) -> io::Result<Cut2dPoly> {
         let n_verts = self.read_u16::<LittleEndian>()? as usize;
 
-        let mut v = Vec::<(f64, f64)>::with_capacity(n_verts);
+        let mut v = Vec::<(f64, f64)>::new();
         for _ in 0..n_verts {
             let x = self.read_f64::<LittleEndian>()?;
             let y = self.read_f64::<LittleEndian>()?;
@@ -727,7 +727,7 @@ pub trait WriteDkBin: WriteBytesExt {
         }
         Ok(())
     }
-    
+
     fn write_dk_version_bin(&mut self, version: (u64, u64, u64)) -> io::Result<()> {
         self.write_u64::<LittleEndian>(DK_MAGIC_NUMBER)?;
         self.write_u64::<LittleEndian>(version.0)?;
