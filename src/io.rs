@@ -1209,26 +1209,6 @@ pub trait WriteDkBin: WriteBytesExt {
         Ok(())
     }
 
-    /// Writes out binary 2d-points data
-    ///
-    /// # Format
-    /// * `n_points: u32`
-    /// * `points: n_points * (f64, f64)`
-    ///
-    /// # Examples
-    fn write_points_2d_bin(&mut self, p: &Points2d) -> io::Result<()> {
-        let points = p.points();
-
-        self.write_u32::<LittleEndian>(points.len() as u32)?;
-
-        for p in points {
-            self.write_f64::<LittleEndian>(p.0)?;
-            self.write_f64::<LittleEndian>(p.1)?;
-        }
-
-        Ok(())
-    }
-
     /// Writes out binary Cut1dLin
     ///
     /// # Format
