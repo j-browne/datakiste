@@ -1,5 +1,6 @@
 // TODO: Documentation
 // TODO: Create list of what to document
+// FIXME: Some things should return Options
 
 extern crate rand;
 
@@ -75,13 +76,139 @@ impl HistAxis {
     }
 }
 
+pub trait Hist: Sized {
+    type Bin;
+    type Val;
+    type Axes;
+
+    fn axes(&self) -> &Self::Axes;
+    fn bin_at_val(&self, val: Self::Val) -> Self::Bin;
+    fn val_at_bin(&self, idx: Self::Bin) -> Self::Val;
+    fn idx_at_bin(&self, bin: Self::Bin) -> usize;
+    fn bin_at_idx(&self, idx: usize) -> Self::Bin;
+    fn counts(&self) -> &Vec<u64>;
+    fn counts_mut(&mut self) -> &mut Vec<u64>;
+
+    fn fill(&mut self, val: Self::Val) {
+        self.fill_at_val(val);
+    }
+
+    fn fill_with_counts(&mut self, val: Self::Val, counts: u64) {
+        self.fill_at_val_with_counts(val, counts);
+    }
+
+
+    fn fill_at_val(&mut self, val: Self::Val) {
+        self.fill_at_val_with_counts(val, 1u64);
+    }
+
+    fn fill_at_val_with_counts(&mut self, val: Self::Val, counts: u64) {
+        let idx = self.idx_at_val(val);
+        self.fill_at_idx_with_counts(idx, counts);
+    }
+
+
+    fn fill_at_bin(&mut self, bin: Self::Bin) {
+        self.fill_at_bin_with_counts(bin, 1u64);
+    }
+
+    fn fill_at_bin_with_counts(&mut self, bin: Self::Bin, counts: u64) {
+        let idx = self.idx_at_bin(bin);
+        self.fill_at_idx_with_counts(idx, counts);
+    }
+
+
+    fn fill_at_idx(&mut self, idx: usize) {
+        self.fill_at_idx_with_counts(idx, 1u64);
+    }
+
+    fn fill_at_idx_with_counts(&mut self, idx: usize, counts: u64) {
+        self.counts_mut()[idx] += counts;
+    }
+
+
+    fn add(&mut self, other: &Self) {
+        for (o_idx, o_c) in other.counts().iter().enumerate() {
+            let o_val = other.val_at_idx(o_idx);
+            let s_idx = self.idx_at_val(o_val);
+            self.fill_at_idx_with_counts(s_idx, *o_c);
+        }
+    }
+
+
+    fn idx_at_val(&self, val: Self::Val) -> usize {
+        let bin = self.bin_at_val(val);
+        self.idx_at_bin(bin)
+    }
+
+    fn val_at_idx(&self, idx: usize) -> Self::Val {
+        let bin = self.bin_at_idx(idx);
+        self.val_at_bin(bin)
+    }
+
+    fn counts_at_val(&self, val: Self::Val) -> u64 {
+        let idx = self.idx_at_val(val);
+        self.counts_at_idx(idx)
+    }
+
+    fn counts_at_bin(&self, bin: Self::Bin) -> u64 {
+        let idx = self.idx_at_bin(bin);
+        self.counts_at_idx(idx)
+    }
+
+    fn counts_at_idx(&self, idx: usize) -> u64 {
+        self.counts()[idx]
+    }
+
+    fn clear(&mut self) {
+        self.counts_mut().clear();
+    }
+}
+
+
 /// A type that describes a 1D histogram.
 ///
 /// # Examples
 #[derive(PartialEq, Debug, Clone)]
 pub struct Hist1d {
-    x_axis: HistAxis,
+    axes: (HistAxis),
     counts: Vec<u64>,
+}
+
+impl Hist for Hist1d {
+    type Bin = (usize);
+    type Val = (f64);
+    type Axes = (HistAxis);
+
+    fn axes(&self) -> &Self::Axes {
+        &self.axes
+    }
+
+
+    fn bin_at_val(&self, val: Self::Val) -> Self::Bin {
+        (self.axes.bin_at_val(val))
+    }
+
+    fn val_at_bin(&self, bin: Self::Bin) -> Self::Val {
+        (self.axes.val_at_bin_mid(bin))
+    }
+
+
+    fn idx_at_bin(&self, bin: Self::Bin) -> usize {
+        bin
+    }
+
+    fn bin_at_idx(&self, idx: usize) -> Self::Bin {
+        (idx)
+    }
+
+    fn counts(&self) -> &Vec<u64> {
+        &self.counts
+    }
+
+    fn counts_mut(&mut self) -> &mut Vec<u64>{
+        &mut self.counts
+    }
 }
 
 impl Hist1d {
@@ -103,12 +230,12 @@ impl Hist1d {
     /// let mut hist = Hist1d::new(0usize, 0f64, 100f64);
     /// assert_eq!(hist, None);
     /// ```
-    pub fn new(bins: usize, min: f64, max: f64) -> Option<Hist1d> {
-        match HistAxis::new(bins, min, max) {
-            Some(x_axis) => {
-                let counts = vec![0u64; bins];
+    pub fn new(bins_0: usize, min_0: f64, max_0: f64) -> Option<Hist1d> {
+        match HistAxis::new(bins_0, min_0, max_0) {
+            Some(axis_0) => {
+                let counts = vec![0u64; bins_0];
                 Some(Hist1d {
-                    x_axis: x_axis,
+                    axes: (axis_0),
                     counts: counts,
                 })
             }
@@ -135,14 +262,15 @@ impl Hist1d {
     /// let mut hist = Hist1d::with_counts(100usize, 0f64, 100f64, vec![]);
     /// assert_eq!(hist, None);
     /// ```
-    pub fn with_counts(bins: usize, min: f64, max: f64, counts: Vec<u64>) -> Option<Hist1d> {
-        if bins != counts.len() {
+    pub fn with_counts(bins_0: usize, min_0: f64, max_0: f64,
+                       counts: Vec<u64>) -> Option<Hist1d> {
+        if bins_0 != counts.len() {
             None
         } else {
-            match HistAxis::new(bins, min, max) {
-                Some(x_axis) => {
+            match HistAxis::new(bins_0, min_0, max_0) {
+                Some(axis_0) => {
                     Some(Hist1d {
-                        x_axis: x_axis,
+                        axes: (axis_0),
                         counts: counts,
                     })
                 }
@@ -151,98 +279,36 @@ impl Hist1d {
         }
     }
 
-    /// Returns a clone of the x-axis.
-    pub fn x_axis(&self) -> HistAxis {
-        self.x_axis.clone()
-    }
-
-    /// Increment bin with value `val` by `1`.
-    pub fn fill(&mut self, val: f64) {
-        self.fill_at_val(val);
-    }
-
-    /// Increment bin with value `val` by `counts`
-    pub fn fill_with_counts(&mut self, val: f64, counts: u64) {
-        self.fill_at_val_with_counts(val, counts);
-    }
-
-    /// Increment bin with value `val` by `1`.
-    pub fn fill_at_val(&mut self, val: f64) {
-        self.fill_at_val_with_counts(val, 1u64);
-    }
-
-    /// Increment bin with value `val` by `counts`
-    pub fn fill_at_val_with_counts(&mut self, val: f64, counts: u64) {
-        let bin = self.x_axis.bin_at_val(val);
-
-        self.fill_at_bin_with_counts(bin, counts);
-    }
-
-    /// Increment bin with index `bin` by `1`
-    pub fn fill_at_bin(&mut self, bin: usize) {
-        self.fill_at_bin_with_counts(bin, 1u64);
-    }
-
-    /// Increment bin with index `bin` by `counts`
-    pub fn fill_at_bin_with_counts(&mut self, bin: usize, counts: u64) {
-        self.counts[bin] += counts; // FIXME
-    }
-
-    /// Add the counts from `other` to `self`.
-    ///
-    /// This assumes all counts in `other` are located at the middle
-    /// value of the bin.
-    pub fn add(&mut self, other: &Hist1d) {
-        for bin in 0..other.x_axis.bins {
-            // TODO: use iterator?
-            let v = other.x_axis.val_at_bin_mid(bin);
-            let c = other.counts_at_bin(bin).unwrap();
-            self.fill_at_val_with_counts(v, *c);
-        }
-    }
-
     /// Add the counts from `other` to `self`.
     ///
     /// This assigns a uninformly-distributed random value in the
     /// range of `[bin_min, bin_max)` for each count in `other`.
-    pub fn add_fuzz(&mut self, other: &Hist1d) {
+    pub fn add_fuzz(&mut self, other: &Self) {
         let mut rng = rand::thread_rng();
-        for bin in 0..other.x_axis.bins {
-            // TODO: use iterator?
-            let range = Range::new(other.x_axis.val_at_bin_min(bin), other.x_axis.val_at_bin_max(bin));
+        for (o_idx, o_c) in other.counts().iter().enumerate() {
+            let o_bin = self.bin_at_idx(o_idx);
 
-            let c = other.counts_at_bin(bin).unwrap();
-            for _ in 0..(*c) {
-                self.fill_at_val(range.ind_sample(&mut rng));
+            let o_val_min = other.axes.val_at_bin_mid(o_bin);
+            let o_val_max = other.axes.val_at_bin_max(o_bin);
+
+            let range = Range::new(o_val_min, o_val_max);
+
+            for _ in 0..(*o_c) {
+                let s_val = range.ind_sample(&mut rng);
+                let s_idx = self.idx_at_val(s_val);
+
+                self.fill_at_idx(s_idx);
             }
-        }
-    }
-
-    /// Returns the counts in the bin with index `bin`.
-    pub fn counts_at_bin(&self, bin: usize) -> Option<&u64> {
-        self.counts.get(bin)
-    }
-
-    /// Returns the counts in the bin that contains value `val`.
-    pub fn counts_at_val(&self, val: f64) -> Option<&u64> {
-        let bin = self.x_axis.bin_at_val(val);
-        self.counts.get(bin)
-    }
-
-    /// Sets the counts in all bins to `0`.
-    pub fn clear(&mut self) {
-        for c in &mut self.counts {
-            *c = 0u64;
         }
     }
 
     /// Returns the number of counts contained by `cut`.
     pub fn integrate(&self, cut: &Cut1d) -> u64 {
         let mut sum = 0u64;
-        let axis = self.x_axis();
-        for bin in 0..(axis.bins) {
-            if cut.contains(axis.val_at_bin_mid(bin)) {
-                sum += self.counts[bin];
+        for (idx, c) in self.counts().iter().enumerate() {
+            let val = self.val_at_idx(idx);
+            if cut.contains(val) {
+                sum += *c;
             }
         }
         sum
@@ -253,31 +319,65 @@ impl Hist1d {
     }
 }
 
+
 /// A type that describes a 2D histogram.
 ///
 /// # Examples
 #[derive(PartialEq, Debug, Clone)]
 pub struct Hist2d {
-    x_axis: HistAxis,
-    y_axis: HistAxis,
+    axes: (HistAxis, HistAxis),
     counts: Vec<u64>,
 }
 
+impl Hist for Hist2d {
+    type Bin = (usize, usize);
+    type Val = (f64, f64);
+    type Axes = (HistAxis, HistAxis);
+
+    fn axes(&self) -> &Self::Axes {
+        &self.axes
+    }
+
+    fn bin_at_val(&self, val: Self::Val) -> Self::Bin {
+        (self.axes.0.bin_at_val(val.0),
+         self.axes.1.bin_at_val(val.1))
+    }
+
+    fn val_at_bin(&self, bin: Self::Bin) -> Self::Val {
+        (self.axes.0.val_at_bin_mid(bin.0),
+         self.axes.1.val_at_bin_mid(bin.1))
+    }
+
+    fn idx_at_bin(&self, bin: Self::Bin) -> usize {
+        self.axes.1.bins * bin.0 + bin.1
+    }
+
+    fn bin_at_idx(&self, mut idx: usize) -> Self::Bin {
+        let mut bin: Self::Bin = (0, 0);
+        bin.0 = idx / self.axes.1.bins;
+        idx %= self.axes.1.bins;
+        bin.1 = idx;
+        bin
+    }
+
+    fn counts(&self) -> &Vec<u64> {
+        &self.counts
+    }
+
+    fn counts_mut(&mut self) -> &mut Vec<u64>{
+        &mut self.counts
+    }
+}
+
 impl Hist2d {
-    pub fn new(bins_x: usize,
-               min_x: f64,
-               max_x: f64,
-               bins_y: usize,
-               min_y: f64,
-               max_y: f64)
-               -> Option<Hist2d> {
-        match (HistAxis::new(bins_x, min_x, max_x),
-               HistAxis::new(bins_y, min_y, max_y)) {
-            (Some(x_axis), Some(y_axis)) => {
-                let counts = vec![0u64; bins_x * bins_y];
+    pub fn new(bins_0: usize, min_0: f64, max_0: f64,
+               bins_1: usize, min_1: f64, max_1: f64) -> Option<Hist2d> {
+        match (HistAxis::new(bins_0, min_0, max_0),
+               HistAxis::new(bins_1, min_1, max_1)) {
+            (Some(axis_0), Some(axis_1)) => {
+                let counts = vec![0u64; bins_0 * bins_1];
                 Some(Hist2d {
-                    x_axis: x_axis,
-                    y_axis: y_axis,
+                    axes: (axis_0, axis_1),
                     counts: counts,
                 })
             }
@@ -285,23 +385,17 @@ impl Hist2d {
         }
     }
 
-    pub fn with_counts(bins_x: usize,
-                       min_x: f64,
-                       max_x: f64,
-                       bins_y: usize,
-                       min_y: f64,
-                       max_y: f64,
-                       counts: Vec<u64>)
-                       -> Option<Hist2d> {
-        if bins_x * bins_y != counts.len() {
+    pub fn with_counts(bins_0: usize, min_0: f64, max_0: f64,
+                       bins_1: usize, min_1: f64, max_1: f64,
+                       counts: Vec<u64>) -> Option<Hist2d> {
+        if bins_0 * bins_1 != counts.len() {
             None
         } else {
-            match (HistAxis::new(bins_x, min_x, max_x),
-                   HistAxis::new(bins_y, min_y, max_y)) {
-                (Some(x_axis), Some(y_axis)) => {
+            match (HistAxis::new(bins_0, min_0, max_0),
+                   HistAxis::new(bins_1, min_1, max_1)) {
+                (Some(axis_0), Some(axis_1)) => {
                     Some(Hist2d {
-                        x_axis: x_axis,
-                        y_axis: y_axis,
+                        axes: (axis_0, axis_1),
                         counts: counts,
                     })
                 }
@@ -310,126 +404,304 @@ impl Hist2d {
         }
     }
 
-    pub fn x_axis(&self) -> HistAxis {
-        self.x_axis.clone()
-    }
-
-    pub fn y_axis(&self) -> HistAxis {
-        self.y_axis.clone()
-    }
-
-    pub fn fill(&mut self, v_x: f64, v_y: f64) {
-        self.fill_at_val(v_x, v_y);
-    }
-
-    pub fn fill_with_counts(&mut self, v_x: f64, v_y: f64, c: u64) {
-        self.fill_at_val_with_counts(v_x, v_y, c);
-    }
-
-    pub fn fill_at_val(&mut self, v_x: f64, v_y: f64) {
-        self.fill_at_val_with_counts(v_x, v_y, 1u64);
-    }
-
-    pub fn fill_at_val_with_counts(&mut self, v_x: f64, v_y: f64, c: u64) {
-        let bin_x = self.x_axis.bin_at_val(v_x);
-        let bin_y = self.y_axis.bin_at_val(v_y);
-
-        self.fill_at_bin_with_counts(bin_x, bin_y, c);
-    }
-
-    pub fn fill_at_bin(&mut self, bin_x: usize, bin_y: usize) {
-        self.fill_at_bin_with_counts(bin_x, bin_y, 1u64);
-    }
-
-    pub fn fill_at_bin_with_counts(&mut self, bin_x: usize, bin_y: usize, c: u64) {
-        let bin = self.combined_bin(bin_x, bin_y);
-        self.counts[bin] += c; // FIXME
-    }
-
-    pub fn combined_bin(&self, bin_x: usize, bin_y: usize) -> usize {
-        bin_x * self.y_axis.bins + bin_y
-    }
-
-    pub fn add(&mut self, other: &Hist2d) {
-        // TODO: iterator?
-        for bin_x in 0..other.x_axis.bins {
-            for bin_y in 0..other.y_axis.bins {
-                let v_x = other.x_axis.val_at_bin_mid(bin_x);
-                let v_y = other.y_axis.val_at_bin_mid(bin_y);
-                let d = other.counts_at_bin(bin_x, bin_y).unwrap();
-
-                self.fill_at_val_with_counts(v_x, v_y, *d);
-            }
-        }
-    }
-
-    pub fn add_fuzz(&mut self, other: &Hist2d) {
+    /// Add the counts from `other` to `self`.
+    ///
+    /// This assigns a uninformly-distributed random value in the
+    /// range of `[bin_min, bin_max)` for each count in `other`.
+    pub fn add_fuzz(&mut self, other: &Self) {
         let mut rng = rand::thread_rng();
-        // TODO: iterator?
-        for bin_x in 0..other.x_axis.bins {
-            for bin_y in 0..other.y_axis.bins {
-                let range_x = Range::new(other.x_axis.val_at_bin_min(bin_x), other.x_axis.val_at_bin_max(bin_x));
-                let range_y = Range::new(other.y_axis.val_at_bin_min(bin_y), other.y_axis.val_at_bin_max(bin_y));
+        for (o_idx, o_c) in other.counts().iter().enumerate() {
+            let o_bin = self.bin_at_idx(o_idx);
 
-                let d = other.counts_at_bin(bin_x, bin_y).unwrap();
-                for _ in 0..(*d) {
-                    self.fill_at_val(range_x.ind_sample(&mut rng), range_y.ind_sample(&mut rng));
-                }
+            let o_val_min = (other.axes.0.val_at_bin_mid(o_bin.0),
+                             other.axes.1.val_at_bin_mid(o_bin.1));
+            let o_val_max = (other.axes.0.val_at_bin_max(o_bin.0),
+                             other.axes.1.val_at_bin_max(o_bin.1));
+
+            let range = (Range::new(o_val_min.0, o_val_max.0),
+                         Range::new(o_val_min.1, o_val_max.1));
+
+            for _ in 0..(*o_c) {
+                let s_val = (range.0.ind_sample(&mut rng),
+                             range.1.ind_sample(&mut rng));
+                let s_idx = self.idx_at_val(s_val);
+
+                self.fill_at_idx(s_idx);
             }
         }
     }
 
-    pub fn counts_at_bin(&self, bin_x: usize, bin_y: usize) -> Option<&u64> {
-        let bin = self.combined_bin(bin_x, bin_y);
-        self.counts.get(bin)
-    }
-
-    pub fn counts_at_val(&self, val_x: f64, val_y: f64) -> Option<&u64> {
-        let bin_x = self.x_axis.bin_at_val(val_x);
-        let bin_y = self.y_axis.bin_at_val(val_y);
-        let bin = self.combined_bin(bin_x, bin_y);
-        self.counts.get(bin)
-    }
-
-    pub fn clear(&mut self) {
-        for c in &mut self.counts {
-            *c = 0u64;
-        }
-    }
-
+    /// Returns the number of counts contained by `cut`.
     pub fn integrate(&self, cut: &Cut2d) -> u64 {
         let mut sum = 0u64;
-        let x_axis = self.x_axis();
-        let y_axis = self.y_axis();
-        for bin_x in 0..(x_axis.bins) {
-            for bin_y in 0..(y_axis.bins) {
-                if cut.contains(x_axis.val_at_bin_mid(bin_x), y_axis.val_at_bin_mid(bin_y)) {
-                    sum += self.counts[self.combined_bin(bin_x, bin_y)];
-                }
+        for (idx, c) in self.counts().iter().enumerate() {
+            let val = self.val_at_idx(idx);
+            if cut.contains(val.0, val.1) {
+                sum += *c;
             }
         }
         sum
     }
+}
 
-    pub fn apply_cut(&self, cut: &Cut2d) -> Hist2d {
-        let x_axis = self.x_axis();
-        let y_axis = self.y_axis();
 
-        let mut counts = vec![0u64; x_axis.bins * y_axis.bins];
+/// A type that describes a 3D histogram.
+///
+/// # Examples
+#[derive(PartialEq, Debug, Clone)]
+pub struct Hist3d {
+    axes: (HistAxis, HistAxis, HistAxis),
+    counts: Vec<u64>,
+}
 
-        for bin_x in 0..(x_axis.bins) {
-            for bin_y in 0..(y_axis.bins) {
-                if cut.contains(x_axis.val_at_bin_mid(bin_x), y_axis.val_at_bin_mid(bin_y)) {
-                    let bin = self.combined_bin(bin_x, bin_y);
-                    counts[bin] = self.counts[bin];
+impl Hist for Hist3d {
+    type Bin = (usize, usize, usize);
+    type Val = (f64, f64, f64);
+    type Axes = (HistAxis, HistAxis, HistAxis);
+
+    fn axes(&self) -> &Self::Axes {
+        &self.axes
+    }
+
+    fn bin_at_val(&self, val: Self::Val) -> Self::Bin {
+        (self.axes.0.bin_at_val(val.0),
+         self.axes.1.bin_at_val(val.1),
+         self.axes.2.bin_at_val(val.2))
+    }
+
+    fn val_at_bin(&self, bin: Self::Bin) -> Self::Val {
+        (self.axes.0.val_at_bin_mid(bin.0),
+         self.axes.1.val_at_bin_mid(bin.1),
+         self.axes.2.val_at_bin_mid(bin.2))
+    }
+
+    fn idx_at_bin(&self, bin: Self::Bin) -> usize {
+        self.axes.2.bins * (self.axes.1.bins * bin.0 + bin.1) + bin.2
+    }
+
+    fn bin_at_idx(&self, mut idx: usize) -> Self::Bin {
+        let mut bin: Self::Bin = (0, 0, 0);
+        bin.0 = idx / (self.axes.1.bins * self.axes.2.bins);
+        idx %= self.axes.1.bins * self.axes.2.bins;
+        bin.1 = idx / self.axes.2.bins;
+        idx %= self.axes.2.bins;
+        bin.2 = idx;
+        bin
+    }
+
+    fn counts(&self) -> &Vec<u64> {
+        &self.counts
+    }
+
+    fn counts_mut(&mut self) -> &mut Vec<u64>{
+        &mut self.counts
+    }
+}
+
+impl Hist3d {
+    pub fn new(bins_0: usize, min_0: f64, max_0: f64,
+               bins_1: usize, min_1: f64, max_1: f64,
+               bins_2: usize, min_2: f64, max_2: f64) -> Option<Hist3d> {
+        match (HistAxis::new(bins_0, min_0, max_0),
+               HistAxis::new(bins_1, min_1, max_1),
+               HistAxis::new(bins_2, min_2, max_2)) {
+            (Some(axis_0), Some(axis_1), Some(axis_2)) => {
+                let counts = vec![0u64; bins_0 * bins_1 * bins_2];
+                Some(Hist3d {
+                    axes: (axis_0, axis_1, axis_2),
+                    counts: counts,
+                })
+            }
+            _ => None,
+        }
+    }
+
+    pub fn with_counts(bins_0: usize, min_0: f64, max_0: f64,
+                       bins_1: usize, min_1: f64, max_1: f64,
+                       bins_2: usize, min_2: f64, max_2: f64,
+                       counts: Vec<u64>) -> Option<Hist3d> {
+        if bins_0 * bins_1 * bins_2 != counts.len() {
+            None
+        } else {
+            match (HistAxis::new(bins_0, min_0, max_0),
+                   HistAxis::new(bins_1, min_1, max_1),
+                   HistAxis::new(bins_2, min_2, max_2)) {
+                (Some(axis_0), Some(axis_1), Some(axis_2)) => {
+                    Some(Hist3d {
+                        axes: (axis_0, axis_1, axis_2),
+                        counts: counts,
+                    })
                 }
+                _ => None,
             }
         }
+    }
 
-        Hist2d {
-            x_axis: x_axis.clone(),
-            y_axis: y_axis.clone(),
-            counts: counts,
+    /// Add the counts from `other` to `self`.
+    ///
+    /// This assigns a uninformly-distributed random value in the
+    /// range of `[bin_min, bin_max)` for each count in `other`.
+    pub fn add_fuzz(&mut self, other: &Self) {
+        let mut rng = rand::thread_rng();
+        for (o_idx, o_c) in other.counts().iter().enumerate() {
+            let o_bin = self.bin_at_idx(o_idx);
+
+            let o_val_min = (other.axes.0.val_at_bin_mid(o_bin.0),
+                             other.axes.1.val_at_bin_mid(o_bin.1),
+                             other.axes.2.val_at_bin_mid(o_bin.2));
+            let o_val_max = (other.axes.0.val_at_bin_max(o_bin.0),
+                             other.axes.1.val_at_bin_max(o_bin.1),
+                             other.axes.2.val_at_bin_max(o_bin.2));
+
+            let range = (Range::new(o_val_min.0, o_val_max.0),
+                         Range::new(o_val_min.1, o_val_max.1),
+                         Range::new(o_val_min.2, o_val_max.2));
+
+            for _ in 0..(*o_c) {
+                let s_val = (range.0.ind_sample(&mut rng),
+                             range.1.ind_sample(&mut rng),
+                             range.2.ind_sample(&mut rng));
+                let s_idx = self.idx_at_val(s_val);
+
+                self.fill_at_idx(s_idx);
+            }
+        }
+    }
+}
+
+
+/// A type that describes a 4D histogram.
+///
+/// # Examples
+#[derive(PartialEq, Debug, Clone)]
+pub struct Hist4d {
+    axes: (HistAxis, HistAxis, HistAxis, HistAxis),
+    counts: Vec<u64>,
+}
+
+impl Hist for Hist4d {
+    type Bin = (usize, usize, usize, usize);
+    type Val = (f64, f64, f64, f64);
+    type Axes = (HistAxis, HistAxis, HistAxis, HistAxis);
+
+    fn axes(&self) -> &Self::Axes {
+        &self.axes
+    }
+
+    fn bin_at_val(&self, val: Self::Val) -> Self::Bin {
+        (self.axes.0.bin_at_val(val.0),
+         self.axes.1.bin_at_val(val.1),
+         self.axes.2.bin_at_val(val.2),
+         self.axes.3.bin_at_val(val.3))
+    }
+
+    fn val_at_bin(&self, bin: Self::Bin) -> Self::Val {
+        (self.axes.0.val_at_bin_mid(bin.0),
+         self.axes.1.val_at_bin_mid(bin.1),
+         self.axes.2.val_at_bin_mid(bin.2),
+         self.axes.3.val_at_bin_mid(bin.3))
+    }
+
+    fn idx_at_bin(&self, bin: Self::Bin) -> usize {
+        self.axes.3.bins * (self.axes.2.bins * (self.axes.1.bins * bin.0 + bin.1) + bin.2) + bin.3
+    }
+
+    fn bin_at_idx(&self, mut idx: usize) -> Self::Bin {
+        let mut bin: Self::Bin = (0, 0, 0, 0);
+        bin.0 = idx / (self.axes.1.bins * self.axes.2.bins * self.axes.3.bins);
+        idx %= self.axes.1.bins * self.axes.2.bins * self.axes.3.bins;
+        bin.1 = idx / (self.axes.2.bins * self.axes.3.bins);
+        idx %= self.axes.2.bins * self.axes.3.bins;
+        bin.2 = idx / self.axes.3.bins;
+        idx %= self.axes.3.bins;
+        bin.3 = idx;
+        bin
+    }
+
+    fn counts(&self) -> &Vec<u64> {
+        &self.counts
+    }
+
+    fn counts_mut(&mut self) -> &mut Vec<u64>{
+        &mut self.counts
+    }
+}
+
+impl Hist4d {
+    pub fn new(bins_0: usize, min_0: f64, max_0: f64,
+               bins_1: usize, min_1: f64, max_1: f64,
+               bins_2: usize, min_2: f64, max_2: f64,
+               bins_3: usize, min_3: f64, max_3: f64) -> Option<Hist4d> {
+        match (HistAxis::new(bins_0, min_0, max_0),
+               HistAxis::new(bins_1, min_1, max_1),
+               HistAxis::new(bins_2, min_2, max_2),
+               HistAxis::new(bins_3, min_3, max_3)) {
+            (Some(axis_0), Some(axis_1), Some(axis_2), Some(axis_3)) => {
+                let counts = vec![0u64; bins_0 * bins_1 * bins_2 * bins_3];
+                Some(Hist4d {
+                    axes: (axis_0, axis_1, axis_2, axis_3),
+                    counts: counts,
+                })
+            }
+            _ => None,
+        }
+    }
+
+    pub fn with_counts(bins_0: usize, min_0: f64, max_0: f64,
+                       bins_1: usize, min_1: f64, max_1: f64,
+                       bins_2: usize, min_2: f64, max_2: f64,
+                       bins_3: usize, min_3: f64, max_3: f64,
+                       counts: Vec<u64>) -> Option<Hist4d> {
+        if bins_0 * bins_1 * bins_2 * bins_3 != counts.len() {
+            None
+        } else {
+            match (HistAxis::new(bins_0, min_0, max_0),
+                   HistAxis::new(bins_1, min_1, max_1),
+                   HistAxis::new(bins_2, min_2, max_2),
+                   HistAxis::new(bins_3, min_3, max_3)) {
+                (Some(axis_0), Some(axis_1), Some(axis_2), Some(axis_3)) => {
+                    Some(Hist4d {
+                        axes: (axis_0, axis_1, axis_2, axis_3),
+                        counts: counts,
+                    })
+                }
+                _ => None,
+            }
+        }
+    }
+
+    /// Add the counts from `other` to `self`.
+    ///
+    /// This assigns a uninformly-distributed random value in the
+    /// range of `[bin_min, bin_max)` for each count in `other`.
+    pub fn add_fuzz(&mut self, other: &Self) {
+        let mut rng = rand::thread_rng();
+        for (o_idx, o_c) in other.counts().iter().enumerate() {
+            let o_bin = self.bin_at_idx(o_idx);
+
+            let o_val_min = (other.axes.0.val_at_bin_mid(o_bin.0),
+                             other.axes.1.val_at_bin_mid(o_bin.1),
+                             other.axes.2.val_at_bin_mid(o_bin.2),
+                             other.axes.3.val_at_bin_mid(o_bin.3));
+            let o_val_max = (other.axes.0.val_at_bin_max(o_bin.0),
+                             other.axes.1.val_at_bin_max(o_bin.1),
+                             other.axes.2.val_at_bin_max(o_bin.2),
+                             other.axes.3.val_at_bin_max(o_bin.3));
+
+            let range = (Range::new(o_val_min.0, o_val_max.0),
+                         Range::new(o_val_min.1, o_val_max.1),
+                         Range::new(o_val_min.2, o_val_max.2),
+                         Range::new(o_val_min.3, o_val_max.3));
+
+            for _ in 0..(*o_c) {
+                let s_val = (range.0.ind_sample(&mut rng),
+                             range.1.ind_sample(&mut rng),
+                             range.2.ind_sample(&mut rng),
+                             range.3.ind_sample(&mut rng));
+                let s_idx = self.idx_at_val(s_val);
+
+                self.fill_at_idx(s_idx);
+            }
         }
     }
 
@@ -470,6 +742,7 @@ impl Points2d {
     }
 }
 
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -507,12 +780,12 @@ mod tests {
     #[test]
     fn hist_1d_bin_width() {
         let h = Hist1d::new(1usize, 0f64, 100f64).unwrap();
-        let axis = h.x_axis();
-        assert_eq!(axis.bin_width(), 100f64);
+        let axes = h.axes();
+        assert_eq!(axes.bin_width(), 100f64);
 
         let h = Hist1d::new(1usize, 0f64, 0f64).unwrap();
-        let axis = h.x_axis();
-        assert_eq!(axis.bin_width(), 0f64);
+        let axes = h.axes();
+        assert_eq!(axes.bin_width(), 0f64);
 
         let h = Hist1d::new(0usize, 0f64, 0f64);
         assert!(h.is_none());

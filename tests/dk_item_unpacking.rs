@@ -2,7 +2,7 @@ extern crate datakiste;
 
 use std::collections::HashMap;
 use datakiste::io::DkItem;
-use datakiste::hist::Hist1d;
+use datakiste::hist::{Hist, Hist1d};
 use std::borrow::Cow;
 
 #[test]

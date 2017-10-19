@@ -2,7 +2,7 @@ extern crate datakiste;
 extern crate rand;
 
 use datakiste::cut::{Cut1dLin, Cut2dCirc, Cut2dPoly};
-use datakiste::hist::{Hist1d, Hist2d};
+use datakiste::hist::{Hist, Hist1d, Hist2d};
 use rand::distributions::{IndependentSample, Range};
 
 #[test]
@@ -44,7 +44,7 @@ fn integrate_2d_rand() {
         let x = range.ind_sample(&mut rng);
         let y = range.ind_sample(&mut rng);
 
-        h.fill(x, y);
+        h.fill((x, y));
     }
 
     let range = Range::new(2f64, 3f64);
@@ -52,10 +52,10 @@ fn integrate_2d_rand() {
         let x = range.ind_sample(&mut rng);
         let y = range.ind_sample(&mut rng);
 
-        h.fill(x, y);
-        h.fill(x, -y);
-        h.fill(-x, -y);
-        h.fill(-x, y);
+        h.fill((x, y));
+        h.fill((x, -y));
+        h.fill((-x, -y));
+        h.fill((-x, y));
     }
 
     let c1 = Cut2dCirc::new(0f64, 0f64, 1.5f64);
@@ -69,10 +69,10 @@ fn integrate_2d_rand() {
 fn integrate_2d_banana() {
     let mut h = Hist2d::new(1001usize, 0f64, 1f64, 1001usize, 0f64, 1f64).unwrap();
 
-    h.fill_with_counts(0.25, 0.65, 100);
-    h.fill_with_counts(0.7, 0.51, 242);
-    h.fill_with_counts(8., 10., 342);
-    h.fill_with_counts(0., 0., 114);
+    h.fill_with_counts((0.25, 0.65), 100);
+    h.fill_with_counts((0.7, 0.51), 242);
+    h.fill_with_counts((8., 10.), 342);
+    h.fill_with_counts((0., 0.), 114);
 
     let c1 = Cut2dPoly::from_verts(vec![(0.1, 0.75), (0.5, 0.65), (0.75, 0.5), (0.4, 0.5), (0.1, 0.7)]);
 
