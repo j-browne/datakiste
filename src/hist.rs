@@ -292,7 +292,7 @@ impl Hist1d {
             let o_val_max = other.axes.val_at_bin_max(o_bin);
 
             let range = Range::new(o_val_min, o_val_max);
-            
+
             for _ in 0..(*o_c) {
                 let s_val = range.ind_sample(&mut rng);
                 let s_idx = self.idx_at_val(s_val);
@@ -416,7 +416,7 @@ impl Hist2d {
 
             let range = (Range::new(o_val_min.0, o_val_max.0),
                          Range::new(o_val_min.1, o_val_max.1));
-            
+
             for _ in 0..(*o_c) {
                 let s_val = (range.0.ind_sample(&mut rng),
                              range.1.ind_sample(&mut rng));
@@ -688,7 +688,7 @@ impl Hist4d {
                          Range::new(o_val_min.1, o_val_max.1),
                          Range::new(o_val_min.2, o_val_max.2),
                          Range::new(o_val_min.3, o_val_max.3));
-            
+
             for _ in 0..(*o_c) {
                 let s_val = (range.0.ind_sample(&mut rng),
                              range.1.ind_sample(&mut rng),
