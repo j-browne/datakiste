@@ -258,6 +258,30 @@ impl<'a> DkItem<'a> {
         }
     }
 
+    pub fn as_hist_3d(&self) -> Option<&Hist3d> {
+        if let DkItem::Hist3d(ref h) = *self {
+            Some(h)
+        } else {
+            None
+        }
+    }
+
+    pub fn as_hist_3d_mut(&mut self) -> Option<&mut Hist3d> {
+        if let DkItem::Hist3d(ref mut h) = *self {
+            Some(h.to_mut())
+        } else {
+            None
+        }
+    }
+
+    pub fn into_hist_3d(self) -> Option<Hist3d> {
+        if let DkItem::Hist3d(h) = self {
+            Some(h.into_owned())
+        } else {
+            None
+        }
+    }
+
     pub fn as_points_1d(&self) -> Option<&Points1d> {
         if let DkItem::Points1d(ref p) = *self {
             Some(p)
