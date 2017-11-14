@@ -538,6 +538,8 @@ pub trait ReadDkBin: ReadBytesExt {
             0 => Ok(DkType::Run),
             1 => Ok(DkType::Hist1d),
             2 => Ok(DkType::Hist2d),
+            3 => Ok(DkType::Hist3d),
+            4 => Ok(DkType::Hist4d),
             11 => Ok(DkType::Points1d),
             12 => Ok(DkType::Points2d),
             13 => Ok(DkType::Points3d),
