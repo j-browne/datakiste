@@ -1397,7 +1397,11 @@ pub trait WriteDkTxt: Write {
     }
 
     fn write_hist_3d_txt(&mut self, h: &Hist3d) -> io::Result<()> {
+        let axes = h.axes();
         for (idx, c) in h.counts().iter().enumerate() {
+            if (idx != 0) && (idx % axes.1.bins == 0) {
+                writeln!(self, "")?;
+            }
             let val = h.val_at_idx(idx);
             writeln!(self, "{}\t{}\t{}\t{}", val.0, val.1, val.2, c)?;
         }
@@ -1405,7 +1409,11 @@ pub trait WriteDkTxt: Write {
     }
 
     fn write_hist_4d_txt(&mut self, h: &Hist4d) -> io::Result<()> {
+        let axes = h.axes();
         for (idx, c) in h.counts().iter().enumerate() {
+            if (idx != 0) && (idx % axes.1.bins == 0) {
+                writeln!(self, "")?;
+            }
             let val = h.val_at_idx(idx);
             writeln!(self, "{}\t{}\t{}\t{}\t{}", val.0, val.1, val.2, val.3, c)?;
         }
