@@ -62,10 +62,10 @@ impl Event {
 #[derive(Debug, Clone)]
 pub struct Hit {
     pub daqid: DaqId,
-    pub detid: DetId,
+    pub detid: Option<DetId>,
     pub rawval: u16,
-    pub value: u16,
-    pub energy: f64,
+    pub value: Option<u16>,
+    pub energy: Option<f64>,
     pub time: f64,
     pub trace: Vec<u16>,
 }
@@ -74,25 +74,15 @@ impl Hit {
     pub fn apply_det(&mut self,
                      all_dets: &[Box<Detector>],
                      daq_det_map: &HashMap<DaqId, DetId>) {
-        self.detid = match daq_det_map.get(&self.daqid) {
-            Some(x) => *x,
-            None => DetId(0, 0),
-        };
-        let idx = self.detid.0 as usize;
-        self.value = if idx > 0 {
-            all_dets[idx - 1].val_corr(self.detid.1, self.rawval)
-        } else {
-            self.rawval
-        };
-        self.energy = self.value as f64;
+        self.detid = daq_det_map.get(&self.daqid).map(|d| d.clone());
+        self.value = self.detid.map(|d| all_dets[usize::from(d.0) - 1].val_corr(d.1, self.rawval));
+        self.energy = None;
     }
 
     pub fn apply_calib(&mut self, calib: &HashMap<DaqId, (f64, f64)>) {
-        let (o, s) = match calib.get(&self.daqid) {
-            Some(x) => *x,
-            None => (0f64, 1f64),
+        if let (Some((o, s)), Some(v)) = (calib.get(&self.daqid), self.value) {
+            self.energy = Some(s * f64::from(v) + o);
         };
-        self.energy = s * self.energy + o;
     }
 }
 

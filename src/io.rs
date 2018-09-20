@@ -9,7 +9,7 @@ use hist::{Hist, Hist1d, Hist2d, Hist3d, Hist4d};
 use points::{Points, Points1d, Points2d, Points3d, Points4d};
 
 const DK_MAGIC_NUMBER: u64 = 0xE2A1_642A_ACB5_C4C9;
-const DK_VERSION: (u64, u64, u64) = (0, 1, 0);
+const DK_VERSION: (u64, u64, u64) = (0, 2, 0);
 
 ///
 #[derive(Clone, Debug)]
@@ -421,7 +421,7 @@ pub trait ReadDkBin: ReadBytesExt {
     /// let mut data: Vec<u8> = vec![];
     /// data.append(&mut vec![0xC9, 0xC4, 0xB5, 0xAC, 0x2A, 0x64, 0xA1, 0xE2]); // Magic Number
     /// data.append(&mut vec![0, 0, 0, 0, 0, 0, 0, 0,   // Version Number - Major
-    ///                       1, 0, 0, 0, 0, 0, 0, 0,   // Version Number - Minor
+    ///                       2, 0, 0, 0, 0, 0, 0, 0,   // Version Number - Minor
     ///                       0, 0, 0, 0, 0, 0, 0, 0]); // Version Number - Patch
     ///
     /// let items = data.as_slice().read_dk_bin().unwrap();
@@ -435,7 +435,7 @@ pub trait ReadDkBin: ReadBytesExt {
     /// let mut data: Vec<u8> = vec![];
     /// data.append(&mut vec![0xC9, 0xC4, 0xB5, 0xAC, 0x2A, 0x64, 0xA1, 0xE2]); // Magic Number
     /// data.append(&mut vec![0, 0, 0, 0, 0, 0, 0, 0]); // Version Number - Major
-    /// data.append(&mut vec![1, 0, 0, 0, 0, 0, 0, 0]); // Version Number - Minor
+    /// data.append(&mut vec![2, 0, 0, 0, 0, 0, 0, 0]); // Version Number - Minor
     /// data.append(&mut vec![0, 0, 0, 0, 0, 0, 0, 0]); // Version Number - Patch
     /// data.append(&mut vec![4]);                      // Item 1 - String - size
     /// data.append(&mut vec![b'h', b'i', b's', b't']); // Item 1 - String - data
@@ -586,10 +586,10 @@ pub trait ReadDkBin: ReadBytesExt {
     ///
     /// # Format
     /// * `daqid: (u16, u16, u16, u16)`
-    /// * `detid: (u16, u16)`
+    /// * `detid: Option((u16, u16))`
     /// * `rawval: u16`
-    /// * `value: u16`
-    /// * `energy: f64`
+    /// * `value: Option(u16)`
+    /// * `energy: Option(f64)`
     /// * `time: f64`
     /// * `trace:`
     ///     * `tr_size: u16`
@@ -601,11 +601,11 @@ pub trait ReadDkBin: ReadBytesExt {
         let cr = self.read_u16::<LittleEndian>()?;
         let sl = self.read_u16::<LittleEndian>()?;
         let ch = self.read_u16::<LittleEndian>()?;
-        let di = self.read_u16::<LittleEndian>()?;
-        let dc = self.read_u16::<LittleEndian>()?;
+        let di = self.read_u15_opt()?;
+        let dc = self.read_u15_opt()?;
         let rv = self.read_u16::<LittleEndian>()?;
-        let val = self.read_u16::<LittleEndian>()?;
-        let en = self.read_f64::<LittleEndian>()?;
+        let val = self.read_u15_opt()?;
+        let en = self.read_f64_opt()?;
         let t = self.read_f64::<LittleEndian>()?;
         let tr_size = self.read_u16::<LittleEndian>()? as usize;
 
@@ -615,14 +615,50 @@ pub trait ReadDkBin: ReadBytesExt {
             tr.push(y);
         }
 
+        let detid = match (di, dc) {
+            (Some(di), Some(dc)) => Some(DetId(di, dc)),
+            _ => None,
+        };
+
         Ok(Hit {
             daqid: DaqId(so, cr, sl, ch),
-            detid: DetId(di, dc),
+            detid,
             rawval: rv,
             value: val,
             energy: en,
             time: t,
             trace: tr,
+        })
+    }
+
+    /// Reads in binary optional u15
+    ///
+    /// # Format
+    /// if the highest bit is flagged, None
+    /// else, Some(u16)
+    ///
+    /// # Examples
+    fn read_u15_opt(&mut self) -> io::Result<Option<u16>> {
+        let v = self.read_u16::<LittleEndian>()?;
+        Ok(match v & 0x8000 {
+            0 => Some(v),
+            _ => None,
+        })
+    }
+
+    /// Reads in binary optional f64
+    ///
+    /// # Format
+    /// if v is NaN
+    /// else, Some(u16)
+    ///
+    /// # Examples
+    fn read_f64_opt(&mut self) -> io::Result<Option<f64>> {
+        let v = self.read_f64::<LittleEndian>()?;
+        Ok(if v.is_nan() {
+            None
+        } else {
+            Some(v)
         })
     }
 
@@ -1040,16 +1076,57 @@ pub trait WriteDkBin: WriteBytesExt {
         self.write_u16::<LittleEndian>(h.daqid.1)?;
         self.write_u16::<LittleEndian>(h.daqid.2)?;
         self.write_u16::<LittleEndian>(h.daqid.3)?;
-        self.write_u16::<LittleEndian>(h.detid.0)?;
-        self.write_u16::<LittleEndian>(h.detid.1)?;
+        self.write_detid_bin(h.detid)?;
         self.write_u16::<LittleEndian>(h.rawval)?;
-        self.write_u16::<LittleEndian>(h.value)?;
-        self.write_f64::<LittleEndian>(h.energy)?;
+        self.write_u15_opt(h.value)?;
+        self.write_f64_opt(h.energy)?;
         self.write_f64::<LittleEndian>(h.time)?;
         self.write_u16::<LittleEndian>(h.trace.len() as u16)?;
         for i in &h.trace {
             self.write_u16::<LittleEndian>(*i)?;
         }
+        Ok(())
+    }
+
+    /// Writes out an optional DetId
+    ///
+    /// # Format
+    /// if None, write out (0x8000, 0x8000)
+    /// else, write out (u16, u16)
+    ///
+    /// # Examples
+    fn write_detid_bin(&mut self, v: Option<DetId>) -> io::Result<()> {
+        if let Some(DetId(di, dc)) = v {
+            self.write_u16::<LittleEndian>(di)?;
+            self.write_u16::<LittleEndian>(dc)?;
+        } else {
+            self.write_u16::<LittleEndian>(0x8000)?;
+            self.write_u16::<LittleEndian>(0x8000)?;
+        }
+        Ok(())
+    }
+
+    /// Writes out an optional u15
+    ///
+    /// # Format
+    /// if None, write out 0x8000
+    /// else, write out u16
+    ///
+    /// # Examples
+    fn write_u15_opt(&mut self, v: Option<u16>) -> io::Result<()> {
+        self.write_u16::<LittleEndian>(v.unwrap_or(0x8000))?;
+        Ok(())
+    }
+
+    /// Writes out an optional f64
+    ///
+    /// # Format
+    /// if None, write out NaN
+    /// else, write out f64
+    ///
+    /// # Examples
+    fn write_f64_opt(&mut self, v: Option<f64>) -> io::Result<()> {
+        self.write_f64::<LittleEndian>(v.unwrap_or(::std::f64::NAN))?;
         Ok(())
     }
 
@@ -1122,7 +1199,7 @@ pub trait WriteDkBin: WriteBytesExt {
         }
         Ok(())
     }
-    
+
     fn write_hist_4d_bin(&mut self, h: &Hist4d) -> io::Result<()> {
         let axes = h.axes();
 
@@ -1462,11 +1539,10 @@ mod tests {
         assert_eq!(h.daqid.1, 0);
         assert_eq!(h.daqid.2, 7);
         assert_eq!(h.daqid.3, 0);
-        assert_eq!(h.detid.0, 40);
-        assert_eq!(h.detid.1, 0);
+        assert_eq!(h.detid, Some(DetId(40, 0)));
         assert_eq!(h.rawval, 9602);
-        assert_eq!(h.value, 9602);
-        assert_f64_eq!(h.energy, 9602.0);
+        assert_eq!(h.value, Some(9602));
+        assert_f64_eq!(h.energy.unwrap(), 9602.0);
         assert_f64_eq!(h.time, 214150.0);
         assert_eq!(h.trace, []);
 
@@ -1499,11 +1575,10 @@ mod tests {
         assert_eq!(h.daqid.1, 0);
         assert_eq!(h.daqid.2, 7);
         assert_eq!(h.daqid.3, 0);
-        assert_eq!(h.detid.0, 40);
-        assert_eq!(h.detid.1, 0);
+        assert_eq!(h.detid, Some(DetId(40, 0)));
         assert_eq!(h.rawval, 9602);
-        assert_eq!(h.value, 9602);
-        assert_f64_eq!(h.energy, 9602.0);
+        assert_eq!(h.value, Some(9602));
+        assert_f64_eq!(h.energy.unwrap(), 9602.0);
         assert_f64_eq!(h.time, 214150.0);
         assert_eq!(h.trace, [0u16, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
 
