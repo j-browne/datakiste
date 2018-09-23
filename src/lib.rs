@@ -3,16 +3,21 @@ extern crate byteorder;
 
 #[macro_use]pub mod logging;
 
+pub use calibration::{Calibration, get_cal_map};
 use detector::*;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{Write, BufReader, BufRead};
+use val_unc::ValUnc;
 
+pub mod calibration;
 pub mod cut;
 pub mod detector;
+pub mod error;
 pub mod hist;
 pub mod io;
 pub mod points;
+pub mod val_unc;
 
 #[derive(Copy, Debug, Clone, Eq, PartialEq, Hash)]
 pub struct DaqId(pub u16, pub u16, pub u16, pub u16);
@@ -49,7 +54,7 @@ impl Event {
         }
     }
 
-    pub fn apply_calib(&mut self, calib: &HashMap<DaqId, (f64, f64)>) {
+    pub fn apply_calib(&mut self, calib: &HashMap<DaqId, Calibration>) {
         for ref mut h in &mut self.hits {
             h.apply_calib(calib);
         }
@@ -65,7 +70,7 @@ pub struct Hit {
     pub detid: Option<DetId>,
     pub rawval: u16,
     pub value: Option<u16>,
-    pub energy: Option<f64>,
+    pub energy: Option<ValUnc>,
     pub time: f64,
     pub trace: Vec<u16>,
 }
@@ -79,10 +84,12 @@ impl Hit {
         self.energy = None;
     }
 
-    pub fn apply_calib(&mut self, calib: &HashMap<DaqId, (f64, f64)>) {
-        if let (Some((o, s)), Some(v)) = (calib.get(&self.daqid), self.value) {
-            self.energy = Some(s * f64::from(v) + o);
-        };
+    pub fn apply_calib(&mut self, calib: &HashMap<DaqId, Calibration>) {
+        self.energy = if let (Some(value), Some(cal)) = (self.value, calib.get(&self.daqid)) {
+            Some(cal.apply(f64::from(value)))
+        } else {
+            None
+        }
     }
 }
 
@@ -165,38 +172,4 @@ fn line_to_det(line: &str) -> Option<Box<Detector>> {
             }
         }
     }
-}
-
-
-// calibrate stuff
-//
-pub fn get_cal_map(file: File) -> HashMap<DaqId, (f64, f64)> {
-    // FIXME: &mut ?
-    let mut map = HashMap::<DaqId, (f64, f64)>::new();
-    // Read in the calibration file
-    let r = BufReader::new(file);
-    for l in r.lines() {
-        let l = l.unwrap();
-        let x: Vec<_> = l.split_whitespace().collect();
-        if x.len() < 6 {
-            warn!("Error parsing a line in the calib file."); //FIXME
-        } else {
-            // FIXME: handle unwraps
-            let id = DaqId(x[0].parse::<u16>().unwrap(),
-                           x[1].parse::<u16>().unwrap(),
-                           x[2].parse::<u16>().unwrap(),
-                           x[3].parse::<u16>().unwrap());
-            let o = x[4].parse::<f64>().unwrap();
-            let s = x[5].parse::<f64>().unwrap();
-
-            let v = map.insert(id, (o, s));
-            if v.is_some() {
-                let v = v.unwrap();
-                warn!("There is already a calibration for Daq ID ({}, {}, {}, {}).\
-                       \n    Old: ({}, {})\n    New: ({}, {})",
-                       id.0, id.1, id.2, id.3, v.0, v.1, o, s);
-            }
-        }
-    }
-    map
 }

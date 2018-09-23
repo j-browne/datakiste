@@ -7,6 +7,7 @@ use {DaqId, DetId, Run, Event, Hit};
 use cut::{Cut1d, Cut1dLin, Cut2d, Cut2dCirc, Cut2dRect, Cut2dPoly};
 use hist::{Hist, Hist1d, Hist2d, Hist3d, Hist4d};
 use points::{Points, Points1d, Points2d, Points3d, Points4d};
+use super::val_unc::ValUnc;
 
 const DK_MAGIC_NUMBER: u64 = 0xE2A1_642A_ACB5_C4C9;
 const DK_VERSION: (u64, u64, u64) = (0, 2, 0);
@@ -589,7 +590,7 @@ pub trait ReadDkBin: ReadBytesExt {
     /// * `detid: Option((u16, u16))`
     /// * `rawval: u16`
     /// * `value: Option(u16)`
-    /// * `energy: Option(f64)`
+    /// * `energy: Option(f64, f64)`
     /// * `time: f64`
     /// * `trace:`
     ///     * `tr_size: u16`
@@ -601,11 +602,10 @@ pub trait ReadDkBin: ReadBytesExt {
         let cr = self.read_u16::<LittleEndian>()?;
         let sl = self.read_u16::<LittleEndian>()?;
         let ch = self.read_u16::<LittleEndian>()?;
-        let di = self.read_u15_opt()?;
-        let dc = self.read_u15_opt()?;
+        let detid = self.read_detid_opt()?;
         let rv = self.read_u16::<LittleEndian>()?;
         let val = self.read_u15_opt()?;
-        let en = self.read_f64_opt()?;
+        let en = self.read_val_unc_opt()?;
         let t = self.read_f64::<LittleEndian>()?;
         let tr_size = self.read_u16::<LittleEndian>()? as usize;
 
@@ -615,11 +615,6 @@ pub trait ReadDkBin: ReadBytesExt {
             tr.push(y);
         }
 
-        let detid = match (di, dc) {
-            (Some(di), Some(dc)) => Some(DetId(di, dc)),
-            _ => None,
-        };
-
         Ok(Hit {
             daqid: DaqId(so, cr, sl, ch),
             detid,
@@ -628,6 +623,40 @@ pub trait ReadDkBin: ReadBytesExt {
             energy: en,
             time: t,
             trace: tr,
+        })
+    }
+
+    /// Reads in binary optional `DetId`
+    ///
+    /// # Format
+    /// if either `di` or `dc` is `None`, return `None`
+    /// else, `Some(DetId)`
+    ///
+    /// # Examples
+    fn read_detid_opt(&mut self) -> io::Result<Option<DetId>> {
+        let di = self.read_u15_opt()?;
+        let dc = self.read_u15_opt()?;
+
+        Ok(match (di, dc) {
+            (Some(di), Some(dc)) => Some(DetId(di, dc)),
+            _ => None,
+        })
+    }
+
+    /// Reads in binary optional `ValUnc`
+    ///
+    /// # Format
+    /// if either `val` or `unc` is `None`, return `None`
+    /// else, `Some(ValUnc)`
+    ///
+    /// # Examples
+    fn read_val_unc_opt(&mut self) -> io::Result<Option<ValUnc>> {
+        let val = self.read_f64_opt()?;
+        let unc = self.read_f64_opt()?;
+
+        Ok(match (val, unc) {
+            (Some(val), Some(unc)) => Some(ValUnc{val, unc}),
+            _ => None,
         })
     }
 
@@ -1064,7 +1093,7 @@ pub trait WriteDkBin: WriteBytesExt {
     /// * `detid: (u16, u16)`
     /// * `rawval: u16`
     /// * `value: u16`
-    /// * `energy: f64`
+    /// * `energy: (f64, f64)`
     /// * `time: f64`
     /// * `trace:`
     ///     * `tr_size: u16`
@@ -1076,10 +1105,10 @@ pub trait WriteDkBin: WriteBytesExt {
         self.write_u16::<LittleEndian>(h.daqid.1)?;
         self.write_u16::<LittleEndian>(h.daqid.2)?;
         self.write_u16::<LittleEndian>(h.daqid.3)?;
-        self.write_detid_bin(h.detid)?;
+        self.write_detid_bin(&h.detid)?;
         self.write_u16::<LittleEndian>(h.rawval)?;
-        self.write_u15_opt(h.value)?;
-        self.write_f64_opt(h.energy)?;
+        self.write_u15_opt(&h.value)?;
+        self.write_val_unc_bin(&h.energy)?;
         self.write_f64::<LittleEndian>(h.time)?;
         self.write_u16::<LittleEndian>(h.trace.len() as u16)?;
         for i in &h.trace {
@@ -1088,21 +1117,43 @@ pub trait WriteDkBin: WriteBytesExt {
         Ok(())
     }
 
-    /// Writes out an optional DetId
+    /// Writes out an optional `DetId`
     ///
     /// # Format
-    /// if None, write out (0x8000, 0x8000)
-    /// else, write out (u16, u16)
+    /// if either are `None`, write out `(None, None)`
+    /// else, write out `(u15_opt, u15_opt)`
     ///
     /// # Examples
-    fn write_detid_bin(&mut self, v: Option<DetId>) -> io::Result<()> {
-        if let Some(DetId(di, dc)) = v {
-            self.write_u16::<LittleEndian>(di)?;
-            self.write_u16::<LittleEndian>(dc)?;
+    fn write_detid_bin(&mut self, v: &Option<DetId>) -> io::Result<()> {
+        let (di_opt, dc_opt) = if let Some(DetId(di, dc)) = v {
+            (Some(*di), Some(*dc))
         } else {
-            self.write_u16::<LittleEndian>(0x8000)?;
-            self.write_u16::<LittleEndian>(0x8000)?;
-        }
+            (None, None)
+        };
+
+        self.write_u15_opt(&di_opt)?;
+        self.write_u15_opt(&dc_opt)?;
+
+        Ok(())
+    }
+
+    /// Writes out an optional `ValUnc`
+    ///
+    /// # Format
+    /// if either are `None`, write out `(None, None)`
+    /// else, write out `(f64_opt, f64_opt)`
+    ///
+    /// # Examples
+    fn write_val_unc_bin(&mut self, v: &Option<ValUnc>) -> io::Result<()> {
+        let (val_opt, unc_opt) = if let Some(ValUnc{val, unc}) = v {
+            (Some(*val), Some(*unc))
+        } else {
+            (None, None)
+        };
+
+        self.write_f64_opt(&val_opt)?;
+        self.write_f64_opt(&unc_opt)?;
+
         Ok(())
     }
 
@@ -1113,7 +1164,7 @@ pub trait WriteDkBin: WriteBytesExt {
     /// else, write out u16
     ///
     /// # Examples
-    fn write_u15_opt(&mut self, v: Option<u16>) -> io::Result<()> {
+    fn write_u15_opt(&mut self, v: &Option<u16>) -> io::Result<()> {
         self.write_u16::<LittleEndian>(v.unwrap_or(0x8000))?;
         Ok(())
     }
@@ -1125,7 +1176,7 @@ pub trait WriteDkBin: WriteBytesExt {
     /// else, write out f64
     ///
     /// # Examples
-    fn write_f64_opt(&mut self, v: Option<f64>) -> io::Result<()> {
+    fn write_f64_opt(&mut self, v: &Option<f64>) -> io::Result<()> {
         self.write_f64::<LittleEndian>(v.unwrap_or(::std::f64::NAN))?;
         Ok(())
     }
@@ -1519,16 +1570,26 @@ mod tests {
             let (a, b) = ($a, $b) as (f64, f64);
             // this allows for the last bit of mantissa to be different
             let epsilon = f64::max(a, b)/f64::powi(2.0, 51);
-            assert!((a - b).abs() < epsilon);
+            println!("{} - {} = {}", a, b, a - b);
+            println!("{} < {}",  (a - b).abs(), epsilon);
+            assert!((a - b).abs() <= epsilon);
         })
     }
 
     #[test]
-    fn read_write_hit() {
-        let hit_bytes = &[1u8, 0, 0, 0, 7, 0, 0, 0, 40, 0,
-                          0, 0, 130, 37, 130, 37, 0, 0, 0,
-                          0, 0, 193, 194, 64, 0, 0, 0, 0,
-                          48, 36, 10, 65, 0, 0] as &[u8];
+    fn read_write_hit_detid_none() {
+        let hit_bytes = &[1u8, 0,
+                          0, 0,
+                          7, 0,
+                          0, 0,
+                          0, 128,
+                          0, 128,
+                          130, 37,
+                          130, 37,
+                          0, 0, 0, 0, 0, 193, 194, 64,
+                          0, 0, 0, 0, 0, 0, 0, 0,
+                          0, 0, 0, 0, 48, 36, 10, 65,
+                          0, 0] as &[u8];
 
         // Read in hit from byte array
         let mut bytes = hit_bytes;
@@ -1539,10 +1600,320 @@ mod tests {
         assert_eq!(h.daqid.1, 0);
         assert_eq!(h.daqid.2, 7);
         assert_eq!(h.daqid.3, 0);
-        assert_eq!(h.detid, Some(DetId(40, 0)));
+        assert!(h.detid.is_none());
         assert_eq!(h.rawval, 9602);
-        assert_eq!(h.value, Some(9602));
-        assert_f64_eq!(h.energy.unwrap(), 9602.0);
+        assert!(h.value.is_some());
+        let value = h.value.unwrap();
+        assert_eq!(value, 9602);
+        assert!(h.energy.is_some());
+        let ValUnc{val, unc} = h.energy.as_ref().unwrap();
+        assert_f64_eq!(*val, 9602.0);
+        assert_f64_eq!(*unc, 0.0);
+        assert_f64_eq!(h.time, 214150.0);
+        assert_eq!(h.trace, []);
+
+        // Make sure there's nothing left over in `bytes`
+        assert_eq!(bytes, []);
+
+        // Write the hit out to a byte array
+        let mut v = Vec::<u8>::new();
+        let _ = v.write_hit_bin(&h);
+
+        // Make sure it was written out correctly
+        assert_eq!(v, hit_bytes);
+    }
+
+    #[test]
+    fn read_hit_di_none() {
+        let hit_bytes = &[1u8, 0,
+                          0, 0,
+                          7, 0,
+                          0, 0,
+                          40, 128,
+                          0, 0,
+                          130, 37,
+                          130, 37,
+                          0, 0, 0, 0, 0, 193, 194, 64,
+                          0, 0, 0, 0, 0, 0, 0, 0,
+                          0, 0, 0, 0, 48, 36, 10, 65,
+                          0, 0] as &[u8];
+
+        // Read in hit from byte array
+        let mut bytes = hit_bytes;
+        let h = bytes.read_hit_bin().unwrap();
+
+        // Make sure it was read correctly
+        assert_eq!(h.daqid.0, 1);
+        assert_eq!(h.daqid.1, 0);
+        assert_eq!(h.daqid.2, 7);
+        assert_eq!(h.daqid.3, 0);
+        assert!(h.detid.is_none());
+        assert_eq!(h.rawval, 9602);
+        assert!(h.value.is_some());
+        let value = h.value.unwrap();
+        assert_eq!(value, 9602);
+        assert!(h.energy.is_some());
+        let ValUnc{val, unc} = h.energy.as_ref().unwrap();
+        assert_f64_eq!(*val, 9602.0);
+        assert_f64_eq!(*unc, 0.0);
+        assert_f64_eq!(h.time, 214150.0);
+        assert_eq!(h.trace, []);
+
+        // Make sure there's nothing left over in `bytes`
+        assert_eq!(bytes, []);
+    }
+
+    #[test]
+    fn read_hit_dc_none() {
+        let hit_bytes = &[1u8, 0,
+                          0, 0,
+                          7, 0,
+                          0, 0,
+                          40, 0,
+                          0, 128,
+                          130, 37,
+                          130, 37,
+                          0, 0, 0, 0, 0, 193, 194, 64,
+                          0, 0, 0, 0, 0, 0, 0, 0,
+                          0, 0, 0, 0, 48, 36, 10, 65,
+                          0, 0] as &[u8];
+
+        // Read in hit from byte array
+        let mut bytes = hit_bytes;
+        let h = bytes.read_hit_bin().unwrap();
+
+        // Make sure it was read correctly
+        assert_eq!(h.daqid.0, 1);
+        assert_eq!(h.daqid.1, 0);
+        assert_eq!(h.daqid.2, 7);
+        assert_eq!(h.daqid.3, 0);
+        assert!(h.detid.is_none());
+        assert_eq!(h.rawval, 9602);
+        assert!(h.value.is_some());
+        let value = h.value.unwrap();
+        assert_eq!(value, 9602);
+        assert!(h.energy.is_some());
+        let ValUnc{val, unc} = h.energy.as_ref().unwrap();
+        assert_f64_eq!(*val, 9602.0);
+        assert_f64_eq!(*unc, 0.0);
+        assert_f64_eq!(h.time, 214150.0);
+        assert_eq!(h.trace, []);
+
+        // Make sure there's nothing left over in `bytes`
+        assert_eq!(bytes, []);
+    }
+
+    #[test]
+    fn read_write_hit_value_none() {
+        let hit_bytes = &[1u8, 0,
+                          0, 0,
+                          7, 0,
+                          0, 0,
+                          40, 0,
+                          0, 0,
+                          130, 37,
+                          0, 128,
+                          0, 0, 0, 0, 0, 193, 194, 64,
+                          0, 0, 0, 0, 0, 0, 0, 0,
+                          0, 0, 0, 0, 48, 36, 10, 65,
+                          0, 0] as &[u8];
+
+        // Read in hit from byte array
+        let mut bytes = hit_bytes;
+        let h = bytes.read_hit_bin().unwrap();
+
+        // Make sure it was read correctly
+        assert_eq!(h.daqid.0, 1);
+        assert_eq!(h.daqid.1, 0);
+        assert_eq!(h.daqid.2, 7);
+        assert_eq!(h.daqid.3, 0);
+        assert!(h.detid.is_some());
+        let DetId(di, dc) = h.detid.unwrap();
+        assert_eq!(di, 40);
+        assert_eq!(dc, 0);
+        assert_eq!(h.rawval, 9602);
+        assert!(h.value.is_none());
+        assert!(h.energy.is_some());
+        let ValUnc{val, unc} = h.energy.as_ref().unwrap();
+        assert_f64_eq!(*val, 9602.0);
+        assert_f64_eq!(*unc, 0.0);
+        assert_f64_eq!(h.time, 214150.0);
+        assert_eq!(h.trace, []);
+
+        // Make sure there's nothing left over in `bytes`
+        assert_eq!(bytes, []);
+
+        // Write the hit out to a byte array
+        let mut v = Vec::<u8>::new();
+        let _ = v.write_hit_bin(&h);
+
+        // Make sure it was written out correctly
+        assert_eq!(v, hit_bytes);
+    }
+
+    #[test]
+    fn read_write_hit_energy_none() {
+        let hit_bytes = &[1u8, 0,
+                          0, 0,
+                          7, 0,
+                          0, 0,
+                          40, 0,
+                          0, 0,
+                          130, 37,
+                          130, 37,
+                          0, 0, 0, 0, 0, 0, 248, 127,
+                          0, 0, 0, 0, 0, 0, 248, 127,
+                          0, 0, 0, 0, 48, 36, 10, 65,
+                          0, 0] as &[u8];
+
+        // Read in hit from byte array
+        let mut bytes = hit_bytes;
+        let h = bytes.read_hit_bin().unwrap();
+
+        // Make sure it was read correctly
+        assert_eq!(h.daqid.0, 1);
+        assert_eq!(h.daqid.1, 0);
+        assert_eq!(h.daqid.2, 7);
+        assert_eq!(h.daqid.3, 0);
+        assert!(h.detid.is_some());
+        let DetId(di, dc) = h.detid.unwrap();
+        assert_eq!(di, 40);
+        assert_eq!(dc, 0);
+        assert_eq!(h.rawval, 9602);
+        assert!(h.value.is_some());
+        let value = h.value.unwrap();
+        assert_eq!(value, 9602);
+        assert!(h.energy.is_none());
+        assert_f64_eq!(h.time, 214150.0);
+        assert_eq!(h.trace, []);
+
+        // Make sure there's nothing left over in `bytes`
+        assert_eq!(bytes, []);
+
+        // Write the hit out to a byte array
+        let mut v = Vec::<u8>::new();
+        let _ = v.write_hit_bin(&h);
+
+        // Make sure it was written out correctly
+        assert_eq!(v, hit_bytes);
+    }
+
+    #[test]
+    fn read_hit_energy_val_none() {
+        let hit_bytes = &[1u8, 0,
+                          0, 0,
+                          7, 0,
+                          0, 0,
+                          40, 0,
+                          0, 0,
+                          130, 37,
+                          130, 37,
+                          0, 0, 0, 0, 0, 0, 248, 127,
+                          0, 0, 0, 0, 0, 0, 0, 0,
+                          0, 0, 0, 0, 48, 36, 10, 65,
+                          0, 0] as &[u8];
+
+        // Read in hit from byte array
+        let mut bytes = hit_bytes;
+        let h = bytes.read_hit_bin().unwrap();
+
+        // Make sure it was read correctly
+        assert_eq!(h.daqid.0, 1);
+        assert_eq!(h.daqid.1, 0);
+        assert_eq!(h.daqid.2, 7);
+        assert_eq!(h.daqid.3, 0);
+        assert!(h.detid.is_some());
+        let DetId(di, dc) = h.detid.unwrap();
+        assert_eq!(di, 40);
+        assert_eq!(dc, 0);
+        assert_eq!(h.rawval, 9602);
+        assert!(h.value.is_some());
+        let value = h.value.unwrap();
+        assert_eq!(value, 9602);
+        assert!(h.energy.is_none());
+        assert_f64_eq!(h.time, 214150.0);
+        assert_eq!(h.trace, []);
+
+        // Make sure there's nothing left over in `bytes`
+        assert_eq!(bytes, []);
+    }
+
+    #[test]
+    fn read_hit_energy_unc_none() {
+        let hit_bytes = &[1u8, 0,
+                          0, 0,
+                          7, 0,
+                          0, 0,
+                          40, 0,
+                          0, 0,
+                          130, 37,
+                          130, 37,
+                          0, 0, 0, 0, 0, 193, 194, 64,
+                          0, 0, 0, 0, 0, 0, 248, 127,
+                          0, 0, 0, 0, 48, 36, 10, 65,
+                          0, 0] as &[u8];
+
+        // Read in hit from byte array
+        let mut bytes = hit_bytes;
+        let h = bytes.read_hit_bin().unwrap();
+
+        // Make sure it was read correctly
+        assert_eq!(h.daqid.0, 1);
+        assert_eq!(h.daqid.1, 0);
+        assert_eq!(h.daqid.2, 7);
+        assert_eq!(h.daqid.3, 0);
+        assert!(h.detid.is_some());
+        let DetId(di, dc) = h.detid.unwrap();
+        assert_eq!(di, 40);
+        assert_eq!(dc, 0);
+        assert_eq!(h.rawval, 9602);
+        assert!(h.value.is_some());
+        let value = h.value.unwrap();
+        assert_eq!(value, 9602);
+        assert!(h.energy.is_none());
+        assert_f64_eq!(h.time, 214150.0);
+        assert_eq!(h.trace, []);
+
+        // Make sure there's nothing left over in `bytes`
+        assert_eq!(bytes, []);
+    }
+
+    #[test]
+    fn read_write_hit() {
+        let hit_bytes = &[1u8, 0,
+                          0, 0,
+                          7, 0,
+                          0, 0,
+                          40, 0,
+                          0, 0,
+                          130, 37,
+                          130, 37,
+                          0, 0, 0, 0, 0, 193, 194, 64,
+                          0, 0, 0, 0, 0, 0, 0, 0,
+                          0, 0, 0, 0, 48, 36, 10, 65,
+                          0, 0] as &[u8];
+
+        // Read in hit from byte array
+        let mut bytes = hit_bytes;
+        let h = bytes.read_hit_bin().unwrap();
+
+        // Make sure it was read correctly
+        assert_eq!(h.daqid.0, 1);
+        assert_eq!(h.daqid.1, 0);
+        assert_eq!(h.daqid.2, 7);
+        assert_eq!(h.daqid.3, 0);
+        assert!(h.detid.is_some());
+        let DetId(di, dc) = h.detid.unwrap();
+        assert_eq!(di, 40);
+        assert_eq!(dc, 0);
+        assert_eq!(h.rawval, 9602);
+        assert!(h.value.is_some());
+        let value = h.value.unwrap();
+        assert_eq!(value, 9602);
+        assert!(h.energy.is_some());
+        let ValUnc{val, unc} = h.energy.as_ref().unwrap();
+        assert_f64_eq!(*val, 9602.0);
+        assert_f64_eq!(*unc, 0.0);
         assert_f64_eq!(h.time, 214150.0);
         assert_eq!(h.trace, []);
 
@@ -1559,13 +1930,21 @@ mod tests {
 
     #[test]
     fn read_write_hit_trace() {
-        let hit_bytes = &[1u8, 0, 0, 0, 7, 0, 0, 0, 40, 0,
-                          0, 0, 130, 37, 130, 37, 0, 0, 0,
-                          0, 0, 193, 194, 64, 0, 0, 0, 0,
-                          48, 36, 10, 65, 10, 0, 0, 0, 1,
-                          0, 2, 0, 3, 0, 4, 0, 5, 0, 6, 0,
-                          7, 0, 8, 0, 9, 0] as &[u8];
-
+        let hit_bytes = &[1u8, 0,
+                          0, 0,
+                          7, 0,
+                          0, 0,
+                          40, 0,
+                          0, 0,
+                          130, 37,
+                          130, 37,
+                          0, 0, 0, 0, 0, 193, 194, 64,
+                          0, 0, 0, 0, 0, 0, 0, 0,
+                          0, 0, 0, 0, 48, 36, 10, 65,
+                          10, 0,
+                          0, 0, 1, 0, 2, 0, 3, 0,
+                          4, 0, 5, 0, 6, 0, 7, 0,
+                          8, 0, 9, 0] as &[u8];
         // Read in hit from byte array
         let mut bytes = hit_bytes;
         let h = bytes.read_hit_bin().unwrap();
@@ -1575,10 +1954,18 @@ mod tests {
         assert_eq!(h.daqid.1, 0);
         assert_eq!(h.daqid.2, 7);
         assert_eq!(h.daqid.3, 0);
-        assert_eq!(h.detid, Some(DetId(40, 0)));
+        assert!(h.detid.is_some());
+        let DetId(di, dc) = h.detid.unwrap();
+        assert_eq!(di, 40);
+        assert_eq!(dc, 0);
         assert_eq!(h.rawval, 9602);
-        assert_eq!(h.value, Some(9602));
-        assert_f64_eq!(h.energy.unwrap(), 9602.0);
+        assert!(h.value.is_some());
+        let value = h.value.unwrap();
+        assert_eq!(value, 9602);
+        assert!(h.energy.is_some());
+        let ValUnc{val, unc} = h.energy.as_ref().unwrap();
+        assert_f64_eq!(*val, 9602.0);
+        assert_f64_eq!(*unc, 0.0);
         assert_f64_eq!(h.time, 214150.0);
         assert_eq!(h.trace, [0u16, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
 
@@ -1595,14 +1982,30 @@ mod tests {
 
     #[test]
     fn read_write_event() {
-        let event_bytes = &[2u8, 0, 0, 0, 0, 0, 10, 0, 0,
-                            0, 0, 0, 0, 0, 244, 48, 244,
-                            48, 0, 0, 0, 0, 0, 122, 200,
-                            64, 0, 0, 0, 0, 192, 17, 10,
-                            65, 0, 0, 1, 0, 0, 0, 7, 0, 0,
-                            0, 40, 0, 0, 0, 130, 37, 130,
-                            37, 0, 0, 0, 0, 0, 193, 194,
-                            64, 0, 0, 0, 0, 48, 36, 10, 65,
+        let event_bytes = &[2u8, 0,
+                            0, 0,
+                            0, 0,
+                            10, 0,
+                            0, 0,
+                            0, 0,
+                            0, 0,
+                            244, 48,
+                            244, 48,
+                            0, 0, 0, 0, 0, 122, 200, 64,
+                            0, 0, 0, 0, 0, 0, 0, 0,
+                            0, 0, 0, 0, 192, 17, 10, 65,
+                            0, 0,
+                            1, 0,
+                            0, 0,
+                            7, 0,
+                            0, 0,
+                            40, 0,
+                            0, 0,
+                            130, 37,
+                            130, 37,
+                            0, 0, 0, 0, 0, 193, 194, 64,
+                            0, 0, 0, 0, 0, 0, 0, 0,
+                            0, 0, 0, 0, 48, 36, 10, 65,
                             0, 0] as &[u8];
 
         // Read in event from byte array
@@ -1626,14 +2029,32 @@ mod tests {
 
     #[test]
     fn read_write_run() {
-        let run_bytes = &[1u8, 0, 0, 0, 2, 0, 0, 0, 0, 0,
-                          10, 0, 0, 0, 0, 0, 0, 0, 244,
-                          48, 244, 48, 0, 0, 0, 0, 0, 122,
-                          200, 64, 0, 0, 0, 0, 192, 17,
-                          10, 65, 0, 0, 1, 0, 0, 0, 7, 0,
-                          0, 0, 40, 0, 0, 0, 130, 37, 130,
-                          37, 0, 0, 0, 0, 0, 193, 194, 64,
-                          0, 0, 0, 0, 48, 36, 10, 65, 0, 0] as &[u8];
+        let run_bytes = &[1u8, 0, 0, 0,
+                          2, 0,
+                          0, 0,
+                          0, 0,
+                          10, 0,
+                          0, 0,
+                          0, 0,
+                          0, 0,
+                          244, 48,
+                          244, 48,
+                          0, 0, 0, 0, 0, 122, 200, 64,
+                          0, 0, 0, 0, 0, 0, 0, 0,
+                          0, 0, 0, 0, 192, 17, 10, 65,
+                          0, 0,
+                          1, 0,
+                          0, 0,
+                          7, 0,
+                          0, 0,
+                          40, 0,
+                          0, 0,
+                          130, 37,
+                          130, 37,
+                          0, 0, 0, 0, 0, 193, 194, 64,
+                          0, 0, 0, 0, 0, 0, 0, 0,
+                          0, 0, 0, 0, 48, 36, 10, 65,
+                          0, 0] as &[u8];
 
         // Read in run from byte array
         let mut bytes = run_bytes;
