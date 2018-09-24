@@ -286,7 +286,7 @@ impl Hist1d {
     }
 
     /// Returns the number of counts contained by `cut`.
-    pub fn integrate(&self, cut: &Cut2d) -> u64 {
+    pub fn integrate(&self, cut: &Cut1d) -> u64 {
         let mut sum = 0u64;
         for (idx, c) in self.counts().iter().enumerate() {
             let val = self.val_at_idx(idx);
@@ -357,11 +357,11 @@ impl Hist2d {
         bins_1: usize,
         min_1: f64,
         max_1: f64,
-    ) -> Option<Hist2d> {
+        ) -> Option<Hist2d> {
         match (
             HistAxis::new(bins_0, min_0, max_0),
             HistAxis::new(bins_1, min_1, max_1),
-        ) {
+            ) {
             (Some(axis_0), Some(axis_1)) => {
                 let counts = vec![0u64; bins_0 * bins_1];
                 Some(Hist2d {
@@ -381,14 +381,14 @@ impl Hist2d {
         min_1: f64,
         max_1: f64,
         counts: Vec<u64>,
-    ) -> Option<Hist2d> {
+        ) -> Option<Hist2d> {
         if bins_0 * bins_1 != counts.len() {
             None
         } else {
             match (
                 HistAxis::new(bins_0, min_0, max_0),
                 HistAxis::new(bins_1, min_1, max_1),
-            ) {
+                ) {
                 (Some(axis_0), Some(axis_1)) => Some(Hist2d {
                     axes: (axis_0, axis_1),
                     counts,
@@ -410,16 +410,16 @@ impl Hist2d {
             let o_val_min = (
                 other.axes.0.val_at_bin_mid(o_bin.0),
                 other.axes.1.val_at_bin_mid(o_bin.1),
-            );
+                );
             let o_val_max = (
                 other.axes.0.val_at_bin_max(o_bin.0),
                 other.axes.1.val_at_bin_max(o_bin.1),
-            );
+                );
 
             let range = (
                 Range::new(o_val_min.0, o_val_max.0),
                 Range::new(o_val_min.1, o_val_max.1),
-            );
+                );
 
             for _ in 0..(*o_c) {
                 let s_val = (range.0.ind_sample(&mut rng), range.1.ind_sample(&mut rng));
@@ -429,7 +429,6 @@ impl Hist2d {
             }
         }
     }
-}
 
     /// Returns the number of counts contained by `cut`.
     pub fn integrate(&self, cut: &Cut2d) -> u64 {
@@ -555,7 +554,6 @@ impl Hist3d {
                 }),
                 _ => None,
             }
-            _ => None,
         }
     }
 
@@ -634,8 +632,6 @@ impl Hist for Hist4d {
             self.axes.3.val_at_bin_mid(bin.3),
         )
     }
-}
-
 
     fn idx_at_bin(&self, bin: Self::Bin) -> usize {
         self.axes.3.bins * (self.axes.2.bins * (self.axes.1.bins * bin.0 + bin.1) + bin.2) + bin.3

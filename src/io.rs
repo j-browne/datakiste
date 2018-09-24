@@ -1581,34 +1581,6 @@ pub trait WriteDkTxt: Write {
         }
         Ok(())
     }
-
-    fn write_points_1d_txt(&mut self, p: &Points1d) -> io::Result<()> {
-        for point in p.points() {
-            writeln!(self, "{}", point)?;
-        }
-        Ok(())
-    }
-
-    fn write_points_2d_txt(&mut self, p: &Points2d) -> io::Result<()> {
-        for point in p.points() {
-            writeln!(self, "{}\t{}", point.0, point.1)?;
-        }
-        Ok(())
-    }
-
-    fn write_points_3d_txt(&mut self, p: &Points3d) -> io::Result<()> {
-        for point in p.points() {
-            writeln!(self, "{}\t{}\t{}", point.0, point.1, point.2)?;
-        }
-        Ok(())
-    }
-
-    fn write_points_4d_txt(&mut self, p: &Points4d) -> io::Result<()> {
-        for point in p.points() {
-            writeln!(self, "{}\t{}\t{}\t{}", point.0, point.1, point.2, point.3)?;
-        }
-        Ok(())
-    }
 }
 
 // Provide some default implementations
