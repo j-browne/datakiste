@@ -1,18 +1,15 @@
 //! A library for analyzing nuclear physics data
 #![feature(tool_lints)]
 
-use crate::{
-    calibration::Calibration,
-    detector::*,
-    val_unc::ValUnc,
-};
+use crate::{calibration::Calibration, detector::*, val_unc::ValUnc};
 use std::{
     collections::HashMap,
     fs::File,
-    io::{Write, BufReader, BufRead},
+    io::{BufRead, BufReader, Write},
 };
 
-#[macro_use]pub mod logging;
+#[macro_use]
+pub mod logging;
 
 pub mod calibration;
 pub mod cut;
@@ -50,9 +47,7 @@ pub struct Event {
 }
 
 impl Event {
-    pub fn apply_det(&mut self,
-                     all_dets: &[Box<Detector>],
-                     daq_det_map: &HashMap<DaqId, DetId>) {
+    pub fn apply_det(&mut self, all_dets: &[Box<Detector>], daq_det_map: &HashMap<DaqId, DetId>) {
         for h in &mut self.hits {
             h.apply_det(all_dets, daq_det_map);
         }
@@ -80,11 +75,11 @@ pub struct Hit {
 }
 
 impl Hit {
-    pub fn apply_det(&mut self,
-                     all_dets: &[Box<Detector>],
-                     daq_det_map: &HashMap<DaqId, DetId>) {
+    pub fn apply_det(&mut self, all_dets: &[Box<Detector>], daq_det_map: &HashMap<DaqId, DetId>) {
         self.detid = daq_det_map.get(&self.daqid).cloned();
-        self.value = self.detid.map(|d| all_dets[usize::from(d.0) - 1].val_corr(d.1, self.rawval));
+        self.value = self
+            .detid
+            .map(|d| all_dets[usize::from(d.0) - 1].val_corr(d.1, self.rawval));
         self.energy = None;
     }
 
@@ -123,9 +118,11 @@ pub fn get_id_map(dets: &[Box<Detector>]) -> HashMap<DaqId, DetId> {
                 let v = map.insert(daq_id, DetId(di, dc));
                 if v.is_some() {
                     let v = v.unwrap();
-                    warn!("Daq ID ({}, {}, {}, {}) is already used.\
-                           \n   Old: ({}, {})\n    New: ({}, {})",
-                           daq_id.0, daq_id.1, daq_id.2, daq_id.3, v.0, v.1, di, dc);
+                    warn!(
+                        "Daq ID ({}, {}, {}, {}) is already used.\
+                         \n   Old: ({}, {})\n    New: ({}, {})",
+                        daq_id.0, daq_id.1, daq_id.2, daq_id.3, v.0, v.1, di, dc
+                    );
                 }
             } else {
                 warn!("Bad Det ID ({}, {}).", di, dc);
@@ -143,7 +140,8 @@ fn line_to_det(line: &str) -> Option<Box<Detector>> {
 
     if l.is_empty() || // Empty line
         l[0].starts_with('#') || // Comment
-        l.len() < 6 {
+        l.len() < 6
+    {
         None
     } else {
         let t = l[0].to_string();

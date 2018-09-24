@@ -1,16 +1,16 @@
 //!
 
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
-use std::{
-    borrow::Cow,
-    io::{self, Read, Write, BufReader, BufRead},
-};
 use crate::{
-    DaqId, DetId, Run, Event, Hit,
-    cut::{Cut1d, Cut1dLin, Cut2d, Cut2dCirc, Cut2dRect, Cut2dPoly},
+    cut::{Cut1d, Cut1dLin, Cut2d, Cut2dCirc, Cut2dPoly, Cut2dRect},
     hist::{Hist, Hist1d, Hist2d, Hist3d, Hist4d},
     points::{Points, Points1d, Points2d, Points3d, Points4d},
     val_unc::ValUnc,
+    DaqId, DetId, Event, Hit, Run,
+};
+use std::{
+    borrow::Cow,
+    io::{self, BufRead, BufReader, Read, Write},
 };
 
 const DK_MAGIC_NUMBER: u64 = 0xE2A1_642A_ACB5_C4C9;
@@ -459,7 +459,10 @@ pub trait ReadDkBin: ReadBytesExt {
     fn read_dk_bin(&mut self) -> io::Result<Vec<(String, DkItem<'static>)>> {
         let version = self.read_dk_version_bin()?;
         if version != DK_VERSION {
-            Err(io::Error::new(io::ErrorKind::Other, "wrong datakiste file version"))
+            Err(io::Error::new(
+                io::ErrorKind::Other,
+                "wrong datakiste file version",
+            ))
         } else {
             let mut v = Vec::new();
             loop {
@@ -481,13 +484,20 @@ pub trait ReadDkBin: ReadBytesExt {
         }
     }
 
-    fn read_dk_version_bin(&mut self) -> io::Result<(u64 , u64, u64)> {
+    fn read_dk_version_bin(&mut self) -> io::Result<(u64, u64, u64)> {
         let magic = self.read_u64::<LittleEndian>()?;
 
         if magic != DK_MAGIC_NUMBER {
-            Err(io::Error::new(io::ErrorKind::Other, "tried to read a non-valid datakiste file"))
+            Err(io::Error::new(
+                io::ErrorKind::Other,
+                "tried to read a non-valid datakiste file",
+            ))
         } else {
-            let version = (self.read_u64::<LittleEndian>()?, self.read_u64::<LittleEndian>()?, self.read_u64::<LittleEndian>()?);
+            let version = (
+                self.read_u64::<LittleEndian>()?,
+                self.read_u64::<LittleEndian>()?,
+                self.read_u64::<LittleEndian>()?,
+            );
             Ok(version)
         }
     }
@@ -527,7 +537,10 @@ pub trait ReadDkBin: ReadBytesExt {
             40 => Ok(DkType::Cut2dCirc),
             41 => Ok(DkType::Cut2dRect),
             42 => Ok(DkType::Cut2dPoly),
-            _ => Err(io::Error::new(io::ErrorKind::Other, "Error creating DkType")),
+            _ => Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Error creating DkType",
+            )),
         }
     }
 
@@ -544,7 +557,12 @@ pub trait ReadDkBin: ReadBytesExt {
         let mut bytes = vec![0u8; n_bytes];
         let _ = self.read_exact(&mut bytes);
 
-        String::from_utf8(bytes).or_else(|_| Err(io::Error::new(io::ErrorKind::Other, "Error creating String")))
+        String::from_utf8(bytes).or_else(|_| {
+            Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Error creating String",
+            ))
+        })
     }
 
     /// Reads in binary run data
@@ -659,7 +677,7 @@ pub trait ReadDkBin: ReadBytesExt {
         let unc = self.read_f64_opt()?;
 
         Ok(match (val, unc) {
-            (Some(val), Some(unc)) => Some(ValUnc{val, unc}),
+            (Some(val), Some(unc)) => Some(ValUnc { val, unc }),
             _ => None,
         })
     }
@@ -688,11 +706,7 @@ pub trait ReadDkBin: ReadBytesExt {
     /// # Examples
     fn read_f64_opt(&mut self) -> io::Result<Option<f64>> {
         let v = self.read_f64::<LittleEndian>()?;
-        Ok(if v.is_nan() {
-            None
-        } else {
-            Some(v)
-        })
+        Ok(if v.is_nan() { None } else { Some(v) })
     }
 
     /// Reads in binary 1d-histogram data
@@ -717,7 +731,10 @@ pub trait ReadDkBin: ReadBytesExt {
 
         match Hist1d::with_counts(bins_0, min_0, max_0, v) {
             Some(h) => Ok(h),
-            None => Err(io::Error::new(io::ErrorKind::Other, "Error creating Hist1d")),
+            None => Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Error creating Hist1d",
+            )),
         }
     }
 
@@ -748,11 +765,12 @@ pub trait ReadDkBin: ReadBytesExt {
             v.push(c);
         }
 
-        match Hist2d::with_counts(bins_0, min_0, max_0,
-                                  bins_1, min_1, max_1,
-                                  v) {
+        match Hist2d::with_counts(bins_0, min_0, max_0, bins_1, min_1, max_1, v) {
             Some(h) => Ok(h),
-            None => Err(io::Error::new(io::ErrorKind::Other, "Error creating Hist2d")),
+            None => Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Error creating Hist2d",
+            )),
         }
     }
 
@@ -775,12 +793,14 @@ pub trait ReadDkBin: ReadBytesExt {
             v.push(c);
         }
 
-        match Hist3d::with_counts(bins_0, min_0, max_0,
-                                  bins_1, min_1, max_1,
-                                  bins_2, min_2, max_2,
-                                  v) {
+        match Hist3d::with_counts(
+            bins_0, min_0, max_0, bins_1, min_1, max_1, bins_2, min_2, max_2, v,
+        ) {
             Some(h) => Ok(h),
-            None => Err(io::Error::new(io::ErrorKind::Other, "Error creating Hist2d")),
+            None => Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Error creating Hist2d",
+            )),
         }
     }
 
@@ -807,13 +827,15 @@ pub trait ReadDkBin: ReadBytesExt {
             v.push(c);
         }
 
-        match Hist4d::with_counts(bins_0, min_0, max_0,
-                                  bins_1, min_1, max_1,
-                                  bins_2, min_2, max_2,
-                                  bins_3, min_3, max_3,
-                                  v) {
+        match Hist4d::with_counts(
+            bins_0, min_0, max_0, bins_1, min_1, max_1, bins_2, min_2, max_2, bins_3, min_3, max_3,
+            v,
+        ) {
             Some(h) => Ok(h),
-            None => Err(io::Error::new(io::ErrorKind::Other, "Error creating Hist2d")),
+            None => Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Error creating Hist2d",
+            )),
         }
     }
 
@@ -956,7 +978,10 @@ pub trait ReadDkBin: ReadBytesExt {
 /// Anything that implements `byteorder::WriteBytesExt`
 /// will get a default implementation of `WriteDkBin`.
 pub trait WriteDkBin: WriteBytesExt {
-    fn write_dk_bin<'a, I: Iterator<Item=(&'a String, &'a DkItem<'a>)> + Sized>(&mut self, it: I) -> io::Result<()> {
+    fn write_dk_bin<'a, I: Iterator<Item = (&'a String, &'a DkItem<'a>)> + Sized>(
+        &mut self,
+        it: I,
+    ) -> io::Result<()> {
         self.write_dk_version_bin(DK_VERSION)?;
         for (n, i) in it {
             self.write_dk_item_bin(&n, &i)?;
@@ -1149,7 +1174,7 @@ pub trait WriteDkBin: WriteBytesExt {
     ///
     /// # Examples
     fn write_val_unc_bin(&mut self, v: &Option<ValUnc>) -> io::Result<()> {
-        let (val_opt, unc_opt) = if let Some(ValUnc{val, unc}) = v {
+        let (val_opt, unc_opt) = if let Some(ValUnc { val, unc }) = v {
             (Some(*val), Some(*unc))
         } else {
             (None, None)
@@ -1570,30 +1595,22 @@ mod tests {
     use hist::{Hist1d, Hist2d};
 
     macro_rules! assert_f64_eq {
-        ($a:expr, $b:expr) => ({
+        ($a:expr, $b:expr) => {{
             let (a, b) = ($a, $b) as (f64, f64);
             // this allows for the last bit of mantissa to be different
-            let epsilon = f64::max(a, b)/f64::powi(2.0, 51);
+            let epsilon = f64::max(a, b) / f64::powi(2.0, 51);
             println!("{} - {} = {}", a, b, a - b);
-            println!("{} < {}",  (a - b).abs(), epsilon);
+            println!("{} < {}", (a - b).abs(), epsilon);
             assert!((a - b).abs() <= epsilon);
-        })
+        }};
     }
 
     #[test]
     fn read_write_hit_detid_none() {
-        let hit_bytes = &[1u8, 0,
-                          0, 0,
-                          7, 0,
-                          0, 0,
-                          0, 128,
-                          0, 128,
-                          130, 37,
-                          130, 37,
-                          0, 0, 0, 0, 0, 193, 194, 64,
-                          0, 0, 0, 0, 0, 0, 0, 0,
-                          0, 0, 0, 0, 48, 36, 10, 65,
-                          0, 0] as &[u8];
+        let hit_bytes = &[
+            1u8, 0, 0, 0, 7, 0, 0, 0, 0, 128, 0, 128, 130, 37, 130, 37, 0, 0, 0, 0, 0, 193, 194,
+            64, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 48, 36, 10, 65, 0, 0,
+        ] as &[u8];
 
         // Read in hit from byte array
         let mut bytes = hit_bytes;
@@ -1610,7 +1627,7 @@ mod tests {
         let value = h.value.unwrap();
         assert_eq!(value, 9602);
         assert!(h.energy.is_some());
-        let ValUnc{val, unc} = h.energy.as_ref().unwrap();
+        let ValUnc { val, unc } = h.energy.as_ref().unwrap();
         assert_f64_eq!(*val, 9602.0);
         assert_f64_eq!(*unc, 0.0);
         assert_f64_eq!(h.time, 214150.0);
@@ -1629,18 +1646,10 @@ mod tests {
 
     #[test]
     fn read_hit_di_none() {
-        let hit_bytes = &[1u8, 0,
-                          0, 0,
-                          7, 0,
-                          0, 0,
-                          40, 128,
-                          0, 0,
-                          130, 37,
-                          130, 37,
-                          0, 0, 0, 0, 0, 193, 194, 64,
-                          0, 0, 0, 0, 0, 0, 0, 0,
-                          0, 0, 0, 0, 48, 36, 10, 65,
-                          0, 0] as &[u8];
+        let hit_bytes = &[
+            1u8, 0, 0, 0, 7, 0, 0, 0, 40, 128, 0, 0, 130, 37, 130, 37, 0, 0, 0, 0, 0, 193, 194, 64,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 48, 36, 10, 65, 0, 0,
+        ] as &[u8];
 
         // Read in hit from byte array
         let mut bytes = hit_bytes;
@@ -1657,7 +1666,7 @@ mod tests {
         let value = h.value.unwrap();
         assert_eq!(value, 9602);
         assert!(h.energy.is_some());
-        let ValUnc{val, unc} = h.energy.as_ref().unwrap();
+        let ValUnc { val, unc } = h.energy.as_ref().unwrap();
         assert_f64_eq!(*val, 9602.0);
         assert_f64_eq!(*unc, 0.0);
         assert_f64_eq!(h.time, 214150.0);
@@ -1669,18 +1678,10 @@ mod tests {
 
     #[test]
     fn read_hit_dc_none() {
-        let hit_bytes = &[1u8, 0,
-                          0, 0,
-                          7, 0,
-                          0, 0,
-                          40, 0,
-                          0, 128,
-                          130, 37,
-                          130, 37,
-                          0, 0, 0, 0, 0, 193, 194, 64,
-                          0, 0, 0, 0, 0, 0, 0, 0,
-                          0, 0, 0, 0, 48, 36, 10, 65,
-                          0, 0] as &[u8];
+        let hit_bytes = &[
+            1u8, 0, 0, 0, 7, 0, 0, 0, 40, 0, 0, 128, 130, 37, 130, 37, 0, 0, 0, 0, 0, 193, 194, 64,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 48, 36, 10, 65, 0, 0,
+        ] as &[u8];
 
         // Read in hit from byte array
         let mut bytes = hit_bytes;
@@ -1697,7 +1698,7 @@ mod tests {
         let value = h.value.unwrap();
         assert_eq!(value, 9602);
         assert!(h.energy.is_some());
-        let ValUnc{val, unc} = h.energy.as_ref().unwrap();
+        let ValUnc { val, unc } = h.energy.as_ref().unwrap();
         assert_f64_eq!(*val, 9602.0);
         assert_f64_eq!(*unc, 0.0);
         assert_f64_eq!(h.time, 214150.0);
@@ -1709,18 +1710,10 @@ mod tests {
 
     #[test]
     fn read_write_hit_value_none() {
-        let hit_bytes = &[1u8, 0,
-                          0, 0,
-                          7, 0,
-                          0, 0,
-                          40, 0,
-                          0, 0,
-                          130, 37,
-                          0, 128,
-                          0, 0, 0, 0, 0, 193, 194, 64,
-                          0, 0, 0, 0, 0, 0, 0, 0,
-                          0, 0, 0, 0, 48, 36, 10, 65,
-                          0, 0] as &[u8];
+        let hit_bytes = &[
+            1u8, 0, 0, 0, 7, 0, 0, 0, 40, 0, 0, 0, 130, 37, 0, 128, 0, 0, 0, 0, 0, 193, 194, 64, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 48, 36, 10, 65, 0, 0,
+        ] as &[u8];
 
         // Read in hit from byte array
         let mut bytes = hit_bytes;
@@ -1738,7 +1731,7 @@ mod tests {
         assert_eq!(h.rawval, 9602);
         assert!(h.value.is_none());
         assert!(h.energy.is_some());
-        let ValUnc{val, unc} = h.energy.as_ref().unwrap();
+        let ValUnc { val, unc } = h.energy.as_ref().unwrap();
         assert_f64_eq!(*val, 9602.0);
         assert_f64_eq!(*unc, 0.0);
         assert_f64_eq!(h.time, 214150.0);
@@ -1757,18 +1750,10 @@ mod tests {
 
     #[test]
     fn read_write_hit_energy_none() {
-        let hit_bytes = &[1u8, 0,
-                          0, 0,
-                          7, 0,
-                          0, 0,
-                          40, 0,
-                          0, 0,
-                          130, 37,
-                          130, 37,
-                          0, 0, 0, 0, 0, 0, 248, 127,
-                          0, 0, 0, 0, 0, 0, 248, 127,
-                          0, 0, 0, 0, 48, 36, 10, 65,
-                          0, 0] as &[u8];
+        let hit_bytes = &[
+            1u8, 0, 0, 0, 7, 0, 0, 0, 40, 0, 0, 0, 130, 37, 130, 37, 0, 0, 0, 0, 0, 0, 248, 127, 0,
+            0, 0, 0, 0, 0, 248, 127, 0, 0, 0, 0, 48, 36, 10, 65, 0, 0,
+        ] as &[u8];
 
         // Read in hit from byte array
         let mut bytes = hit_bytes;
@@ -1804,18 +1789,10 @@ mod tests {
 
     #[test]
     fn read_hit_energy_val_none() {
-        let hit_bytes = &[1u8, 0,
-                          0, 0,
-                          7, 0,
-                          0, 0,
-                          40, 0,
-                          0, 0,
-                          130, 37,
-                          130, 37,
-                          0, 0, 0, 0, 0, 0, 248, 127,
-                          0, 0, 0, 0, 0, 0, 0, 0,
-                          0, 0, 0, 0, 48, 36, 10, 65,
-                          0, 0] as &[u8];
+        let hit_bytes = &[
+            1u8, 0, 0, 0, 7, 0, 0, 0, 40, 0, 0, 0, 130, 37, 130, 37, 0, 0, 0, 0, 0, 0, 248, 127, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 48, 36, 10, 65, 0, 0,
+        ] as &[u8];
 
         // Read in hit from byte array
         let mut bytes = hit_bytes;
@@ -1844,18 +1821,10 @@ mod tests {
 
     #[test]
     fn read_hit_energy_unc_none() {
-        let hit_bytes = &[1u8, 0,
-                          0, 0,
-                          7, 0,
-                          0, 0,
-                          40, 0,
-                          0, 0,
-                          130, 37,
-                          130, 37,
-                          0, 0, 0, 0, 0, 193, 194, 64,
-                          0, 0, 0, 0, 0, 0, 248, 127,
-                          0, 0, 0, 0, 48, 36, 10, 65,
-                          0, 0] as &[u8];
+        let hit_bytes = &[
+            1u8, 0, 0, 0, 7, 0, 0, 0, 40, 0, 0, 0, 130, 37, 130, 37, 0, 0, 0, 0, 0, 193, 194, 64,
+            0, 0, 0, 0, 0, 0, 248, 127, 0, 0, 0, 0, 48, 36, 10, 65, 0, 0,
+        ] as &[u8];
 
         // Read in hit from byte array
         let mut bytes = hit_bytes;
@@ -1884,18 +1853,10 @@ mod tests {
 
     #[test]
     fn read_write_hit() {
-        let hit_bytes = &[1u8, 0,
-                          0, 0,
-                          7, 0,
-                          0, 0,
-                          40, 0,
-                          0, 0,
-                          130, 37,
-                          130, 37,
-                          0, 0, 0, 0, 0, 193, 194, 64,
-                          0, 0, 0, 0, 0, 0, 0, 0,
-                          0, 0, 0, 0, 48, 36, 10, 65,
-                          0, 0] as &[u8];
+        let hit_bytes = &[
+            1u8, 0, 0, 0, 7, 0, 0, 0, 40, 0, 0, 0, 130, 37, 130, 37, 0, 0, 0, 0, 0, 193, 194, 64,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 48, 36, 10, 65, 0, 0,
+        ] as &[u8];
 
         // Read in hit from byte array
         let mut bytes = hit_bytes;
@@ -1915,7 +1876,7 @@ mod tests {
         let value = h.value.unwrap();
         assert_eq!(value, 9602);
         assert!(h.energy.is_some());
-        let ValUnc{val, unc} = h.energy.as_ref().unwrap();
+        let ValUnc { val, unc } = h.energy.as_ref().unwrap();
         assert_f64_eq!(*val, 9602.0);
         assert_f64_eq!(*unc, 0.0);
         assert_f64_eq!(h.time, 214150.0);
@@ -1934,21 +1895,11 @@ mod tests {
 
     #[test]
     fn read_write_hit_trace() {
-        let hit_bytes = &[1u8, 0,
-                          0, 0,
-                          7, 0,
-                          0, 0,
-                          40, 0,
-                          0, 0,
-                          130, 37,
-                          130, 37,
-                          0, 0, 0, 0, 0, 193, 194, 64,
-                          0, 0, 0, 0, 0, 0, 0, 0,
-                          0, 0, 0, 0, 48, 36, 10, 65,
-                          10, 0,
-                          0, 0, 1, 0, 2, 0, 3, 0,
-                          4, 0, 5, 0, 6, 0, 7, 0,
-                          8, 0, 9, 0] as &[u8];
+        let hit_bytes = &[
+            1u8, 0, 0, 0, 7, 0, 0, 0, 40, 0, 0, 0, 130, 37, 130, 37, 0, 0, 0, 0, 0, 193, 194, 64,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 48, 36, 10, 65, 10, 0, 0, 0, 1, 0, 2, 0, 3, 0, 4,
+            0, 5, 0, 6, 0, 7, 0, 8, 0, 9, 0,
+        ] as &[u8];
         // Read in hit from byte array
         let mut bytes = hit_bytes;
         let h = bytes.read_hit_bin().unwrap();
@@ -1967,7 +1918,7 @@ mod tests {
         let value = h.value.unwrap();
         assert_eq!(value, 9602);
         assert!(h.energy.is_some());
-        let ValUnc{val, unc} = h.energy.as_ref().unwrap();
+        let ValUnc { val, unc } = h.energy.as_ref().unwrap();
         assert_f64_eq!(*val, 9602.0);
         assert_f64_eq!(*unc, 0.0);
         assert_f64_eq!(h.time, 214150.0);
@@ -1986,31 +1937,12 @@ mod tests {
 
     #[test]
     fn read_write_event() {
-        let event_bytes = &[2u8, 0,
-                            0, 0,
-                            0, 0,
-                            10, 0,
-                            0, 0,
-                            0, 0,
-                            0, 0,
-                            244, 48,
-                            244, 48,
-                            0, 0, 0, 0, 0, 122, 200, 64,
-                            0, 0, 0, 0, 0, 0, 0, 0,
-                            0, 0, 0, 0, 192, 17, 10, 65,
-                            0, 0,
-                            1, 0,
-                            0, 0,
-                            7, 0,
-                            0, 0,
-                            40, 0,
-                            0, 0,
-                            130, 37,
-                            130, 37,
-                            0, 0, 0, 0, 0, 193, 194, 64,
-                            0, 0, 0, 0, 0, 0, 0, 0,
-                            0, 0, 0, 0, 48, 36, 10, 65,
-                            0, 0] as &[u8];
+        let event_bytes = &[
+            2u8, 0, 0, 0, 0, 0, 10, 0, 0, 0, 0, 0, 0, 0, 244, 48, 244, 48, 0, 0, 0, 0, 0, 122, 200,
+            64, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 192, 17, 10, 65, 0, 0, 1, 0, 0, 0, 7, 0, 0, 0,
+            40, 0, 0, 0, 130, 37, 130, 37, 0, 0, 0, 0, 0, 193, 194, 64, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 48, 36, 10, 65, 0, 0,
+        ] as &[u8];
 
         // Read in event from byte array
         let mut bytes = event_bytes;
@@ -2033,32 +1965,12 @@ mod tests {
 
     #[test]
     fn read_write_run() {
-        let run_bytes = &[1u8, 0, 0, 0,
-                          2, 0,
-                          0, 0,
-                          0, 0,
-                          10, 0,
-                          0, 0,
-                          0, 0,
-                          0, 0,
-                          244, 48,
-                          244, 48,
-                          0, 0, 0, 0, 0, 122, 200, 64,
-                          0, 0, 0, 0, 0, 0, 0, 0,
-                          0, 0, 0, 0, 192, 17, 10, 65,
-                          0, 0,
-                          1, 0,
-                          0, 0,
-                          7, 0,
-                          0, 0,
-                          40, 0,
-                          0, 0,
-                          130, 37,
-                          130, 37,
-                          0, 0, 0, 0, 0, 193, 194, 64,
-                          0, 0, 0, 0, 0, 0, 0, 0,
-                          0, 0, 0, 0, 48, 36, 10, 65,
-                          0, 0] as &[u8];
+        let run_bytes = &[
+            1u8, 0, 0, 0, 2, 0, 0, 0, 0, 0, 10, 0, 0, 0, 0, 0, 0, 0, 244, 48, 244, 48, 0, 0, 0, 0,
+            0, 122, 200, 64, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 192, 17, 10, 65, 0, 0, 1, 0, 0, 0,
+            7, 0, 0, 0, 40, 0, 0, 0, 130, 37, 130, 37, 0, 0, 0, 0, 0, 193, 194, 64, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 48, 36, 10, 65, 0, 0,
+        ] as &[u8];
 
         // Read in run from byte array
         let mut bytes = run_bytes;
@@ -2107,11 +2019,10 @@ mod tests {
 
     #[test]
     fn read_write_hist_1d_bin() {
-        let hist_bytes = &[3u8, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                           0, 0, 0, 0, 0, 0, 0, 0, 8, 64,
-                           2, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0,
-                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                           0, 0] as &[u8];
+        let hist_bytes = &[
+            3u8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 64, 2, 0, 0, 0, 0, 0, 0, 0,
+            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        ] as &[u8];
 
         // Read in hit from byte array
         let mut bytes = hist_bytes;
@@ -2143,8 +2054,8 @@ mod tests {
         let _ = bytes.read_to_hist_2d_txt(&mut h1);
 
         // Make sure it was read correctly
-        let h2 = Hist2d::with_counts(2usize, 0f64, 4f64, 2usize, 0f64, 2f64, vec![2, 1, 0, 4])
-                     .unwrap();
+        let h2 =
+            Hist2d::with_counts(2usize, 0f64, 4f64, 2usize, 0f64, 2f64, vec![2, 1, 0, 4]).unwrap();
         assert_eq!(h1, h2);
 
         // Make sure there's nothing left over in `bytes`
@@ -2161,18 +2072,19 @@ mod tests {
 
     #[test]
     fn read_write_hist_2d_bin() {
-        let hist_bytes = &[2u8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16, 64, 2,
-                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 64, 2, 0, 0,
-                           0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4,
-                           0, 0, 0, 0, 0, 0, 0] as &[u8];
+        let hist_bytes = &[
+            2u8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16, 64, 2, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 64, 2, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0,
+        ] as &[u8];
 
         // Read in hit from byte array
         let mut bytes = hist_bytes;
         let h1 = bytes.read_hist_2d_bin().unwrap();
 
         // Make sure it was read correctly
-        let h2 = Hist2d::with_counts(2usize, 0f64, 4f64, 2usize, 0f64, 2f64, vec![2, 1, 0, 4])
-                     .unwrap();
+        let h2 =
+            Hist2d::with_counts(2usize, 0f64, 4f64, 2usize, 0f64, 2f64, vec![2, 1, 0, 4]).unwrap();
         assert_eq!(h1, h2);
 
         // Make sure there's nothing left over in `bytes`

@@ -14,7 +14,6 @@ pub trait Points {
     }
 }
 
-
 #[derive(Default, Debug, Clone)]
 pub struct Points1d {
     points: Vec<f64>,
@@ -34,18 +33,13 @@ impl Points for Points1d {
 
 impl Points1d {
     pub fn new() -> Points1d {
-        Points1d {
-            points: Vec::new(),
-        }
+        Points1d { points: Vec::new() }
     }
 
     pub fn with_points(points: Vec<f64>) -> Points1d {
-        Points1d {
-            points,
-        }
+        Points1d { points }
     }
 }
-
 
 #[derive(Default, Debug, Clone)]
 pub struct Points2d {
@@ -66,18 +60,13 @@ impl Points for Points2d {
 
 impl Points2d {
     pub fn new() -> Points2d {
-        Points2d {
-            points: Vec::new(),
-        }
+        Points2d { points: Vec::new() }
     }
 
     pub fn with_points(points: Vec<(f64, f64)>) -> Points2d {
-        Points2d {
-            points,
-        }
+        Points2d { points }
     }
 }
-
 
 #[derive(Default, Debug, Clone)]
 pub struct Points3d {
@@ -98,18 +87,13 @@ impl Points for Points3d {
 
 impl Points3d {
     pub fn new() -> Points3d {
-        Points3d {
-            points: Vec::new(),
-        }
+        Points3d { points: Vec::new() }
     }
 
     pub fn with_points(points: Vec<(f64, f64, f64)>) -> Points3d {
-        Points3d {
-            points,
-        }
+        Points3d { points }
     }
 }
-
 
 #[derive(Default, Debug, Clone)]
 pub struct Points4d {
@@ -130,14 +114,10 @@ impl Points for Points4d {
 
 impl Points4d {
     pub fn new() -> Points4d {
-        Points4d {
-            points: Vec::new(),
-        }
+        Points4d { points: Vec::new() }
     }
 
     pub fn with_points(points: Vec<(f64, f64, f64, f64)>) -> Points4d {
-        Points4d {
-            points,
-        }
+        Points4d { points }
     }
 }

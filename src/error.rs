@@ -1,12 +1,12 @@
 use std::{
     convert::From,
-    num::{ParseIntError, ParseFloatError},
     io,
+    num::{ParseFloatError, ParseIntError},
 };
 
 pub type Result<T> = ::std::result::Result<T, Error>;
 
-pub enum Error{
+pub enum Error {
     Int(ParseIntError),
     Float(ParseFloatError),
     Io(io::Error),

@@ -1,15 +1,10 @@
+use super::{error::Result, val_unc::ValUnc, DaqId};
 use std::{
     collections::HashMap,
     fs::File,
-    io::{BufReader, BufRead},
+    io::{BufRead, BufReader},
     path::Path,
 };
-use super::{
-    DaqId,
-    error::Result,
-    val_unc::ValUnc,
-};
-
 
 pub struct Calibration {
     pub slope: f64,
@@ -29,7 +24,10 @@ impl Calibration {
         ].iter().max_by(|a, b| a.partial_cmp(b).expect("Error applying calibration (f64s weren't Ord)"))
             .expect("Error applying calibration (trying to find max of empty list) (should be impossible)");
 
-        ValUnc{val: mean, unc: max_res}
+        ValUnc {
+            val: mean,
+            unc: max_res,
+        }
     }
 }
 
@@ -52,7 +50,7 @@ pub fn get_cal_map<T: AsRef<Path>>(file_name: T) -> Result<HashMap<DaqId, Calibr
                 x[0].parse::<u16>()?,
                 x[1].parse::<u16>()?,
                 x[2].parse::<u16>()?,
-                x[3].parse::<u16>()?
+                x[3].parse::<u16>()?,
             );
             let intercept = x[4].parse::<f64>()?;
             let intercept_err = x[5].parse::<f64>()?;
@@ -61,11 +59,18 @@ pub fn get_cal_map<T: AsRef<Path>>(file_name: T) -> Result<HashMap<DaqId, Calibr
 
             let v = map.insert(
                 daq_id,
-                Calibration{slope, slope_err, intercept, intercept_err}
+                Calibration {
+                    slope,
+                    slope_err,
+                    intercept,
+                    intercept_err,
+                },
             );
             if v.is_some() {
-                eprintln!("There is already a calibration for Daq ID ({}, {}, {}, {}).",
-                   daq_id.0, daq_id.1, daq_id.2, daq_id.3);
+                eprintln!(
+                    "There is already a calibration for Daq ID ({}, {}, {}, {}).",
+                    daq_id.0, daq_id.1, daq_id.2, daq_id.3
+                );
             }
         }
     }
