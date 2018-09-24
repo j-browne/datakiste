@@ -1,9 +1,9 @@
 extern crate datakiste;
 
-use std::collections::HashMap;
-use datakiste::io::DkItem;
 use datakiste::hist::{Hist, Hist1d};
+use datakiste::io::DkItem;
 use std::borrow::Cow;
+use std::collections::HashMap;
 
 #[test]
 fn dk_item_unpacking_1() {
