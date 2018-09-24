@@ -1592,7 +1592,7 @@ impl<W: Write> WriteDkTxt for W {}
 #[cfg(test)]
 mod tests {
     use super::*;
-    use hist::{Hist1d, Hist2d};
+    use crate::hist::{Hist1d, Hist2d};
 
     macro_rules! assert_f64_eq {
         ($a:expr, $b:expr) => {{
