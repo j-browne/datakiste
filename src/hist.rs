@@ -1,12 +1,9 @@
 // TODO: Documentation
 // TODO: Create list of what to document
 // FIXME: Some things should return Options
-
-extern crate rand;
-
 use std::mem;
-use self::rand::distributions::{IndependentSample, Range};
-use cut::{Cut1d, Cut2d};
+use rand::distributions::{IndependentSample, Range};
+use crate::cut::{Cut1d, Cut2d};
 
 
 /// A type that describes an axis for a histogram.

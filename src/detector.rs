@@ -1,6 +1,6 @@
 //TODO: Display for detid, daqid, etc
 use std::fmt::Debug;
-use DaqId;
+use crate::DaqId;
 
 pub trait Detector: Debug {
     fn name(&self) -> String;

@@ -1,13 +1,17 @@
 //!
 
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
-use std::borrow::Cow;
-use std::io::{self, Read, Write, BufReader, BufRead};
-use {DaqId, DetId, Run, Event, Hit};
-use cut::{Cut1d, Cut1dLin, Cut2d, Cut2dCirc, Cut2dRect, Cut2dPoly};
-use hist::{Hist, Hist1d, Hist2d, Hist3d, Hist4d};
-use points::{Points, Points1d, Points2d, Points3d, Points4d};
-use super::val_unc::ValUnc;
+use std::{
+    borrow::Cow,
+    io::{self, Read, Write, BufReader, BufRead},
+};
+use crate::{
+    DaqId, DetId, Run, Event, Hit,
+    cut::{Cut1d, Cut1dLin, Cut2d, Cut2dCirc, Cut2dRect, Cut2dPoly},
+    hist::{Hist, Hist1d, Hist2d, Hist3d, Hist4d},
+    points::{Points, Points1d, Points2d, Points3d, Points4d},
+    val_unc::ValUnc,
+};
 
 const DK_MAGIC_NUMBER: u64 = 0xE2A1_642A_ACB5_C4C9;
 const DK_VERSION: (u64, u64, u64) = (0, 2, 0);

@@ -1,14 +1,16 @@
 //! A library for analyzing nuclear physics data
-extern crate byteorder;
+use crate::{
+    calibration::Calibration,
+    detector::*,
+    val_unc::ValUnc,
+};
+use std::{
+    collections::HashMap,
+    fs::File,
+    io::{Write, BufReader, BufRead},
+};
 
 #[macro_use]pub mod logging;
-
-pub use calibration::{Calibration, get_cal_map};
-use detector::*;
-use std::collections::HashMap;
-use std::fs::File;
-use std::io::{Write, BufReader, BufRead};
-use val_unc::ValUnc;
 
 pub mod calibration;
 pub mod cut;
