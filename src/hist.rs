@@ -1,10 +1,11 @@
 // TODO: Documentation
 // TODO: Create list of what to document
 // FIXME: Some things should return Options
+#![allow(clippy::too_many_arguments)]
+
 use std::mem;
 use rand::distributions::{IndependentSample, Range};
 use crate::cut::{Cut1d, Cut2d};
-
 
 /// A type that describes an axis for a histogram.
 ///
@@ -36,9 +37,9 @@ impl HistAxis {
             None
         } else {
             Some(HistAxis {
-                bins: bins,
-                min: min,
-                max: max,
+                bins,
+                min,
+                max,
             })
         }
     }
@@ -233,7 +234,7 @@ impl Hist1d {
                 let counts = vec![0u64; bins_0];
                 Some(Hist1d {
                     axes: (axis_0),
-                    counts: counts,
+                    counts,
                 })
             }
             _ => None,
@@ -268,7 +269,7 @@ impl Hist1d {
                 Some(axis_0) => {
                     Some(Hist1d {
                         axes: (axis_0),
-                        counts: counts,
+                        counts,
                     })
                 }
                 _ => None,
@@ -371,7 +372,7 @@ impl Hist2d {
                 let counts = vec![0u64; bins_0 * bins_1];
                 Some(Hist2d {
                     axes: (axis_0, axis_1),
-                    counts: counts,
+                    counts,
                 })
             }
             _ => None,
@@ -389,7 +390,7 @@ impl Hist2d {
                 (Some(axis_0), Some(axis_1)) => {
                     Some(Hist2d {
                         axes: (axis_0, axis_1),
-                        counts: counts,
+                        counts,
                     })
                 }
                 _ => None,
@@ -502,7 +503,7 @@ impl Hist3d {
                 let counts = vec![0u64; bins_0 * bins_1 * bins_2];
                 Some(Hist3d {
                     axes: (axis_0, axis_1, axis_2),
-                    counts: counts,
+                    counts,
                 })
             }
             _ => None,
@@ -522,7 +523,7 @@ impl Hist3d {
                 (Some(axis_0), Some(axis_1), Some(axis_2)) => {
                     Some(Hist3d {
                         axes: (axis_0, axis_1, axis_2),
-                        counts: counts,
+                        counts,
                     })
                 }
                 _ => None,
@@ -633,7 +634,7 @@ impl Hist4d {
                 let counts = vec![0u64; bins_0 * bins_1 * bins_2 * bins_3];
                 Some(Hist4d {
                     axes: (axis_0, axis_1, axis_2, axis_3),
-                    counts: counts,
+                    counts,
                 })
             }
             _ => None,
@@ -655,7 +656,7 @@ impl Hist4d {
                 (Some(axis_0), Some(axis_1), Some(axis_2), Some(axis_3)) => {
                     Some(Hist4d {
                         axes: (axis_0, axis_1, axis_2, axis_3),
-                        counts: counts,
+                        counts,
                     })
                 }
                 _ => None,

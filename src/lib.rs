@@ -1,4 +1,6 @@
 //! A library for analyzing nuclear physics data
+#![feature(tool_lints)]
+
 use crate::{
     calibration::Calibration,
     detector::*,
@@ -51,13 +53,13 @@ impl Event {
     pub fn apply_det(&mut self,
                      all_dets: &[Box<Detector>],
                      daq_det_map: &HashMap<DaqId, DetId>) {
-        for ref mut h in &mut self.hits {
+        for h in &mut self.hits {
             h.apply_det(all_dets, daq_det_map);
         }
     }
 
     pub fn apply_calib(&mut self, calib: &HashMap<DaqId, Calibration>) {
-        for ref mut h in &mut self.hits {
+        for h in &mut self.hits {
             h.apply_calib(calib);
         }
     }
@@ -81,7 +83,7 @@ impl Hit {
     pub fn apply_det(&mut self,
                      all_dets: &[Box<Detector>],
                      daq_det_map: &HashMap<DaqId, DetId>) {
-        self.detid = daq_det_map.get(&self.daqid).map(|d| d.clone());
+        self.detid = daq_det_map.get(&self.daqid).cloned();
         self.value = self.detid.map(|d| all_dets[usize::from(d.0) - 1].val_corr(d.1, self.rawval));
         self.energy = None;
     }

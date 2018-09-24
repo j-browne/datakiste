@@ -41,7 +41,7 @@ impl Points1d {
 
     pub fn with_points(points: Vec<f64>) -> Points1d {
         Points1d {
-            points: points
+            points,
         }
     }
 }
@@ -73,7 +73,7 @@ impl Points2d {
 
     pub fn with_points(points: Vec<(f64, f64)>) -> Points2d {
         Points2d {
-            points: points
+            points,
         }
     }
 }
@@ -105,7 +105,7 @@ impl Points3d {
 
     pub fn with_points(points: Vec<(f64, f64, f64)>) -> Points3d {
         Points3d {
-            points: points
+            points,
         }
     }
 }
@@ -137,7 +137,7 @@ impl Points4d {
 
     pub fn with_points(points: Vec<(f64, f64, f64, f64)>) -> Points4d {
         Points4d {
-            points: points
+            points,
         }
     }
 }

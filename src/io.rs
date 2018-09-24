@@ -1494,7 +1494,7 @@ pub trait WriteDkTxt: Write {
         let axes = h.axes();
         for (idx, c) in h.counts().iter().enumerate() {
             if (idx != 0) && (idx % axes.1.bins == 0) {
-                writeln!(self, "")?;
+                writeln!(self)?;
             }
             let val = h.val_at_idx(idx);
             writeln!(self, "{}\t{}\t{}", val.0, val.1, c)?;
@@ -1525,7 +1525,7 @@ pub trait WriteDkTxt: Write {
         if let Some(v) = c.verts().first() {
             writeln!(self, "{}\t{}", v.0, v.1)?;
         }
-        writeln!(self, "")?;
+        writeln!(self)?;
         Ok(())
     }
 

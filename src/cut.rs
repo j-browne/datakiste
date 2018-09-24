@@ -24,8 +24,8 @@ impl Cut1dLin {
         let max = f64::max(x1, x2);
 
         Cut1dLin {
-            min: min,
-            max: max,
+            min,
+            max,
         }
     }
 
@@ -54,8 +54,8 @@ pub struct Cut2dCirc {
 impl Cut2dCirc {
     pub fn new(x: f64, y: f64, r: f64) -> Cut2dCirc {
         Cut2dCirc {
-            x: x,
-            y: y,
+            x,
+            y,
             r: r.abs(),
         }
     }
@@ -90,7 +90,7 @@ impl Cut2dPoly {
     }
 
     pub fn from_verts(verts: Vec<(f64, f64)>) -> Cut2dPoly {
-        Cut2dPoly { verts: verts }
+        Cut2dPoly { verts }
     }
 
     pub fn verts(&self) -> &Vec<(f64, f64)> {
@@ -138,10 +138,10 @@ impl Cut2dRect {
         let ymax = f64::max(y1, y2);
 
         Cut2dRect {
-            xmin: xmin,
-            ymin: ymin,
-            xmax: xmax,
-            ymax: ymax,
+            xmin,
+            ymin,
+            xmax,
+            ymax,
         }
     }
 
