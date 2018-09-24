@@ -1,13 +1,11 @@
 // TODO: Documentation
 // TODO: Create list of what to document
 // FIXME: Some things should return Options
+#![allow(clippy::too_many_arguments)]
 
-extern crate rand;
-
+use crate::cut::{Cut1d, Cut2d};
+use rand::distributions::{IndependentSample, Range};
 use std::mem;
-use self::rand::distributions::{IndependentSample, Range};
-use cut::{Cut1d, Cut2d};
-
 
 /// A type that describes an axis for a histogram.
 ///
@@ -38,11 +36,7 @@ impl HistAxis {
         if bins == 0 {
             None
         } else {
-            Some(HistAxis {
-                bins: bins,
-                min: min,
-                max: max,
-            })
+            Some(HistAxis { bins, min, max })
         }
     }
 
@@ -97,7 +91,6 @@ pub trait Hist: Sized {
         self.fill_at_val_with_counts(val, counts);
     }
 
-
     fn fill_at_val(&mut self, val: Self::Val) {
         self.fill_at_val_with_counts(val, 1u64);
     }
@@ -106,7 +99,6 @@ pub trait Hist: Sized {
         let idx = self.idx_at_val(val);
         self.fill_at_idx_with_counts(idx, counts);
     }
-
 
     fn fill_at_bin(&mut self, bin: Self::Bin) {
         self.fill_at_bin_with_counts(bin, 1u64);
@@ -117,7 +109,6 @@ pub trait Hist: Sized {
         self.fill_at_idx_with_counts(idx, counts);
     }
 
-
     fn fill_at_idx(&mut self, idx: usize) {
         self.fill_at_idx_with_counts(idx, 1u64);
     }
@@ -126,7 +117,6 @@ pub trait Hist: Sized {
         self.counts_mut()[idx] += counts;
     }
 
-
     fn add(&mut self, other: &Self) {
         for (o_idx, o_c) in other.counts().iter().enumerate() {
             let o_val = other.val_at_idx(o_idx);
@@ -134,7 +124,6 @@ pub trait Hist: Sized {
             self.fill_at_idx_with_counts(s_idx, *o_c);
         }
     }
-
 
     fn idx_at_val(&self, val: Self::Val) -> usize {
         let bin = self.bin_at_val(val);
@@ -165,7 +154,6 @@ pub trait Hist: Sized {
     }
 }
 
-
 /// A type that describes a 1D histogram.
 ///
 /// # Examples
@@ -184,7 +172,6 @@ impl Hist for Hist1d {
         &self.axes
     }
 
-
     fn bin_at_val(&self, val: Self::Val) -> Self::Bin {
         (self.axes.bin_at_val(val))
     }
@@ -192,7 +179,6 @@ impl Hist for Hist1d {
     fn val_at_bin(&self, bin: Self::Bin) -> Self::Val {
         (self.axes.val_at_bin_mid(bin))
     }
-
 
     fn idx_at_bin(&self, bin: Self::Bin) -> usize {
         bin
@@ -206,7 +192,7 @@ impl Hist for Hist1d {
         &self.counts
     }
 
-    fn counts_mut(&mut self) -> &mut Vec<u64>{
+    fn counts_mut(&mut self) -> &mut Vec<u64> {
         &mut self.counts
     }
 }
@@ -236,7 +222,7 @@ impl Hist1d {
                 let counts = vec![0u64; bins_0];
                 Some(Hist1d {
                     axes: (axis_0),
-                    counts: counts,
+                    counts,
                 })
             }
             _ => None,
@@ -262,18 +248,15 @@ impl Hist1d {
     /// let mut hist = Hist1d::with_counts(100usize, 0f64, 100f64, vec![]);
     /// assert_eq!(hist, None);
     /// ```
-    pub fn with_counts(bins_0: usize, min_0: f64, max_0: f64,
-                       counts: Vec<u64>) -> Option<Hist1d> {
+    pub fn with_counts(bins_0: usize, min_0: f64, max_0: f64, counts: Vec<u64>) -> Option<Hist1d> {
         if bins_0 != counts.len() {
             None
         } else {
             match HistAxis::new(bins_0, min_0, max_0) {
-                Some(axis_0) => {
-                    Some(Hist1d {
-                        axes: (axis_0),
-                        counts: counts,
-                    })
-                }
+                Some(axis_0) => Some(Hist1d {
+                    axes: (axis_0),
+                    counts,
+                }),
                 _ => None,
             }
         }
@@ -303,7 +286,7 @@ impl Hist1d {
     }
 
     /// Returns the number of counts contained by `cut`.
-    pub fn integrate(&self, cut: &Cut1d) -> u64 {
+    pub fn integrate(&self, cut: &Cut2d) -> u64 {
         let mut sum = 0u64;
         for (idx, c) in self.counts().iter().enumerate() {
             let val = self.val_at_idx(idx);
@@ -313,14 +296,10 @@ impl Hist1d {
         }
         sum
     }
-
-    pub fn counts(&self) -> &Vec<u64> {
-        &self.counts
-    }
 }
 
 
-/// A type that describes a 2D histogram.
+/// A type that describes a 3D histogram.
 ///
 /// # Examples
 #[derive(PartialEq, Debug, Clone)]
@@ -339,13 +318,14 @@ impl Hist for Hist2d {
     }
 
     fn bin_at_val(&self, val: Self::Val) -> Self::Bin {
-        (self.axes.0.bin_at_val(val.0),
-         self.axes.1.bin_at_val(val.1))
+        (self.axes.0.bin_at_val(val.0), self.axes.1.bin_at_val(val.1))
     }
 
     fn val_at_bin(&self, bin: Self::Bin) -> Self::Val {
-        (self.axes.0.val_at_bin_mid(bin.0),
-         self.axes.1.val_at_bin_mid(bin.1))
+        (
+            self.axes.0.val_at_bin_mid(bin.0),
+            self.axes.1.val_at_bin_mid(bin.1),
+        )
     }
 
     fn idx_at_bin(&self, bin: Self::Bin) -> usize {
@@ -364,41 +344,55 @@ impl Hist for Hist2d {
         &self.counts
     }
 
-    fn counts_mut(&mut self) -> &mut Vec<u64>{
+    fn counts_mut(&mut self) -> &mut Vec<u64> {
         &mut self.counts
     }
 }
 
 impl Hist2d {
-    pub fn new(bins_0: usize, min_0: f64, max_0: f64,
-               bins_1: usize, min_1: f64, max_1: f64) -> Option<Hist2d> {
-        match (HistAxis::new(bins_0, min_0, max_0),
-               HistAxis::new(bins_1, min_1, max_1)) {
+    pub fn new(
+        bins_0: usize,
+        min_0: f64,
+        max_0: f64,
+        bins_1: usize,
+        min_1: f64,
+        max_1: f64,
+    ) -> Option<Hist2d> {
+        match (
+            HistAxis::new(bins_0, min_0, max_0),
+            HistAxis::new(bins_1, min_1, max_1),
+        ) {
             (Some(axis_0), Some(axis_1)) => {
                 let counts = vec![0u64; bins_0 * bins_1];
                 Some(Hist2d {
                     axes: (axis_0, axis_1),
-                    counts: counts,
+                    counts,
                 })
             }
             _ => None,
         }
     }
 
-    pub fn with_counts(bins_0: usize, min_0: f64, max_0: f64,
-                       bins_1: usize, min_1: f64, max_1: f64,
-                       counts: Vec<u64>) -> Option<Hist2d> {
+    pub fn with_counts(
+        bins_0: usize,
+        min_0: f64,
+        max_0: f64,
+        bins_1: usize,
+        min_1: f64,
+        max_1: f64,
+        counts: Vec<u64>,
+    ) -> Option<Hist2d> {
         if bins_0 * bins_1 != counts.len() {
             None
         } else {
-            match (HistAxis::new(bins_0, min_0, max_0),
-                   HistAxis::new(bins_1, min_1, max_1)) {
-                (Some(axis_0), Some(axis_1)) => {
-                    Some(Hist2d {
-                        axes: (axis_0, axis_1),
-                        counts: counts,
-                    })
-                }
+            match (
+                HistAxis::new(bins_0, min_0, max_0),
+                HistAxis::new(bins_1, min_1, max_1),
+            ) {
+                (Some(axis_0), Some(axis_1)) => Some(Hist2d {
+                    axes: (axis_0, axis_1),
+                    counts,
+                }),
                 _ => None,
             }
         }
@@ -413,23 +407,29 @@ impl Hist2d {
         for (o_idx, o_c) in other.counts().iter().enumerate() {
             let o_bin = self.bin_at_idx(o_idx);
 
-            let o_val_min = (other.axes.0.val_at_bin_mid(o_bin.0),
-                             other.axes.1.val_at_bin_mid(o_bin.1));
-            let o_val_max = (other.axes.0.val_at_bin_max(o_bin.0),
-                             other.axes.1.val_at_bin_max(o_bin.1));
+            let o_val_min = (
+                other.axes.0.val_at_bin_mid(o_bin.0),
+                other.axes.1.val_at_bin_mid(o_bin.1),
+            );
+            let o_val_max = (
+                other.axes.0.val_at_bin_max(o_bin.0),
+                other.axes.1.val_at_bin_max(o_bin.1),
+            );
 
-            let range = (Range::new(o_val_min.0, o_val_max.0),
-                         Range::new(o_val_min.1, o_val_max.1));
+            let range = (
+                Range::new(o_val_min.0, o_val_max.0),
+                Range::new(o_val_min.1, o_val_max.1),
+            );
 
             for _ in 0..(*o_c) {
-                let s_val = (range.0.ind_sample(&mut rng),
-                             range.1.ind_sample(&mut rng));
+                let s_val = (range.0.ind_sample(&mut rng), range.1.ind_sample(&mut rng));
                 let s_idx = self.idx_at_val(s_val);
 
                 self.fill_at_idx(s_idx);
             }
         }
     }
+}
 
     /// Returns the number of counts contained by `cut`.
     pub fn integrate(&self, cut: &Cut2d) -> u64 {
@@ -443,7 +443,6 @@ impl Hist2d {
         sum
     }
 }
-
 
 /// A type that describes a 3D histogram.
 ///
@@ -464,15 +463,19 @@ impl Hist for Hist3d {
     }
 
     fn bin_at_val(&self, val: Self::Val) -> Self::Bin {
-        (self.axes.0.bin_at_val(val.0),
-         self.axes.1.bin_at_val(val.1),
-         self.axes.2.bin_at_val(val.2))
+        (
+            self.axes.0.bin_at_val(val.0),
+            self.axes.1.bin_at_val(val.1),
+            self.axes.2.bin_at_val(val.2),
+        )
     }
 
     fn val_at_bin(&self, bin: Self::Bin) -> Self::Val {
-        (self.axes.0.val_at_bin_mid(bin.0),
-         self.axes.1.val_at_bin_mid(bin.1),
-         self.axes.2.val_at_bin_mid(bin.2))
+        (
+            self.axes.0.val_at_bin_mid(bin.0),
+            self.axes.1.val_at_bin_mid(bin.1),
+            self.axes.2.val_at_bin_mid(bin.2),
+        )
     }
 
     fn idx_at_bin(&self, bin: Self::Bin) -> usize {
@@ -493,47 +496,66 @@ impl Hist for Hist3d {
         &self.counts
     }
 
-    fn counts_mut(&mut self) -> &mut Vec<u64>{
+    fn counts_mut(&mut self) -> &mut Vec<u64> {
         &mut self.counts
     }
 }
 
 impl Hist3d {
-    pub fn new(bins_0: usize, min_0: f64, max_0: f64,
-               bins_1: usize, min_1: f64, max_1: f64,
-               bins_2: usize, min_2: f64, max_2: f64) -> Option<Hist3d> {
-        match (HistAxis::new(bins_0, min_0, max_0),
-               HistAxis::new(bins_1, min_1, max_1),
-               HistAxis::new(bins_2, min_2, max_2)) {
+    pub fn new(
+        bins_0: usize,
+        min_0: f64,
+        max_0: f64,
+        bins_1: usize,
+        min_1: f64,
+        max_1: f64,
+        bins_2: usize,
+        min_2: f64,
+        max_2: f64,
+    ) -> Option<Hist3d> {
+        match (
+            HistAxis::new(bins_0, min_0, max_0),
+            HistAxis::new(bins_1, min_1, max_1),
+            HistAxis::new(bins_2, min_2, max_2),
+        ) {
             (Some(axis_0), Some(axis_1), Some(axis_2)) => {
                 let counts = vec![0u64; bins_0 * bins_1 * bins_2];
                 Some(Hist3d {
                     axes: (axis_0, axis_1, axis_2),
-                    counts: counts,
+                    counts,
                 })
             }
             _ => None,
         }
     }
 
-    pub fn with_counts(bins_0: usize, min_0: f64, max_0: f64,
-                       bins_1: usize, min_1: f64, max_1: f64,
-                       bins_2: usize, min_2: f64, max_2: f64,
-                       counts: Vec<u64>) -> Option<Hist3d> {
+    pub fn with_counts(
+        bins_0: usize,
+        min_0: f64,
+        max_0: f64,
+        bins_1: usize,
+        min_1: f64,
+        max_1: f64,
+        bins_2: usize,
+        min_2: f64,
+        max_2: f64,
+        counts: Vec<u64>,
+    ) -> Option<Hist3d> {
         if bins_0 * bins_1 * bins_2 != counts.len() {
             None
         } else {
-            match (HistAxis::new(bins_0, min_0, max_0),
-                   HistAxis::new(bins_1, min_1, max_1),
-                   HistAxis::new(bins_2, min_2, max_2)) {
-                (Some(axis_0), Some(axis_1), Some(axis_2)) => {
-                    Some(Hist3d {
-                        axes: (axis_0, axis_1, axis_2),
-                        counts: counts,
-                    })
-                }
+            match (
+                HistAxis::new(bins_0, min_0, max_0),
+                HistAxis::new(bins_1, min_1, max_1),
+                HistAxis::new(bins_2, min_2, max_2),
+            ) {
+                (Some(axis_0), Some(axis_1), Some(axis_2)) => Some(Hist3d {
+                    axes: (axis_0, axis_1, axis_2),
+                    counts,
+                }),
                 _ => None,
             }
+            _ => None,
         }
     }
 
@@ -546,21 +568,29 @@ impl Hist3d {
         for (o_idx, o_c) in other.counts().iter().enumerate() {
             let o_bin = self.bin_at_idx(o_idx);
 
-            let o_val_min = (other.axes.0.val_at_bin_mid(o_bin.0),
-                             other.axes.1.val_at_bin_mid(o_bin.1),
-                             other.axes.2.val_at_bin_mid(o_bin.2));
-            let o_val_max = (other.axes.0.val_at_bin_max(o_bin.0),
-                             other.axes.1.val_at_bin_max(o_bin.1),
-                             other.axes.2.val_at_bin_max(o_bin.2));
+            let o_val_min = (
+                other.axes.0.val_at_bin_mid(o_bin.0),
+                other.axes.1.val_at_bin_mid(o_bin.1),
+                other.axes.2.val_at_bin_mid(o_bin.2),
+            );
+            let o_val_max = (
+                other.axes.0.val_at_bin_max(o_bin.0),
+                other.axes.1.val_at_bin_max(o_bin.1),
+                other.axes.2.val_at_bin_max(o_bin.2),
+            );
 
-            let range = (Range::new(o_val_min.0, o_val_max.0),
-                         Range::new(o_val_min.1, o_val_max.1),
-                         Range::new(o_val_min.2, o_val_max.2));
+            let range = (
+                Range::new(o_val_min.0, o_val_max.0),
+                Range::new(o_val_min.1, o_val_max.1),
+                Range::new(o_val_min.2, o_val_max.2),
+            );
 
             for _ in 0..(*o_c) {
-                let s_val = (range.0.ind_sample(&mut rng),
-                             range.1.ind_sample(&mut rng),
-                             range.2.ind_sample(&mut rng));
+                let s_val = (
+                    range.0.ind_sample(&mut rng),
+                    range.1.ind_sample(&mut rng),
+                    range.2.ind_sample(&mut rng),
+                );
                 let s_idx = self.idx_at_val(s_val);
 
                 self.fill_at_idx(s_idx);
@@ -568,7 +598,6 @@ impl Hist3d {
         }
     }
 }
-
 
 /// A type that describes a 4D histogram.
 ///
@@ -589,18 +618,24 @@ impl Hist for Hist4d {
     }
 
     fn bin_at_val(&self, val: Self::Val) -> Self::Bin {
-        (self.axes.0.bin_at_val(val.0),
-         self.axes.1.bin_at_val(val.1),
-         self.axes.2.bin_at_val(val.2),
-         self.axes.3.bin_at_val(val.3))
+        (
+            self.axes.0.bin_at_val(val.0),
+            self.axes.1.bin_at_val(val.1),
+            self.axes.2.bin_at_val(val.2),
+            self.axes.3.bin_at_val(val.3),
+        )
     }
 
     fn val_at_bin(&self, bin: Self::Bin) -> Self::Val {
-        (self.axes.0.val_at_bin_mid(bin.0),
-         self.axes.1.val_at_bin_mid(bin.1),
-         self.axes.2.val_at_bin_mid(bin.2),
-         self.axes.3.val_at_bin_mid(bin.3))
+        (
+            self.axes.0.val_at_bin_mid(bin.0),
+            self.axes.1.val_at_bin_mid(bin.1),
+            self.axes.2.val_at_bin_mid(bin.2),
+            self.axes.3.val_at_bin_mid(bin.3),
+        )
     }
+}
+
 
     fn idx_at_bin(&self, bin: Self::Bin) -> usize {
         self.axes.3.bins * (self.axes.2.bins * (self.axes.1.bins * bin.0 + bin.1) + bin.2) + bin.3
@@ -622,49 +657,71 @@ impl Hist for Hist4d {
         &self.counts
     }
 
-    fn counts_mut(&mut self) -> &mut Vec<u64>{
+    fn counts_mut(&mut self) -> &mut Vec<u64> {
         &mut self.counts
     }
 }
 
 impl Hist4d {
-    pub fn new(bins_0: usize, min_0: f64, max_0: f64,
-               bins_1: usize, min_1: f64, max_1: f64,
-               bins_2: usize, min_2: f64, max_2: f64,
-               bins_3: usize, min_3: f64, max_3: f64) -> Option<Hist4d> {
-        match (HistAxis::new(bins_0, min_0, max_0),
-               HistAxis::new(bins_1, min_1, max_1),
-               HistAxis::new(bins_2, min_2, max_2),
-               HistAxis::new(bins_3, min_3, max_3)) {
+    pub fn new(
+        bins_0: usize,
+        min_0: f64,
+        max_0: f64,
+        bins_1: usize,
+        min_1: f64,
+        max_1: f64,
+        bins_2: usize,
+        min_2: f64,
+        max_2: f64,
+        bins_3: usize,
+        min_3: f64,
+        max_3: f64,
+    ) -> Option<Hist4d> {
+        match (
+            HistAxis::new(bins_0, min_0, max_0),
+            HistAxis::new(bins_1, min_1, max_1),
+            HistAxis::new(bins_2, min_2, max_2),
+            HistAxis::new(bins_3, min_3, max_3),
+        ) {
             (Some(axis_0), Some(axis_1), Some(axis_2), Some(axis_3)) => {
                 let counts = vec![0u64; bins_0 * bins_1 * bins_2 * bins_3];
                 Some(Hist4d {
                     axes: (axis_0, axis_1, axis_2, axis_3),
-                    counts: counts,
+                    counts,
                 })
             }
             _ => None,
         }
     }
 
-    pub fn with_counts(bins_0: usize, min_0: f64, max_0: f64,
-                       bins_1: usize, min_1: f64, max_1: f64,
-                       bins_2: usize, min_2: f64, max_2: f64,
-                       bins_3: usize, min_3: f64, max_3: f64,
-                       counts: Vec<u64>) -> Option<Hist4d> {
+    pub fn with_counts(
+        bins_0: usize,
+        min_0: f64,
+        max_0: f64,
+        bins_1: usize,
+        min_1: f64,
+        max_1: f64,
+        bins_2: usize,
+        min_2: f64,
+        max_2: f64,
+        bins_3: usize,
+        min_3: f64,
+        max_3: f64,
+        counts: Vec<u64>,
+    ) -> Option<Hist4d> {
         if bins_0 * bins_1 * bins_2 * bins_3 != counts.len() {
             None
         } else {
-            match (HistAxis::new(bins_0, min_0, max_0),
-                   HistAxis::new(bins_1, min_1, max_1),
-                   HistAxis::new(bins_2, min_2, max_2),
-                   HistAxis::new(bins_3, min_3, max_3)) {
-                (Some(axis_0), Some(axis_1), Some(axis_2), Some(axis_3)) => {
-                    Some(Hist4d {
-                        axes: (axis_0, axis_1, axis_2, axis_3),
-                        counts: counts,
-                    })
-                }
+            match (
+                HistAxis::new(bins_0, min_0, max_0),
+                HistAxis::new(bins_1, min_1, max_1),
+                HistAxis::new(bins_2, min_2, max_2),
+                HistAxis::new(bins_3, min_3, max_3),
+            ) {
+                (Some(axis_0), Some(axis_1), Some(axis_2), Some(axis_3)) => Some(Hist4d {
+                    axes: (axis_0, axis_1, axis_2, axis_3),
+                    counts,
+                }),
                 _ => None,
             }
         }
@@ -679,66 +736,38 @@ impl Hist4d {
         for (o_idx, o_c) in other.counts().iter().enumerate() {
             let o_bin = self.bin_at_idx(o_idx);
 
-            let o_val_min = (other.axes.0.val_at_bin_mid(o_bin.0),
-                             other.axes.1.val_at_bin_mid(o_bin.1),
-                             other.axes.2.val_at_bin_mid(o_bin.2),
-                             other.axes.3.val_at_bin_mid(o_bin.3));
-            let o_val_max = (other.axes.0.val_at_bin_max(o_bin.0),
-                             other.axes.1.val_at_bin_max(o_bin.1),
-                             other.axes.2.val_at_bin_max(o_bin.2),
-                             other.axes.3.val_at_bin_max(o_bin.3));
+            let o_val_min = (
+                other.axes.0.val_at_bin_mid(o_bin.0),
+                other.axes.1.val_at_bin_mid(o_bin.1),
+                other.axes.2.val_at_bin_mid(o_bin.2),
+                other.axes.3.val_at_bin_mid(o_bin.3),
+            );
+            let o_val_max = (
+                other.axes.0.val_at_bin_max(o_bin.0),
+                other.axes.1.val_at_bin_max(o_bin.1),
+                other.axes.2.val_at_bin_max(o_bin.2),
+                other.axes.3.val_at_bin_max(o_bin.3),
+            );
 
-            let range = (Range::new(o_val_min.0, o_val_max.0),
-                         Range::new(o_val_min.1, o_val_max.1),
-                         Range::new(o_val_min.2, o_val_max.2),
-                         Range::new(o_val_min.3, o_val_max.3));
+            let range = (
+                Range::new(o_val_min.0, o_val_max.0),
+                Range::new(o_val_min.1, o_val_max.1),
+                Range::new(o_val_min.2, o_val_max.2),
+                Range::new(o_val_min.3, o_val_max.3),
+            );
 
             for _ in 0..(*o_c) {
-                let s_val = (range.0.ind_sample(&mut rng),
-                             range.1.ind_sample(&mut rng),
-                             range.2.ind_sample(&mut rng),
-                             range.3.ind_sample(&mut rng));
+                let s_val = (
+                    range.0.ind_sample(&mut rng),
+                    range.1.ind_sample(&mut rng),
+                    range.2.ind_sample(&mut rng),
+                    range.3.ind_sample(&mut rng),
+                );
                 let s_idx = self.idx_at_val(s_val);
 
                 self.fill_at_idx(s_idx);
             }
         }
-    }
-
-    pub fn counts(&self) -> &Vec<u64> {
-        &self.counts
-    }
-}
-
-
-#[derive(Debug, Clone)]
-pub struct Points2d {
-    points: Vec<(f64, f64)>,
-}
-
-impl Points2d {
-    pub fn new() -> Points2d {
-        Points2d {
-            points: Vec::new(),
-        }
-    }
-
-    pub fn with_points(points: Vec<(f64, f64)>) -> Points2d {
-        Points2d {
-            points: points
-        }
-    }
-
-    pub fn add(&mut self, other: &mut Points2d) {
-        self.points.append(&mut other.points);
-    }
-
-    pub fn push(&mut self, x: f64, y: f64) {
-        self.points.push((x, y));
-    }
-
-    pub fn points(&self) -> &Vec<(f64, f64)> {
-        &self.points
     }
 }
 
@@ -797,11 +826,12 @@ mod tests {
     #[test]
     fn hist_1d_add() {
         let mut h1a = Hist1d::with_counts(5usize, 0f64, 10f64, vec![2, 3, 50, 4, 1]).unwrap();
-        let mut h2a = Hist1d::with_counts(10usize,
-                                          5f64,
-                                          10f64,
-                                          vec![0, 0, 5, 15, 16, 10, 9, 20, 8, 12])
-                          .unwrap();
+        let mut h2a = Hist1d::with_counts(
+            10usize,
+            5f64,
+            10f64,
+            vec![0, 0, 5, 15, 16, 10, 9, 20, 8, 12],
+        ).unwrap();
 
         let h1b = h1a.clone();
         let h2b = h2a.clone();

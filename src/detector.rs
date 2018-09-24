@@ -1,6 +1,6 @@
 //TODO: Display for detid, daqid, etc
+use crate::DaqId;
 use std::fmt::Debug;
-use DaqId;
 
 pub trait Detector: Debug {
     fn name(&self) -> String;
@@ -46,8 +46,10 @@ impl Detector for BB10F {
     }
 
     fn contains_daq(&self, id: DaqId) -> bool {
-        (id.0 == self.start.0) && (id.1 == self.start.1) && (id.2 == self.start.2) &&
-        ((id.3 >= self.start.3) && (id.3 < self.start.3 + self.num_chans))
+        (id.0 == self.start.0)
+            && (id.1 == self.start.1)
+            && (id.2 == self.start.2)
+            && ((id.3 >= self.start.3) && (id.3 < self.start.3 + self.num_chans))
     }
 
     fn daq_to_det(&self, id: DaqId) -> Option<u16> {
@@ -68,7 +70,6 @@ impl Detector for BB10F {
         }
     }
 }
-
 
 #[derive(Debug)]
 pub struct BB15B {
@@ -97,8 +98,10 @@ impl Detector for BB15B {
     }
 
     fn contains_daq(&self, id: DaqId) -> bool {
-        (id.0 == self.start.0) && (id.1 == self.start.1) && (id.2 == self.start.2) &&
-        ((id.3 >= self.start.3) && (id.3 < self.start.3 + self.num_chans))
+        (id.0 == self.start.0)
+            && (id.1 == self.start.1)
+            && (id.2 == self.start.2)
+            && ((id.3 >= self.start.3) && (id.3 < self.start.3 + self.num_chans))
     }
 
     fn daq_to_det(&self, id: DaqId) -> Option<u16> {
@@ -119,7 +122,6 @@ impl Detector for BB15B {
         }
     }
 }
-
 
 #[derive(Debug)]
 pub struct BB15F {
@@ -153,8 +155,9 @@ impl Detector for BB15F {
     }
 
     fn contains_daq(&self, id: DaqId) -> bool {
-        (id.0 == self.start.0) && (id.1 == self.start.1) &&
-        ((id.2 >= self.start.2) && (id.2 < self.start.2 + 4))
+        (id.0 == self.start.0)
+            && (id.1 == self.start.1)
+            && ((id.2 >= self.start.2) && (id.2 < self.start.2 + 4))
     }
 
     fn daq_to_det(&self, id: DaqId) -> Option<u16> {
@@ -181,7 +184,6 @@ impl Detector for BB15F {
         }
     }
 }
-
 
 #[derive(Debug)]
 pub struct HABANERO {
@@ -210,8 +212,9 @@ impl Detector for HABANERO {
     }
 
     fn contains_daq(&self, id: DaqId) -> bool {
-        (id.0 == self.start.0) && (id.1 == self.start.1) &&
-        ((id.2 >= self.start.2) && (id.2 < self.start.2 + 5))
+        (id.0 == self.start.0)
+            && (id.1 == self.start.1)
+            && ((id.2 >= self.start.2) && (id.2 < self.start.2 + 5))
     }
 
     fn daq_to_det(&self, id: DaqId) -> Option<u16> {
@@ -233,7 +236,6 @@ impl Detector for HABANERO {
         }
     }
 }
-
 
 #[derive(Debug)]
 pub struct HAGRID {
@@ -262,8 +264,10 @@ impl Detector for HAGRID {
     }
 
     fn contains_daq(&self, id: DaqId) -> bool {
-        (id.0 == self.start.0) && (id.1 == self.start.1) && (id.2 == self.start.2) &&
-        ((id.3 >= self.start.3) && (id.3 < self.start.3 + self.num_chans))
+        (id.0 == self.start.0)
+            && (id.1 == self.start.1)
+            && (id.2 == self.start.2)
+            && ((id.3 >= self.start.3) && (id.3 < self.start.3 + self.num_chans))
     }
 
     fn daq_to_det(&self, id: DaqId) -> Option<u16> {
@@ -284,7 +288,6 @@ impl Detector for HAGRID {
         }
     }
 }
-
 
 #[derive(Debug)]
 pub struct PSICE {
@@ -336,7 +339,6 @@ impl Detector for PSICE {
     }
 }
 
-
 #[derive(Debug)]
 pub struct PSICXY {
     name: String,
@@ -364,8 +366,9 @@ impl Detector for PSICXY {
     }
 
     fn contains_daq(&self, id: DaqId) -> bool {
-        (id.0 == self.start.0) && (id.1 == self.start.1) &&
-        ((id.2 >= self.start.2) && (id.2 < self.start.2 + 2))
+        (id.0 == self.start.0)
+            && (id.1 == self.start.1)
+            && ((id.2 >= self.start.2) && (id.2 < self.start.2 + 2))
     }
 
     fn daq_to_det(&self, id: DaqId) -> Option<u16> {
@@ -387,7 +390,6 @@ impl Detector for PSICXY {
         }
     }
 }
-
 
 #[derive(Debug)]
 pub struct QQQ3B {
@@ -437,7 +439,6 @@ impl Detector for QQQ3B {
         }
     }
 }
-
 
 #[derive(Debug)]
 pub struct QQQ3F {
@@ -493,7 +494,6 @@ impl Detector for QQQ3F {
     }
 }
 
-
 #[derive(Debug)]
 pub struct QQQ5B {
     name: String,
@@ -521,8 +521,10 @@ impl Detector for QQQ5B {
     }
 
     fn contains_daq(&self, id: DaqId) -> bool {
-        (id.0 == self.start.0) && (id.1 == self.start.1) && (id.2 == self.start.2) &&
-        ((id.3 >= self.start.3) && (id.3 < self.start.3 + self.num_chans))
+        (id.0 == self.start.0)
+            && (id.1 == self.start.1)
+            && (id.2 == self.start.2)
+            && ((id.3 >= self.start.3) && (id.3 < self.start.3 + self.num_chans))
     }
 
     fn daq_to_det(&self, id: DaqId) -> Option<u16> {
@@ -543,7 +545,6 @@ impl Detector for QQQ5B {
         }
     }
 }
-
 
 #[derive(Debug)]
 pub struct QQQ5F {
@@ -577,8 +578,9 @@ impl Detector for QQQ5F {
     }
 
     fn contains_daq(&self, id: DaqId) -> bool {
-        (id.0 == self.start.0) && (id.1 == self.start.1) &&
-        ((id.2 >= self.start.2) && (id.2 < self.start.2 + 2))
+        (id.0 == self.start.0)
+            && (id.1 == self.start.1)
+            && ((id.2 >= self.start.2) && (id.2 < self.start.2 + 2))
     }
 
     fn daq_to_det(&self, id: DaqId) -> Option<u16> {
@@ -600,7 +602,6 @@ impl Detector for QQQ5F {
         }
     }
 }
-
 
 #[derive(Debug)]
 pub struct YY1F {

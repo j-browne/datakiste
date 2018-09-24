@@ -74,7 +74,13 @@ fn integrate_2d_banana() {
     h.fill_with_counts((8., 10.), 342);
     h.fill_with_counts((0., 0.), 114);
 
-    let c1 = Cut2dPoly::from_verts(vec![(0.1, 0.75), (0.5, 0.65), (0.75, 0.5), (0.4, 0.5), (0.1, 0.7)]);
+    let c1 = Cut2dPoly::from_verts(vec![
+        (0.1, 0.75),
+        (0.5, 0.65),
+        (0.75, 0.5),
+        (0.4, 0.5),
+        (0.1, 0.7),
+    ]);
 
     assert_eq!(h.integrate(&c1), 342);
 }

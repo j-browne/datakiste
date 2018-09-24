@@ -1,18 +1,24 @@
 //! A library for analyzing nuclear physics data
-extern crate byteorder;
+#![feature(tool_lints)]
 
-#[macro_use]pub mod logging;
+use crate::{calibration::Calibration, detector::*, val_unc::ValUnc};
+use std::{
+    collections::HashMap,
+    fs::File,
+    io::{BufRead, BufReader, Write},
+};
 
-use detector::*;
-use std::collections::HashMap;
-use std::fs::File;
-use std::io::{Write, BufReader, BufRead};
+#[macro_use]
+pub mod logging;
 
+pub mod calibration;
 pub mod cut;
 pub mod detector;
+pub mod error;
 pub mod hist;
 pub mod io;
 pub mod points;
+pub mod val_unc;
 
 #[derive(Copy, Debug, Clone, Eq, PartialEq, Hash)]
 pub struct DaqId(pub u16, pub u16, pub u16, pub u16);
@@ -41,16 +47,14 @@ pub struct Event {
 }
 
 impl Event {
-    pub fn apply_det(&mut self,
-                     all_dets: &[Box<Detector>],
-                     daq_det_map: &HashMap<DaqId, DetId>) {
-        for ref mut h in &mut self.hits {
+    pub fn apply_det(&mut self, all_dets: &[Box<Detector>], daq_det_map: &HashMap<DaqId, DetId>) {
+        for h in &mut self.hits {
             h.apply_det(all_dets, daq_det_map);
         }
     }
 
-    pub fn apply_calib(&mut self, calib: &HashMap<DaqId, (f64, f64)>) {
-        for ref mut h in &mut self.hits {
+    pub fn apply_calib(&mut self, calib: &HashMap<DaqId, Calibration>) {
+        for h in &mut self.hits {
             h.apply_calib(calib);
         }
     }
@@ -62,37 +66,29 @@ impl Event {
 #[derive(Debug, Clone)]
 pub struct Hit {
     pub daqid: DaqId,
-    pub detid: DetId,
+    pub detid: Option<DetId>,
     pub rawval: u16,
-    pub value: u16,
-    pub energy: f64,
+    pub value: Option<u16>,
+    pub energy: Option<ValUnc>,
     pub time: f64,
     pub trace: Vec<u16>,
 }
 
 impl Hit {
-    pub fn apply_det(&mut self,
-                     all_dets: &[Box<Detector>],
-                     daq_det_map: &HashMap<DaqId, DetId>) {
-        self.detid = match daq_det_map.get(&self.daqid) {
-            Some(x) => *x,
-            None => DetId(0, 0),
-        };
-        let idx = self.detid.0 as usize;
-        self.value = if idx > 0 {
-            all_dets[idx - 1].val_corr(self.detid.1, self.rawval)
-        } else {
-            self.rawval
-        };
-        self.energy = self.value as f64;
+    pub fn apply_det(&mut self, all_dets: &[Box<Detector>], daq_det_map: &HashMap<DaqId, DetId>) {
+        self.detid = daq_det_map.get(&self.daqid).cloned();
+        self.value = self
+            .detid
+            .map(|d| all_dets[usize::from(d.0) - 1].val_corr(d.1, self.rawval));
+        self.energy = None;
     }
 
-    pub fn apply_calib(&mut self, calib: &HashMap<DaqId, (f64, f64)>) {
-        let (o, s) = match calib.get(&self.daqid) {
-            Some(x) => *x,
-            None => (0f64, 1f64),
-        };
-        self.energy = s * self.energy + o;
+    pub fn apply_calib(&mut self, calib: &HashMap<DaqId, Calibration>) {
+        self.energy = if let (Some(value), Some(cal)) = (self.value, calib.get(&self.daqid)) {
+            Some(cal.apply(f64::from(value)))
+        } else {
+            None
+        }
     }
 }
 
@@ -122,9 +118,11 @@ pub fn get_id_map(dets: &[Box<Detector>]) -> HashMap<DaqId, DetId> {
                 let v = map.insert(daq_id, DetId(di, dc));
                 if v.is_some() {
                     let v = v.unwrap();
-                    warn!("Daq ID ({}, {}, {}, {}) is already used.\
-                           \n   Old: ({}, {})\n    New: ({}, {})",
-                           daq_id.0, daq_id.1, daq_id.2, daq_id.3, v.0, v.1, di, dc);
+                    warn!(
+                        "Daq ID ({}, {}, {}, {}) is already used.\
+                         \n   Old: ({}, {})\n    New: ({}, {})",
+                        daq_id.0, daq_id.1, daq_id.2, daq_id.3, v.0, v.1, di, dc
+                    );
                 }
             } else {
                 warn!("Bad Det ID ({}, {}).", di, dc);
@@ -142,7 +140,8 @@ fn line_to_det(line: &str) -> Option<Box<Detector>> {
 
     if l.is_empty() || // Empty line
         l[0].starts_with('#') || // Comment
-        l.len() < 6 {
+        l.len() < 6
+    {
         None
     } else {
         let t = l[0].to_string();
@@ -175,38 +174,4 @@ fn line_to_det(line: &str) -> Option<Box<Detector>> {
             }
         }
     }
-}
-
-
-// calibrate stuff
-//
-pub fn get_cal_map(file: File) -> HashMap<DaqId, (f64, f64)> {
-    // FIXME: &mut ?
-    let mut map = HashMap::<DaqId, (f64, f64)>::new();
-    // Read in the calibration file
-    let r = BufReader::new(file);
-    for l in r.lines() {
-        let l = l.unwrap();
-        let x: Vec<_> = l.split_whitespace().collect();
-        if x.len() < 6 {
-            warn!("Error parsing a line in the calib file."); //FIXME
-        } else {
-            // FIXME: handle unwraps
-            let id = DaqId(x[0].parse::<u16>().unwrap(),
-                           x[1].parse::<u16>().unwrap(),
-                           x[2].parse::<u16>().unwrap(),
-                           x[3].parse::<u16>().unwrap());
-            let o = x[4].parse::<f64>().unwrap();
-            let s = x[5].parse::<f64>().unwrap();
-
-            let v = map.insert(id, (o, s));
-            if v.is_some() {
-                let v = v.unwrap();
-                warn!("There is already a calibration for Daq ID ({}, {}, {}, {}).\
-                       \n    Old: ({}, {})\n    New: ({}, {})",
-                       id.0, id.1, id.2, id.3, v.0, v.1, o, s);
-            }
-        }
-    }
-    map
 }

@@ -1,9 +1,9 @@
 extern crate datakiste;
 
-use std::collections::HashMap;
-use datakiste::io::DkItem;
 use datakiste::hist::{Hist, Hist1d};
+use datakiste::io::DkItem;
 use std::borrow::Cow;
+use std::collections::HashMap;
 
 #[test]
 fn dk_item_unpacking_1() {
@@ -74,7 +74,7 @@ fn dk_item_unpacking_2() {
         println!("{:?}", h);
     }
     {
-        let mut h = m.get_mut("1").unwrap().as_hist_1d_mut().unwrap();
+        let h = m.get_mut("1").unwrap().as_hist_1d_mut().unwrap();
         h.fill(1f64);
         println!("{:?}", h);
     }
@@ -92,7 +92,7 @@ fn dk_item_unpacking_2() {
         println!("{:?}", h);
     }
     {
-        let mut h = m.get_mut("2").unwrap().as_hist_1d_mut().unwrap();
+        let h = m.get_mut("2").unwrap().as_hist_1d_mut().unwrap();
         h.fill(1f64);
         println!("{:?}", h);
     }
@@ -122,7 +122,7 @@ fn dk_item_unpacking_3() {
         println!("{:?}", h);
     }
     {
-        let mut h = m.get_mut("1").unwrap().as_hist_1d_mut().unwrap();
+        let h = m.get_mut("1").unwrap().as_hist_1d_mut().unwrap();
         h.fill(1f64);
         println!("{:?}", h);
     }
@@ -140,7 +140,7 @@ fn dk_item_unpacking_3() {
         println!("{:?}", h);
     }
     {
-        let mut h = m.get_mut("2").unwrap().as_hist_1d_mut().unwrap();
+        let h = m.get_mut("2").unwrap().as_hist_1d_mut().unwrap();
         h.fill(1f64);
         println!("{:?}", h);
     }
