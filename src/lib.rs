@@ -1,6 +1,4 @@
 //! A library for analyzing nuclear physics data
-#![feature(tool_lints)]
-
 use crate::{calibration::Calibration, detector::*, val_unc::ValUnc};
 use std::{
     collections::HashMap,

@@ -1153,6 +1153,7 @@ pub trait WriteDkBin: WriteBytesExt {
     /// else, write out `(u15_opt, u15_opt)`
     ///
     /// # Examples
+    #[allow(clippy::trivially_copy_pass_by_ref)]
     fn write_detid_bin(&mut self, v: &Option<DetId>) -> io::Result<()> {
         let (di_opt, dc_opt) = if let Some(DetId(di, dc)) = v {
             (Some(*di), Some(*dc))
@@ -1193,6 +1194,7 @@ pub trait WriteDkBin: WriteBytesExt {
     /// else, write out u16
     ///
     /// # Examples
+    #[deny(clippy::trivially_copy_pass_by_ref)]
     fn write_u15_opt(&mut self, v: &Option<u16>) -> io::Result<()> {
         self.write_u16::<LittleEndian>(v.unwrap_or(0x8000))?;
         Ok(())
