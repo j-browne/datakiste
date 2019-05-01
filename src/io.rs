@@ -263,6 +263,54 @@ impl<'a> DkItem<'a> {
         }
     }
 
+    pub fn as_hist_3d(&self) -> Option<&Hist3d> {
+        if let DkItem::Hist3d(ref h) = *self {
+            Some(h)
+        } else {
+            None
+        }
+    }
+
+    pub fn as_hist_3d_mut(&mut self) -> Option<&mut Hist3d> {
+        if let DkItem::Hist3d(ref mut h) = *self {
+            Some(h.to_mut())
+        } else {
+            None
+        }
+    }
+
+    pub fn into_hist_3d(self) -> Option<Hist3d> {
+        if let DkItem::Hist3d(h) = self {
+            Some(h.into_owned())
+        } else {
+            None
+        }
+    }
+
+    pub fn as_hist_4d(&self) -> Option<&Hist4d> {
+        if let DkItem::Hist4d(ref h) = *self {
+            Some(h)
+        } else {
+            None
+        }
+    }
+
+    pub fn as_hist_4d_mut(&mut self) -> Option<&mut Hist4d> {
+        if let DkItem::Hist4d(ref mut h) = *self {
+            Some(h.to_mut())
+        } else {
+            None
+        }
+    }
+
+    pub fn into_hist_4d(self) -> Option<Hist4d> {
+        if let DkItem::Hist4d(h) = self {
+            Some(h.into_owned())
+        } else {
+            None
+        }
+    }
+
     pub fn as_points_1d(&self) -> Option<&Points1d> {
         if let DkItem::Points1d(ref p) = *self {
             Some(p)
@@ -529,6 +577,8 @@ pub trait ReadDkBin: ReadBytesExt {
             0 => Ok(DkType::Run),
             1 => Ok(DkType::Hist1d),
             2 => Ok(DkType::Hist2d),
+            3 => Ok(DkType::Hist3d),
+            4 => Ok(DkType::Hist4d),
             11 => Ok(DkType::Points1d),
             12 => Ok(DkType::Points2d),
             13 => Ok(DkType::Points3d),
@@ -799,7 +849,7 @@ pub trait ReadDkBin: ReadBytesExt {
             Some(h) => Ok(h),
             None => Err(io::Error::new(
                 io::ErrorKind::Other,
-                "Error creating Hist2d",
+                "Error creating Hist3d",
             )),
         }
     }
@@ -834,7 +884,7 @@ pub trait ReadDkBin: ReadBytesExt {
             Some(h) => Ok(h),
             None => Err(io::Error::new(
                 io::ErrorKind::Other,
-                "Error creating Hist2d",
+                "Error creating Hist4d",
             )),
         }
     }
