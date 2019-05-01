@@ -5,13 +5,13 @@ use crate::{
     cut::{Cut1d, Cut1dLin, Cut2d, Cut2dCirc, Cut2dPoly, Cut2dRect},
     hist::{Hist, Hist1d, Hist2d, Hist3d, Hist4d},
     points::{Points, Points1d, Points2d, Points3d, Points4d},
-    val_unc::ValUnc,
     DaqId, DetId, Event, Hit, Run,
 };
 use std::{
     borrow::Cow,
     io::{self, BufRead, BufReader, Read, Write},
 };
+use::val_unc::ValUnc;
 
 const DK_MAGIC_NUMBER: u64 = 0xE2A1_642A_ACB5_C4C9;
 const DK_VERSION: (u64, u64, u64) = (0, 2, 0);

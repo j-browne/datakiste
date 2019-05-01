@@ -1,10 +1,11 @@
 //! A library for analyzing nuclear physics data
-use crate::{calibration::Calibration, detector::*, val_unc::ValUnc};
+use crate::{calibration::Calibration, detector::*};
 use std::{
     collections::HashMap,
     fs::File,
     io::{BufRead, BufReader, Write},
 };
+use val_unc::ValUnc;
 
 #[macro_use]
 pub mod logging;
@@ -16,7 +17,6 @@ pub mod error;
 pub mod hist;
 pub mod io;
 pub mod points;
-pub mod val_unc;
 
 #[derive(Copy, Debug, Clone, Eq, PartialEq, Hash)]
 pub struct DaqId(pub u16, pub u16, pub u16, pub u16);

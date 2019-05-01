@@ -1,10 +1,11 @@
-use super::{error::Result, val_unc::ValUnc, DaqId};
+use super::{error::Result, DaqId};
 use std::{
     collections::HashMap,
     fs::File,
     io::{BufRead, BufReader},
     path::Path,
 };
+use val_unc::ValUnc;
 
 pub struct Calibration {
     pub slope: f64,
