@@ -7,4 +7,4 @@ edition = "2018"
 [dependencies]
 byteorder = "0.5.2"
 rand = "0.3.14"
-val_unc = { path = "../val_unc/" }
+val_unc = { git = "https://github.com/j-browne/val_unc" }
