@@ -11,7 +11,7 @@ use std::{
     borrow::Cow,
     io::{self, BufRead, BufReader, Read, Write},
 };
-use::val_unc::ValUnc;
+use::val_unc::{ValUnc, ValSysStat};
 
 const DK_MAGIC_NUMBER: u64 = 0xE2A1_642A_ACB5_C4C9;
 const DK_VERSION: (u64, u64, u64) = (0, 2, 0);
@@ -732,6 +732,24 @@ pub trait ReadDkBin: ReadBytesExt {
         })
     }
 
+    /// Reads in binary optional `ValSysStat`
+    ///
+    /// # Format
+    /// if either `val`, `sys`, or `stat` is `None`, return `None`
+    /// else, `Some(ValSysStat)`
+    ///
+    /// # Examples
+    fn read_val_sys_stat_opt(&mut self) -> io::Result<Option<ValSysStat>> {
+        let val = self.read_f64_opt()?;
+        let sys = self.read_f64_opt()?;
+        let stat = self.read_f64_opt()?;
+
+        Ok(match (val, sys, stat) {
+            (Some(val), Some(sys), Some(stat)) => Some(ValSysStat { val, sys, stat }),
+            _ => None,
+        })
+    }
+
     /// Reads in binary optional u15
     ///
     /// # Format
@@ -1233,6 +1251,27 @@ pub trait WriteDkBin: WriteBytesExt {
 
         self.write_f64_opt(&val_opt)?;
         self.write_f64_opt(&unc_opt)?;
+
+        Ok(())
+    }
+
+    /// Writes out an optional `ValSysStat`
+    ///
+    /// # Format
+    /// if any are `None`, write out `(None, None, None)`
+    /// else, write out `(f64_opt, f64_opt, f64_opt)`
+    ///
+    /// # Examples
+    fn write_val_sys_stat_bin(&mut self, v: &Option<ValSysStat>) -> io::Result<()> {
+        let (val_opt, sys_opt, stat_opt) = if let Some(ValSysStat { val, sys, stat }) = v {
+            (Some(*val), Some(*sys), Some(*stat))
+        } else {
+            (None, None, None)
+        };
+
+        self.write_f64_opt(&val_opt)?;
+        self.write_f64_opt(&sys_opt)?;
+        self.write_f64_opt(&stat_opt)?;
 
         Ok(())
     }
