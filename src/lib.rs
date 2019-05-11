@@ -1,5 +1,6 @@
 //! A library for analyzing nuclear physics data
 use crate::{calibration::Calibration, detector::*};
+use rand::distributions::{Distribution, Uniform};
 use std::{
     collections::HashMap,
     fs::File,
@@ -86,7 +87,18 @@ impl Hit {
             Some(cal.apply(f64::from(value)))
         } else {
             None
-        }
+        };
+    }
+
+    pub fn apply_calib_fuzz(&mut self, calib: &HashMap<DaqId, Calibration>) {
+        let rng_range = Uniform::new(0f64, 1.);
+        let mut rng = rand::thread_rng();
+
+        self.energy = if let (Some(value), Some(cal)) = (self.value, calib.get(&self.daqid)) {
+            Some(cal.apply(f64::from(value) + rng_range.sample(&mut rng)))
+        } else {
+            None
+        };
     }
 }
 

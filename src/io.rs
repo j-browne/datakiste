@@ -8,7 +8,7 @@ use crate::{
     DaqId, DetId, Event, Hit, Run,
 };
 use std::{
-    borrow::Cow,
+    borrow::{Cow, Borrow},
     io::{self, BufRead, BufReader, Read, Write},
 };
 use::val_unc::{ValUnc, ValSysStat};
@@ -1046,13 +1046,15 @@ pub trait ReadDkBin: ReadBytesExt {
 /// Anything that implements `byteorder::WriteBytesExt`
 /// will get a default implementation of `WriteDkBin`.
 pub trait WriteDkBin: WriteBytesExt {
-    fn write_dk_bin<'a, I: Iterator<Item = (&'a String, &'a DkItem<'a>)> + Sized>(
+    fn write_dk_bin<'a, I, S, D>(
         &mut self,
         it: I,
-    ) -> io::Result<()> {
+    ) -> io::Result<()> 
+    where I: Iterator<Item = (S, D)>, S: Borrow<String>, D: Borrow<DkItem<'a>>
+    {
         self.write_dk_version_bin(DK_VERSION)?;
         for (n, i) in it {
-            self.write_dk_item_bin(&n, &i)?;
+            self.write_dk_item_bin(n.borrow(), i.borrow())?;
         }
         Ok(())
     }
