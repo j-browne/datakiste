@@ -164,8 +164,6 @@ impl Cut2d for Cut2dRect {
 
 #[cfg(test)]
 mod tests {
-    extern crate rand;
-    use self::rand::Rng;
     use super::*;
     const EP: f64 = 3. * ::std::f64::EPSILON;
 
@@ -312,6 +310,7 @@ mod tests {
 
     #[test]
     fn poly_contains_rand() {
+        use rand::distributions::{Distribution, Uniform};
         // Make sure the order and direction of the points doesn't matter
         let cs = vec![
             Cut2dPoly::from_verts(vec![
@@ -390,15 +389,14 @@ mod tests {
 
         for c in cs {
             println!("cut: {:?}", c);
+            let range = Uniform::new(-2f64, 4f64);
 
-            let mut xs: Vec<f64> = rng
-                .gen_iter::<f64>()
-                .map(|x| x * 4f64 - 2f64)
+            let mut xs: Vec<f64> = range
+                .sample_iter(&mut rng)
                 .take(100)
                 .collect();
-            let mut ys: Vec<f64> = rng
-                .gen_iter::<f64>()
-                .map(|x| x * 4f64 - 2f64)
+            let mut ys: Vec<f64> = range
+                .sample_iter(&mut rng)
                 .take(100)
                 .collect();
 

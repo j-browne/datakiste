@@ -3,7 +3,7 @@ extern crate rand;
 
 use datakiste::cut::{Cut1dLin, Cut2dCirc, Cut2dPoly};
 use datakiste::hist::{Hist, Hist1d, Hist2d};
-use rand::distributions::{IndependentSample, Range};
+use rand::distributions::{Distribution, Uniform};
 
 #[test]
 fn integrate_1d_rand() {
@@ -11,16 +11,16 @@ fn integrate_1d_rand() {
 
     let mut h = Hist1d::new(1001usize, -5f64, 5f64).unwrap();
 
-    let range = Range::new(-1f64, 1f64);
+    let range = Uniform::new(-1f64, 1f64);
     for _ in 0..150 {
-        let x = range.ind_sample(&mut rng);
+        let x = range.sample(&mut rng);
 
         h.fill(x);
     }
 
-    let range = Range::new(2f64, 3f64);
+    let range = Uniform::new(2f64, 3f64);
     for _ in 0..100 {
-        let x = range.ind_sample(&mut rng);
+        let x = range.sample(&mut rng);
 
         h.fill(x);
         h.fill(-x);
@@ -39,18 +39,18 @@ fn integrate_2d_rand() {
 
     let mut h = Hist2d::new(1001usize, -5f64, 5f64, 1001usize, -5f64, 5f64).unwrap();
 
-    let range = Range::new(-1f64, 1f64);
+    let range = Uniform::new(-1f64, 1f64);
     for _ in 0..150 {
-        let x = range.ind_sample(&mut rng);
-        let y = range.ind_sample(&mut rng);
+        let x = range.sample(&mut rng);
+        let y = range.sample(&mut rng);
 
         h.fill((x, y));
     }
 
-    let range = Range::new(2f64, 3f64);
+    let range = Uniform::new(2f64, 3f64);
     for _ in 0..100 {
-        let x = range.ind_sample(&mut rng);
-        let y = range.ind_sample(&mut rng);
+        let x = range.sample(&mut rng);
+        let y = range.sample(&mut rng);
 
         h.fill((x, y));
         h.fill((x, -y));
