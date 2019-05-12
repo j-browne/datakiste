@@ -18,12 +18,23 @@ impl Calibration {
     pub fn apply(&self, x: f64) -> ValUnc {
         let mean = self.intercept + self.slope * x;
         let max_res = *[
-            (((self.intercept - self.intercept_err) + (self.slope - self.slope_err) * x) - mean).abs(),
-            (((self.intercept - self.intercept_err) + (self.slope + self.slope_err) * x) - mean).abs(),
-            (((self.intercept + self.intercept_err) + (self.slope - self.slope_err) * x) - mean).abs(),
-            (((self.intercept + self.intercept_err) + (self.slope + self.slope_err) * x) - mean).abs(),
-        ].iter().max_by(|a, b| a.partial_cmp(b).expect("Error applying calibration (f64s weren't Ord)"))
-            .expect("Error applying calibration (trying to find max of empty list) (should be impossible)");
+            (((self.intercept - self.intercept_err) + (self.slope - self.slope_err) * x) - mean)
+                .abs(),
+            (((self.intercept - self.intercept_err) + (self.slope + self.slope_err) * x) - mean)
+                .abs(),
+            (((self.intercept + self.intercept_err) + (self.slope - self.slope_err) * x) - mean)
+                .abs(),
+            (((self.intercept + self.intercept_err) + (self.slope + self.slope_err) * x) - mean)
+                .abs(),
+        ]
+        .iter()
+        .max_by(|a, b| {
+            a.partial_cmp(b)
+                .expect("Error applying calibration (f64s weren't Ord)")
+        })
+        .expect(
+            "Error applying calibration (trying to find max of empty list) (should be impossible)",
+        );
 
         ValUnc {
             val: mean,

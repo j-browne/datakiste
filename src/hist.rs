@@ -70,7 +70,7 @@ impl HistAxis {
     }
 }
 
-pub trait Hist: Sized {
+pub trait Hist {
     type Bin;
     type Val;
     type Axes;
@@ -298,7 +298,6 @@ impl Hist1d {
     }
 }
 
-
 /// A type that describes a 3D histogram.
 ///
 /// # Examples
@@ -357,11 +356,11 @@ impl Hist2d {
         bins_1: usize,
         min_1: f64,
         max_1: f64,
-        ) -> Option<Hist2d> {
+    ) -> Option<Hist2d> {
         match (
             HistAxis::new(bins_0, min_0, max_0),
             HistAxis::new(bins_1, min_1, max_1),
-            ) {
+        ) {
             (Some(axis_0), Some(axis_1)) => {
                 let counts = vec![0u64; bins_0 * bins_1];
                 Some(Hist2d {
@@ -381,14 +380,14 @@ impl Hist2d {
         min_1: f64,
         max_1: f64,
         counts: Vec<u64>,
-        ) -> Option<Hist2d> {
+    ) -> Option<Hist2d> {
         if bins_0 * bins_1 != counts.len() {
             None
         } else {
             match (
                 HistAxis::new(bins_0, min_0, max_0),
                 HistAxis::new(bins_1, min_1, max_1),
-                ) {
+            ) {
                 (Some(axis_0), Some(axis_1)) => Some(Hist2d {
                     axes: (axis_0, axis_1),
                     counts,
@@ -410,16 +409,16 @@ impl Hist2d {
             let o_val_min = (
                 other.axes.0.val_at_bin_mid(o_bin.0),
                 other.axes.1.val_at_bin_mid(o_bin.1),
-                );
+            );
             let o_val_max = (
                 other.axes.0.val_at_bin_max(o_bin.0),
                 other.axes.1.val_at_bin_max(o_bin.1),
-                );
+            );
 
             let range = (
                 Uniform::new(o_val_min.0, o_val_max.0),
                 Uniform::new(o_val_min.1, o_val_max.1),
-                );
+            );
 
             for _ in 0..(*o_c) {
                 let s_val = (range.0.sample(&mut rng), range.1.sample(&mut rng));
@@ -767,7 +766,6 @@ impl Hist4d {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -827,7 +825,8 @@ mod tests {
             5f64,
             10f64,
             vec![0, 0, 5, 15, 16, 10, 9, 20, 8, 12],
-        ).unwrap();
+        )
+        .unwrap();
 
         let h1b = h1a.clone();
         let h2b = h2a.clone();

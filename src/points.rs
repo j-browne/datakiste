@@ -1,12 +1,12 @@
 pub trait Points {
-    type Point;
+    type Point: Clone;
 
-    fn points(&self) -> &Vec<Self::Point>;
+    fn points(&self) -> &[Self::Point];
 
     fn points_mut(&mut self) -> &mut Vec<Self::Point>;
 
-    fn add(&mut self, other: &mut Self) {
-        self.points_mut().append(other.points_mut());
+    fn add(&mut self, other: &Self) {
+        self.points_mut().extend_from_slice(other.points());
     }
 
     fn push(&mut self, p: Self::Point) {
@@ -22,7 +22,7 @@ pub struct Points1d {
 impl Points for Points1d {
     type Point = f64;
 
-    fn points(&self) -> &Vec<Self::Point> {
+    fn points(&self) -> &[Self::Point] {
         &self.points
     }
 
@@ -49,7 +49,7 @@ pub struct Points2d {
 impl Points for Points2d {
     type Point = (f64, f64);
 
-    fn points(&self) -> &Vec<Self::Point> {
+    fn points(&self) -> &[Self::Point] {
         &self.points
     }
 
@@ -76,7 +76,7 @@ pub struct Points3d {
 impl Points for Points3d {
     type Point = (f64, f64, f64);
 
-    fn points(&self) -> &Vec<Self::Point> {
+    fn points(&self) -> &[Self::Point] {
         &self.points
     }
 
@@ -103,7 +103,7 @@ pub struct Points4d {
 impl Points for Points4d {
     type Point = (f64, f64, f64, f64);
 
-    fn points(&self) -> &Vec<Self::Point> {
+    fn points(&self) -> &[Self::Point] {
         &self.points
     }
 

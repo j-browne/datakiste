@@ -1,17 +1,17 @@
 //!
 
-use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use crate::{
     cut::{Cut1d, Cut1dLin, Cut2d, Cut2dCirc, Cut2dPoly, Cut2dRect},
     hist::{Hist, Hist1d, Hist2d, Hist3d, Hist4d},
     points::{Points, Points1d, Points2d, Points3d, Points4d},
     DaqId, DetId, Event, Hit, Run,
 };
+use ::val_unc::{ValSysStat, ValUnc};
+use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use std::{
-    borrow::{Cow, Borrow},
+    borrow::{Borrow, Cow},
     io::{self, BufRead, BufReader, Read, Write},
 };
-use::val_unc::{ValUnc, ValSysStat};
 
 const DK_MAGIC_NUMBER: u64 = 0xE2A1_642A_ACB5_C4C9;
 const DK_VERSION: (u64, u64, u64) = (0, 2, 0);
@@ -1046,11 +1046,11 @@ pub trait ReadDkBin: ReadBytesExt {
 /// Anything that implements `byteorder::WriteBytesExt`
 /// will get a default implementation of `WriteDkBin`.
 pub trait WriteDkBin: WriteBytesExt {
-    fn write_dk_bin<'a, I, S, D>(
-        &mut self,
-        it: I,
-    ) -> io::Result<()> 
-    where I: Iterator<Item = (S, D)>, S: Borrow<String>, D: Borrow<DkItem<'a>>
+    fn write_dk_bin<'a, I, S, D>(&mut self, it: I) -> io::Result<()>
+    where
+        I: Iterator<Item = (S, D)>,
+        S: Borrow<String>,
+        D: Borrow<DkItem<'a>>,
     {
         self.write_dk_version_bin(DK_VERSION)?;
         for (n, i) in it {

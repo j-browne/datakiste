@@ -7,4 +7,5 @@ edition = "2018"
 [dependencies]
 byteorder = "*"
 rand = "*"
+structopt = "*"
 val_unc = { git = "https://github.com/j-browne/val_unc" }
