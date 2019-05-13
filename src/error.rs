@@ -1,32 +1,8 @@
-use std::{
-    convert::From,
-    io,
-    num::{ParseFloatError, ParseIntError},
-};
-
-pub type Result<T> = ::std::result::Result<T, Error>;
-
-#[derive(Debug)]
-pub enum Error {
-    Int(ParseIntError),
-    Float(ParseFloatError),
-    Io(io::Error),
-}
-
-impl From<ParseIntError> for Error {
-    fn from(e: ParseIntError) -> Self {
-        Error::Int(e)
-    }
-}
-
-impl From<ParseFloatError> for Error {
-    fn from(e: ParseFloatError) -> Self {
-        Error::Float(e)
-    }
-}
-
-impl From<io::Error> for Error {
-    fn from(e: io::Error) -> Self {
-        Error::Io(e)
+#![allow(deprecated)]
+error_chain! {
+    foreign_links{
+        Int(std::num::ParseIntError);
+        Float(std::num::ParseFloatError);
+        Io(std::io::Error) #[cfg(unix)];
     }
 }
