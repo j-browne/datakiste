@@ -47,10 +47,7 @@ fn main() -> Result<(), Box<std::error::Error>> {
     for (n, i) in items {
         match i {
             DkItem::Hist1d(h) => {
-                let f_out_name = &format!("{}.dkht", n);
-                let f_out = File::create(f_out_name)?;
-                let mut f_out = BufWriter::new(f_out);
-
+                let mut f_out = BufWriter::new(File::create(format!("{}.dkht", n))?);
                 f_out.write_hist_1d_txt(&h)?;
             }
             DkItem::Hist2d(h) => {

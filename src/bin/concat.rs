@@ -24,7 +24,7 @@ struct Opt {
 fn main() -> Result<(), Box<std::error::Error>> {
     let opt = Opt::from_args();
     let f_list = BufReader::new(File::open(opt.f_list_name)?);
-    let mut f_out = BufWriter::new(File::open(opt.f_out_name)?);
+    let mut f_out = BufWriter::new(File::create(opt.f_out_name)?);
 
     let mut items = Vec::<(String, DkItem)>::new();
     for line in f_list.lines() {
