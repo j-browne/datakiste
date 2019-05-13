@@ -1,10 +1,10 @@
 //! A library for analyzing nuclear physics data
+#[macro_use]extern crate error_chain;
 use crate::{calibration::Calibration, detector::*};
 use rand::distributions::{Distribution, Uniform};
 use std::{
     collections::HashMap,
-    fs::File,
-    io::{BufRead, BufReader, Write},
+    io::{BufRead, Write},
 };
 use val_unc::ValUnc;
 
@@ -104,18 +104,14 @@ impl Hit {
 
 // make_det stuff
 //
-pub fn get_dets(file: File) -> Vec<Box<Detector>> {
-    // FIXME: &mut ?
-    let mut dets = Vec::<Box<Detector>>::new();
-    // Read in the detector configuration file
-    let r = BufReader::new(file);
-    for l in r.lines() {
-        let l = l.unwrap(); // FIXME
-        if let Some(d) = line_to_det(&l) {
-            dets.push(d);
-        }
-    }
-    dets
+pub fn get_dets<T: BufRead>(file: T) -> Vec<Box<Detector>> {
+    file
+        .lines()
+        .map(|l| line_to_det(&l.expect("error reading line")))
+        .collect::<Vec<_>>()
+        .into_iter()
+        .collect::<Option<_>>()
+        .expect("error parsing detectors")
 }
 
 pub fn get_id_map(dets: &[Box<Detector>]) -> HashMap<DaqId, DetId> {
@@ -142,9 +138,7 @@ pub fn get_id_map(dets: &[Box<Detector>]) -> HashMap<DaqId, DetId> {
     map
 }
 
-// FIXME: This is very hacky
-// TODO: It's possible that a detector might have different requirements,
-// so use a macro and put it in class?
+// FIXME: This is hacky. Use serde
 fn line_to_det(line: &str) -> Option<Box<Detector>> {
     let l: Vec<_> = line.split_whitespace().collect();
 

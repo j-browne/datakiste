@@ -1,9 +1,7 @@
 use super::{error::Result, DaqId};
 use std::{
     collections::HashMap,
-    fs::File,
-    io::{BufRead, BufReader},
-    path::Path,
+    io::BufRead,
 };
 use val_unc::ValUnc;
 
@@ -43,10 +41,7 @@ impl Calibration {
     }
 }
 
-pub fn get_cal_map<T: AsRef<Path>>(file_name: T) -> Result<HashMap<DaqId, Calibration>> {
-    let file = File::open(file_name)?;
-    let file = BufReader::new(file);
-
+pub fn get_cal_map<T: BufRead>(file: T) -> Result<HashMap<DaqId, Calibration>> {
     let mut map = HashMap::new();
     // Read in the calibration file
     for l in file.lines() {
