@@ -1,5 +1,6 @@
 //! A library for analyzing nuclear physics data
-#[macro_use]extern crate error_chain;
+#[macro_use]
+extern crate error_chain;
 use crate::{calibration::Calibration, detector::*};
 use rand::distributions::{Distribution, Uniform};
 use std::{
@@ -105,8 +106,7 @@ impl Hit {
 // make_det stuff
 //
 pub fn get_dets<T: BufRead>(file: T) -> Vec<Box<Detector>> {
-    file
-        .lines()
+    file.lines()
         .map(|l| line_to_det(&l.expect("error reading line")))
         .collect::<Vec<_>>()
         .into_iter()

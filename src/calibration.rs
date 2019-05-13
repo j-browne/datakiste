@@ -1,8 +1,5 @@
 use super::{error::Result, DaqId};
-use std::{
-    collections::HashMap,
-    io::BufRead,
-};
+use std::{collections::HashMap, io::BufRead};
 use val_unc::ValUnc;
 
 pub struct Calibration {

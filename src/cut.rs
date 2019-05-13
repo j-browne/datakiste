@@ -391,14 +391,8 @@ mod tests {
             println!("cut: {:?}", c);
             let range = Uniform::new(-2f64, 4f64);
 
-            let mut xs: Vec<f64> = range
-                .sample_iter(&mut rng)
-                .take(100)
-                .collect();
-            let mut ys: Vec<f64> = range
-                .sample_iter(&mut rng)
-                .take(100)
-                .collect();
+            let mut xs: Vec<f64> = range.sample_iter(&mut rng).take(100).collect();
+            let mut ys: Vec<f64> = range.sample_iter(&mut rng).take(100).collect();
 
             // Make sure horizontal and vertical lines are fine
             xs.push(1f64);

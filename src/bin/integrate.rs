@@ -2,11 +2,7 @@ use datakiste::{
     hist::Hist,
     io::{DkItem, ReadDkBin},
 };
-use std::{
-    fs::File,
-    io::BufReader,
-    path::PathBuf,
-};
+use std::{fs::File, io::BufReader, path::PathBuf};
 use structopt::{clap::AppSettings, StructOpt};
 
 #[derive(Debug, StructOpt)]
@@ -47,17 +43,20 @@ enum SubCommand {
 fn main() -> Result<(), Box<std::error::Error>> {
     let opt = Opt::from_args();
     match opt.sub_command {
-        SubCommand::All {f_hist_name, hist_name} => {
+        SubCommand::All {
+            f_hist_name,
+            hist_name,
+        } => {
             let mut f_hist = BufReader::new(File::open(f_hist_name)?);
             let mut hist_item = None;
 
             for (n, i) in f_hist.read_dk_bin()? {
                 if n == hist_name {
                     match i {
-                        DkItem::Hist1d(_) |
-                        DkItem::Hist2d(_) |
-                        DkItem::Hist3d(_) |
-                        DkItem::Hist4d(_) => hist_item = Some(i),
+                        DkItem::Hist1d(_)
+                        | DkItem::Hist2d(_)
+                        | DkItem::Hist3d(_)
+                        | DkItem::Hist4d(_) => hist_item = Some(i),
                         _ => Err(format!("{} not a histogram", hist_name))?,
                     }
                     break;
@@ -72,7 +71,12 @@ fn main() -> Result<(), Box<std::error::Error>> {
                 _ => Err(format!("{} not a histogram", hist_name))?,
             }
         }
-        SubCommand::Cut {f_hist_name, hist_name, f_cut_name, cut_name} => {
+        SubCommand::Cut {
+            f_hist_name,
+            hist_name,
+            f_cut_name,
+            cut_name,
+        } => {
             let mut f_hist = BufReader::new(File::open(f_hist_name)?);
             let mut f_cut = BufReader::new(File::open(f_cut_name)?);
             let mut hist_item = None;
@@ -81,10 +85,10 @@ fn main() -> Result<(), Box<std::error::Error>> {
             for (n, i) in f_cut.read_dk_bin()? {
                 if n == cut_name {
                     match i {
-                        DkItem::Cut1dLin(_) |
-                        DkItem::Cut2dCirc(_) |
-                        DkItem::Cut2dPoly(_) |
-                        DkItem::Cut2dRect(_) => cut_item = Some(i),
+                        DkItem::Cut1dLin(_)
+                        | DkItem::Cut2dCirc(_)
+                        | DkItem::Cut2dPoly(_)
+                        | DkItem::Cut2dRect(_) => cut_item = Some(i),
                         _ => Err(format!("{} not a cut", cut_name))?,
                     }
                     break;
@@ -94,8 +98,7 @@ fn main() -> Result<(), Box<std::error::Error>> {
             for (n, i) in f_hist.read_dk_bin()? {
                 if n == hist_name {
                     match i {
-                        DkItem::Hist1d(_) |
-                        DkItem::Hist2d(_) => hist_item = Some(i),
+                        DkItem::Hist1d(_) | DkItem::Hist2d(_) => hist_item = Some(i),
                         _ => Err(format!("{} not a histogram", hist_name))?,
                     }
                     break;
@@ -103,10 +106,18 @@ fn main() -> Result<(), Box<std::error::Error>> {
             }
 
             match (hist_item, cut_item) {
-                (Some(DkItem::Hist1d(h)), Some(DkItem::Cut1dLin(c))) => println!("{}", h.integrate(&*c)),
-                (Some(DkItem::Hist2d(h)), Some(DkItem::Cut2dCirc(c))) => println!("{}", h.integrate(&*c)),
-                (Some(DkItem::Hist2d(h)), Some(DkItem::Cut2dPoly(c))) => println!("{}", h.integrate(&*c)),
-                (Some(DkItem::Hist2d(h)), Some(DkItem::Cut2dRect(c))) => println!("{}", h.integrate(&*c)),
+                (Some(DkItem::Hist1d(h)), Some(DkItem::Cut1dLin(c))) => {
+                    println!("{}", h.integrate(&*c))
+                }
+                (Some(DkItem::Hist2d(h)), Some(DkItem::Cut2dCirc(c))) => {
+                    println!("{}", h.integrate(&*c))
+                }
+                (Some(DkItem::Hist2d(h)), Some(DkItem::Cut2dPoly(c))) => {
+                    println!("{}", h.integrate(&*c))
+                }
+                (Some(DkItem::Hist2d(h)), Some(DkItem::Cut2dRect(c))) => {
+                    println!("{}", h.integrate(&*c))
+                }
                 _ => Err("hist and cut are incompatible")?,
             }
         }
