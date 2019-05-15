@@ -1,4 +1,7 @@
 //! A library for analyzing nuclear physics data
+#![feature(custom_attribute)]
+#[macro_use]
+extern crate serde_derive;
 #[macro_use]
 extern crate error_chain;
 use crate::{calibration::Calibration, detector::*};
@@ -20,10 +23,10 @@ pub mod hist;
 pub mod io;
 pub mod points;
 
-#[derive(Copy, Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Copy, Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct DaqId(pub u16, pub u16, pub u16, pub u16);
 
-#[derive(Copy, Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Copy, Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct DetId(pub u16, pub u16);
 
 /// A type that hold the data from an experimental run
