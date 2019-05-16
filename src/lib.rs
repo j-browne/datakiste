@@ -4,11 +4,11 @@
 extern crate serde_derive;
 #[macro_use]
 extern crate error_chain;
-use crate::{calibration::Calibration, detector::*};
+use crate::{calibration::Calibration, detector::Detector, error::Result};
 use rand::distributions::{Distribution, Uniform};
 use std::{
     collections::HashMap,
-    io::{BufRead, Write},
+    io::{Read, Write},
 };
 use val_unc::ValUnc;
 
@@ -50,7 +50,7 @@ pub struct Event {
 }
 
 impl Event {
-    pub fn apply_det(&mut self, all_dets: &[Box<Detector>], daq_det_map: &HashMap<DaqId, DetId>) {
+    pub fn apply_det(&mut self, all_dets: &[Detector], daq_det_map: &HashMap<DaqId, DetId>) {
         for h in &mut self.hits {
             h.apply_det(all_dets, daq_det_map);
         }
@@ -78,7 +78,7 @@ pub struct Hit {
 }
 
 impl Hit {
-    pub fn apply_det(&mut self, all_dets: &[Box<Detector>], daq_det_map: &HashMap<DaqId, DetId>) {
+    pub fn apply_det(&mut self, all_dets: &[Detector], daq_det_map: &HashMap<DaqId, DetId>) {
         self.detid = daq_det_map.get(&self.daqid).cloned();
         self.value = self
             .detid
@@ -108,16 +108,11 @@ impl Hit {
 
 // make_det stuff
 //
-pub fn get_dets<T: BufRead>(file: T) -> Vec<Box<Detector>> {
-    file.lines()
-        .map(|l| line_to_det(&l.expect("error reading line")))
-        .collect::<Vec<_>>()
-        .into_iter()
-        .collect::<Option<_>>()
-        .expect("error parsing detectors")
+pub fn get_dets<T: Read>(file: T) -> Result<Vec<Detector>> {
+    Ok(serde_json::from_reader(file)?)
 }
 
-pub fn get_id_map(dets: &[Box<Detector>]) -> HashMap<DaqId, DetId> {
+pub fn get_id_map(dets: &[Detector]) -> HashMap<DaqId, DetId> {
     let mut map = HashMap::<DaqId, DetId>::new();
     // Loop through the detectors, creating the daq id to det id map
     for (di, d) in dets.iter().enumerate() {
@@ -139,46 +134,4 @@ pub fn get_id_map(dets: &[Box<Detector>]) -> HashMap<DaqId, DetId> {
         }
     }
     map
-}
-
-// FIXME: This is hacky. Use serde
-fn line_to_det(line: &str) -> Option<Box<Detector>> {
-    let l: Vec<_> = line.split_whitespace().collect();
-
-    if l.is_empty() || // Empty line
-        l[0].starts_with('#') || // Comment
-        l.len() < 6
-    {
-        None
-    } else {
-        let t = l[0].to_string();
-        let n = l[1].to_string();
-        let mut id_vec = Vec::<u16>::new();
-        for v in l.iter().take(6).skip(2) {
-            if let Ok(num) = v.parse::<u16>() {
-                id_vec.push(num);
-            } else {
-                return None;
-            }
-        }
-        let id = DaqId(id_vec[0], id_vec[1], id_vec[2], id_vec[3]);
-        match &t as &str {
-            "BB10_F" => Some(Box::new(BB10F::new(id, n))),
-            "BB15_B" => Some(Box::new(BB15B::new(id, n))),
-            "BB15_F" => Some(Box::new(BB15F::new(id, n))),
-            "HABANERO" => Some(Box::new(HABANERO::new(id, n))),
-            "HAGRID" => Some(Box::new(HAGRID::new(id, n))),
-            "PSIC_XY" => Some(Box::new(PSICXY::new(id, n))),
-            "PSIC_E" => Some(Box::new(PSICE::new(id, n))),
-            "QQQ3_B" => Some(Box::new(QQQ3B::new(id, n))),
-            "QQQ3_F" => Some(Box::new(QQQ3F::new(id, n))),
-            "QQQ5_B" => Some(Box::new(QQQ5B::new(id, n))),
-            "QQQ5_F" => Some(Box::new(QQQ5F::new(id, n))),
-            "YY1_F" => Some(Box::new(YY1F::new(id, n))),
-            _ => {
-                warn!("Unrecognized detector type `{}`", t);
-                None
-            }
-        }
-    }
 }
