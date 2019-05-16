@@ -3,15 +3,25 @@ use crate::DaqId;
 #[derive(Debug, Serialize, Deserialize)]
 #[allow(non_camel_case_types)]
 pub enum Detector {
+    #[serde(rename = "BB10_F")]
     BB10F(u16, u16, u16, u16),
+    #[serde(rename = "BB15_B")]
     BB15B(u16, u16, u16, u16),
+    #[serde(rename = "BB15_F")]
     BB15F(u16, u16, u16),
+    #[serde(rename = "QQQ3_B")]
     QQQ3B(u16, u16, u16),
+    #[serde(rename = "QQQ3_F")]
     QQQ3F(u16, u16, u16),
+    #[serde(rename = "QQQ5_B")]
     QQQ5B(u16, u16, u16, u16),
+    #[serde(rename = "QQQ5_F")]
     QQQ5F(u16, u16, u16),
+    #[serde(rename = "YY1_F")]
     YY1F(u16, u16, u16),
+    #[serde(rename = "HAGRID")]
     Hagrid(u16, u16, u16, u16),
+    #[serde(rename = "HABANERO")]
     Habanero(u16, u16, u16),
     PSIC_E(u16, u16, u16, u16),
     PSIC_XY(u16, u16, u16),
