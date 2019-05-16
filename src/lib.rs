@@ -40,6 +40,72 @@ pub struct Run {
     pub events: Vec<Event>,
 }
 
+impl Run {
+    pub fn into_events(self) -> IntoEvents {
+        IntoEvents::new(self)
+    }
+
+    pub fn into_hits(self) -> IntoHits {
+        IntoHits::new(self)
+    }
+}
+
+pub struct IntoEvents {
+    events: std::vec::IntoIter<Event>,
+}
+
+impl IntoEvents {
+    fn new(run: Run) -> Self {
+        let events = run.events.into_iter();
+        Self {
+            events,
+        }
+    }
+}
+
+impl Iterator for IntoEvents {
+    type Item = Event;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.events.next()
+    }
+}
+
+pub struct IntoHits {
+    events: std::vec::IntoIter<Event>,
+    hits: Option<std::vec::IntoIter<Hit>>,
+}
+
+impl IntoHits {
+    fn new(run: Run) -> Self {
+        let mut events = run.events.into_iter();
+        let hits = events.next().map(|x| x.hits.into_iter());
+        Self {
+            events,
+            hits,
+        }
+    }
+}
+
+impl Iterator for IntoHits {
+    type Item = Hit;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        loop {
+            if let Some(hits) = self.hits.as_mut() {
+                if let next @ Some(_) = hits.next() {
+                    break next;
+                } else {
+                    self.hits = self.events.next().map(|x| x.hits.into_iter());
+                    continue;
+                }
+            } else {
+                break None;
+            }
+        }
+    }
+}
+
 /// A type that holds an experimental event
 ///
 /// An `Event` holds a sequence of `Hit`s.
