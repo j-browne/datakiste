@@ -1,5 +1,4 @@
 //! A library for analyzing nuclear physics data
-#![feature(custom_attribute)]
 #[macro_use]
 extern crate serde_derive;
 #[macro_use]
