@@ -1724,10 +1724,10 @@ mod tests {
         assert_f64_eq!(*val, 9602.0);
         assert_f64_eq!(*unc, 0.0);
         assert_f64_eq!(h.time, 214150.0);
-        assert_eq!(h.trace, []);
+        assert!(h.trace.is_empty());
 
         // Make sure there's nothing left over in `bytes`
-        assert_eq!(bytes, []);
+        assert!(bytes.is_empty());
 
         // Write the hit out to a byte array
         let mut v = Vec::<u8>::new();
@@ -1763,10 +1763,10 @@ mod tests {
         assert_f64_eq!(*val, 9602.0);
         assert_f64_eq!(*unc, 0.0);
         assert_f64_eq!(h.time, 214150.0);
-        assert_eq!(h.trace, []);
+        assert!(h.trace.is_empty());
 
         // Make sure there's nothing left over in `bytes`
-        assert_eq!(bytes, []);
+        assert!(bytes.is_empty());
     }
 
     #[test]
@@ -1795,10 +1795,10 @@ mod tests {
         assert_f64_eq!(*val, 9602.0);
         assert_f64_eq!(*unc, 0.0);
         assert_f64_eq!(h.time, 214150.0);
-        assert_eq!(h.trace, []);
+        assert!(h.trace.is_empty());
 
         // Make sure there's nothing left over in `bytes`
-        assert_eq!(bytes, []);
+        assert!(bytes.is_empty());
     }
 
     #[test]
@@ -1828,10 +1828,10 @@ mod tests {
         assert_f64_eq!(*val, 9602.0);
         assert_f64_eq!(*unc, 0.0);
         assert_f64_eq!(h.time, 214150.0);
-        assert_eq!(h.trace, []);
+        assert!(h.trace.is_empty());
 
         // Make sure there's nothing left over in `bytes`
-        assert_eq!(bytes, []);
+        assert!(bytes.is_empty());
 
         // Write the hit out to a byte array
         let mut v = Vec::<u8>::new();
@@ -1867,10 +1867,10 @@ mod tests {
         assert_eq!(value, 9602);
         assert!(h.energy.is_none());
         assert_f64_eq!(h.time, 214150.0);
-        assert_eq!(h.trace, []);
+        assert!(h.trace.is_empty());
 
         // Make sure there's nothing left over in `bytes`
-        assert_eq!(bytes, []);
+        assert!(bytes.is_empty());
 
         // Write the hit out to a byte array
         let mut v = Vec::<u8>::new();
@@ -1906,10 +1906,10 @@ mod tests {
         assert_eq!(value, 9602);
         assert!(h.energy.is_none());
         assert_f64_eq!(h.time, 214150.0);
-        assert_eq!(h.trace, []);
+        assert!(h.trace.is_empty());
 
         // Make sure there's nothing left over in `bytes`
-        assert_eq!(bytes, []);
+        assert!(bytes.is_empty());
     }
 
     #[test]
@@ -1938,10 +1938,10 @@ mod tests {
         assert_eq!(value, 9602);
         assert!(h.energy.is_none());
         assert_f64_eq!(h.time, 214150.0);
-        assert_eq!(h.trace, []);
+        assert!(h.trace.is_empty());
 
         // Make sure there's nothing left over in `bytes`
-        assert_eq!(bytes, []);
+        assert!(bytes.is_empty());
     }
 
     #[test]
@@ -1973,10 +1973,10 @@ mod tests {
         assert_f64_eq!(*val, 9602.0);
         assert_f64_eq!(*unc, 0.0);
         assert_f64_eq!(h.time, 214150.0);
-        assert_eq!(h.trace, []);
+        assert!(h.trace.is_empty());
 
         // Make sure there's nothing left over in `bytes`
-        assert_eq!(bytes, []);
+        assert!(bytes.is_empty());
 
         // Write the hit out to a byte array
         let mut v = Vec::<u8>::new();
@@ -2018,7 +2018,7 @@ mod tests {
         assert_eq!(h.trace, [0u16, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
 
         // Make sure there's nothing left over in `bytes`
-        assert_eq!(bytes, []);
+        assert!(bytes.is_empty());
 
         // Write the hit out to a byte array
         let mut v = Vec::<u8>::new();
@@ -2046,7 +2046,7 @@ mod tests {
         assert_eq!(e.hits.len(), 2);
 
         // Make sure there's nothing left over in `bytes`
-        assert_eq!(bytes, []);
+        assert!(bytes.is_empty());
 
         // Write the event out to a byte array
         let mut v = Vec::<u8>::new();
@@ -2074,7 +2074,7 @@ mod tests {
         assert_eq!(r.events.len(), 1);
 
         // Make sure there's nothing left over in `bytes`
-        assert_eq!(bytes, []);
+        assert!(bytes.is_empty());
 
         // Write the run out to a byte array
         let mut v = Vec::<u8>::new();
@@ -2099,7 +2099,7 @@ mod tests {
         assert_eq!(h1, h2);
 
         // Make sure there's nothing left over in `bytes`
-        assert_eq!(bytes, []);
+        assert!(bytes.is_empty());
 
         // Write the hist out to a string
         let mut v = Vec::<u8>::new();
@@ -2126,7 +2126,7 @@ mod tests {
         assert_eq!(h1, h2);
 
         // Make sure there's nothing left over in `bytes`
-        assert_eq!(bytes, []);
+        assert!(bytes.is_empty());
 
         // Write the hit out to a byte array
         let mut v = Vec::<u8>::new();
@@ -2152,7 +2152,7 @@ mod tests {
         assert_eq!(h1, h2);
 
         // Make sure there's nothing left over in `bytes`
-        assert_eq!(bytes, []);
+        assert!(bytes.is_empty());
 
         // Write the hist out to a string
         let mut v = Vec::<u8>::new();
@@ -2181,7 +2181,7 @@ mod tests {
         assert_eq!(h1, h2);
 
         // Make sure there's nothing left over in `bytes`
-        assert_eq!(bytes, []);
+        assert!(bytes.is_empty());
 
         // Write the hit out to a byte array
         let mut v = Vec::<u8>::new();
