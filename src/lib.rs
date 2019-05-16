@@ -5,6 +5,7 @@ extern crate serde_derive;
 #[macro_use]
 extern crate error_chain;
 use crate::{calibration::Calibration, detector::Detector, error::Result};
+use indexmap::IndexMap;
 use rand::distributions::{Distribution, Uniform};
 use std::{
     collections::HashMap,
@@ -109,7 +110,8 @@ impl Hit {
 // make_det stuff
 //
 pub fn get_dets<T: Read>(file: T) -> Result<Vec<Detector>> {
-    Ok(serde_json::from_reader(file)?)
+    let map: IndexMap<String, Detector> = serde_json::from_reader(file)?;
+    Ok(map.into_iter().map(|(_, x)| x).collect())
 }
 
 pub fn get_id_map(dets: &[Detector]) -> HashMap<DaqId, DetId> {

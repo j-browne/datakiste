@@ -7,9 +7,10 @@ edition = "2018"
 [dependencies]
 byteorder = "*"
 error-chain = "*"
+indexmap = { version = "*", features = ["serde-1"] }
 rand = "*"
 structopt = "*"
 val_unc = { git = "https://github.com/j-browne/val_unc", features = ["serde-1"] }
 serde = "1.0"
 serde_derive = "1.0"
-serde_json = "*"
+serde_json = { version = "*", features = ["preserve_order"] }
