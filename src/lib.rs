@@ -202,3 +202,23 @@ pub fn get_id_map(dets: &[Detector]) -> HashMap<DaqId, DetId> {
     }
     map
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn into_hits() {
+        let h = Hit {daqid: DaqId(0,0,0,0), detid: None, rawval: 0, value: None, energy: None, time: 0.0, trace: vec![]};
+        let run = Run {
+            events: vec![
+                Event {hits: vec![h.clone(); 3]},
+                Event {hits: vec![h.clone(); 4]},
+                Event {hits: vec![]},
+                Event {hits: vec![h.clone(); 1]},
+                Event {hits: vec![h.clone(); 2]},
+            ]
+        };
+        assert_eq!(run.into_hits().count(), 10);
+    }
+}
