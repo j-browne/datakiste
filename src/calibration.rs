@@ -6,6 +6,7 @@ use val_unc::ValUnc;
 pub struct Calibration {
     pub slope: ValUnc,
     pub intercept: ValUnc,
+    pub resolution: ValUnc,
 }
 
 impl Calibration {
