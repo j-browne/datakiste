@@ -40,7 +40,7 @@ enum SubCommand {
     },
 }
 
-fn main() -> Result<(), Box<std::error::Error>> {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     let opt = Opt::from_args();
     match opt.sub_command {
         SubCommand::All {

@@ -407,14 +407,14 @@ impl<'a> DkItem<'a> {
         }
     }
 
-    pub fn as_cut_1d(&self) -> Option<&Cut1d> {
+    pub fn as_cut_1d(&self) -> Option<&dyn Cut1d> {
         match *self {
             DkItem::Cut1dLin(ref c) => Some(c.as_ref()),
             _ => None,
         }
     }
 
-    pub fn as_cut_2d(&self) -> Option<&Cut2d> {
+    pub fn as_cut_2d(&self) -> Option<&dyn Cut2d> {
         match *self {
             DkItem::Cut2dCirc(ref c) => Some(c.as_ref()),
             DkItem::Cut2dRect(ref c) => Some(c.as_ref()),

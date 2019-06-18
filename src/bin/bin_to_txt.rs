@@ -20,7 +20,7 @@ struct Opt {
     f_in_name: PathBuf,
 }
 
-fn main() -> Result<(), Box<std::error::Error>> {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     let opt = Opt::from_args();
     let mut f_in = BufReader::new(File::open(opt.f_in_name)?);
 

@@ -39,7 +39,7 @@ struct Opt {
     fuzz: bool,
 }
 
-fn main() -> Result<(), Box<std::error::Error>> {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     let opt = Opt::from_args();
     let f_hists = BufReader::new(File::open(opt.f_hists_name)?);
     let mut f_in = BufReader::new(File::open(opt.f_in_name)?);
