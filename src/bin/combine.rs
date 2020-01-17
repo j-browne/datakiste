@@ -141,7 +141,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         .ok_or("item is not a Points4d")?
                         .add(&p);
                 }
-                _ => Err("could not combine item")?,
+                _ => return Err("could not combine item".into()),
             }
         }
     }

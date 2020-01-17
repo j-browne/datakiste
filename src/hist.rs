@@ -159,14 +159,14 @@ pub trait Hist {
 /// # Examples
 #[derive(PartialEq, Debug, Clone)]
 pub struct Hist1d {
-    axes: (HistAxis),
+    axes: HistAxis,
     counts: Vec<u64>,
 }
 
 impl Hist for Hist1d {
-    type Bin = (usize);
-    type Val = (f64);
-    type Axes = (HistAxis);
+    type Bin = usize;
+    type Val = f64;
+    type Axes = HistAxis;
 
     fn axes(&self) -> &Self::Axes {
         &self.axes

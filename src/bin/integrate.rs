@@ -58,7 +58,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         | DkItem::Hist2d(_)
                         | DkItem::Hist3d(_)
                         | DkItem::Hist4d(_) => hist_item = Some(i),
-                        _ => Err(format!("{} not a histogram", hist_name))?,
+                        _ => return Err(format!("{} not a histogram", hist_name).into()),
                     }
                     break;
                 }
@@ -69,7 +69,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 Some(DkItem::Hist2d(h)) => println!("{}", h.counts().iter().sum::<u64>()),
                 Some(DkItem::Hist3d(h)) => println!("{}", h.counts().iter().sum::<u64>()),
                 Some(DkItem::Hist4d(h)) => println!("{}", h.counts().iter().sum::<u64>()),
-                _ => Err(format!("{} not a histogram", hist_name))?,
+                _ => return Err(format!("{} not a histogram", hist_name).into()),
             }
         }
         SubCommand::Cut {
@@ -90,7 +90,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         | DkItem::Cut2dCirc(_)
                         | DkItem::Cut2dPoly(_)
                         | DkItem::Cut2dRect(_) => cut_item = Some(i),
-                        _ => Err(format!("{} not a cut", cut_name))?,
+                        _ => return Err(format!("{} not a cut", cut_name).into()),
                     }
                     break;
                 }
@@ -100,7 +100,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 if n == hist_name {
                     match i {
                         DkItem::Hist1d(_) | DkItem::Hist2d(_) => hist_item = Some(i),
-                        _ => Err(format!("{} not a histogram", hist_name))?,
+                        _ => return Err(format!("{} not a histogram", hist_name).into()),
                     }
                     break;
                 }
@@ -119,7 +119,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 (Some(DkItem::Hist2d(h)), Some(DkItem::Cut2dRect(c))) => {
                     println!("{}", h.integrate(&*c))
                 }
-                _ => Err("hist and cut are incompatible")?,
+                _ => return Err("hist and cut are incompatible".into()),
             }
         }
     }

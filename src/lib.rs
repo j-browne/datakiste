@@ -186,9 +186,7 @@ pub fn get_id_map(dets: &[Detector]) -> HashMap<DaqId, DetId> {
         let di = (di as u16) + 1;
         for dc in 0..d.num_chans() {
             if let Some(daq_id) = d.det_to_daq(dc) {
-                let v = map.insert(daq_id, DetId(di, dc));
-                if v.is_some() {
-                    let v = v.unwrap();
+                if let Some(v) = map.insert(daq_id, DetId(di, dc)) {
                     warn!(
                         "Daq ID ({}, {}, {}, {}) is already used.\
                          \n   Old: ({}, {})\n    New: ({}, {})",

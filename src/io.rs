@@ -1206,7 +1206,7 @@ pub trait WriteDkBin: WriteBytesExt {
         self.write_u16::<LittleEndian>(h.daqid.3)?;
         self.write_detid_bin(&h.detid)?;
         self.write_u16::<LittleEndian>(h.rawval)?;
-        self.write_u15_opt(&h.value)?;
+        self.write_u15_opt(h.value)?;
         self.write_val_unc_bin(&h.energy)?;
         self.write_f64::<LittleEndian>(h.time)?;
         self.write_u16::<LittleEndian>(h.trace.len() as u16)?;
@@ -1231,8 +1231,8 @@ pub trait WriteDkBin: WriteBytesExt {
             (None, None)
         };
 
-        self.write_u15_opt(&di_opt)?;
-        self.write_u15_opt(&dc_opt)?;
+        self.write_u15_opt(di_opt)?;
+        self.write_u15_opt(dc_opt)?;
 
         Ok(())
     }
@@ -1286,7 +1286,7 @@ pub trait WriteDkBin: WriteBytesExt {
     ///
     /// # Examples
     #[deny(clippy::trivially_copy_pass_by_ref)]
-    fn write_u15_opt(&mut self, v: &Option<u16>) -> io::Result<()> {
+    fn write_u15_opt(&mut self, v: Option<u16>) -> io::Result<()> {
         self.write_u16::<LittleEndian>(v.unwrap_or(0x8000))?;
         Ok(())
     }
