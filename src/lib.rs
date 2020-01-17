@@ -56,9 +56,7 @@ pub struct IntoEvents {
 impl IntoEvents {
     fn new(run: Run) -> Self {
         let events = run.events.into_iter();
-        Self {
-            events,
-        }
+        Self { events }
     }
 }
 
@@ -79,10 +77,7 @@ impl IntoHits {
     fn new(run: Run) -> Self {
         let mut events = run.events.into_iter();
         let hits = events.next().map(|x| x.hits.into_iter());
-        Self {
-            events,
-            hits,
-        }
+        Self { events, hits }
     }
 }
 
@@ -207,7 +202,15 @@ mod tests {
 
     #[test]
     fn into_hits() {
-        let h = Hit {daqid: DaqId(0,0,0,0), detid: None, rawval: 0, value: None, energy: None, time: 0.0, trace: vec![]};
+        let h = Hit {
+            daqid: DaqId(0, 0, 0, 0),
+            detid: None,
+            rawval: 0,
+            value: None,
+            energy: None,
+            time: 0.0,
+            trace: vec![],
+        };
         let run = Run {
             events: vec![
                 Event {hits: vec![h.clone(); 3]},
