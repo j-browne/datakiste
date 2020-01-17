@@ -4,16 +4,11 @@ use std::{
     io::{BufRead, BufReader, BufWriter},
     path::PathBuf,
 };
-use structopt::{clap::AppSettings, StructOpt};
+use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
-#[structopt(
-    name = "concat",
-    about = "Concatenate a datakiste items from multiple files into one",
-    version = "",
-    author = "",
-    raw(global_settings = "&[AppSettings::DisableVersion]")
-)]
+#[structopt(name = "concat", no_version)]
+/// Concatenate a datakiste items from multiple files into one
 struct Opt {
     #[structopt(name = "LIST_FILE", help = "File to read", parse(from_os_str))]
     f_list_name: PathBuf,

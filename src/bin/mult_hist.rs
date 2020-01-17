@@ -5,16 +5,11 @@ use std::{
     io::{BufRead, BufReader},
     path::PathBuf,
 };
-use structopt::{clap::AppSettings, StructOpt};
+use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
-#[structopt(
-    name = "mult_hist",
-    about = "I don't know why this is useful, delete?",
-    version = "",
-    author = "",
-    raw(global_settings = "&[AppSettings::DisableVersion]")
-)]
+#[structopt(name = "mult_hist", no_version)]
+/// I don't know why this is useful, delete?
 struct Opt {
     #[structopt(name = "FILE", help = "File to read", parse(from_os_str))]
     f_in_name: PathBuf,

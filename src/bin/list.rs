@@ -4,16 +4,11 @@ use datakiste::{
     points::Points,
 };
 use std::{fs::File, io::BufReader, path::PathBuf};
-use structopt::{clap::AppSettings, StructOpt};
+use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
-#[structopt(
-    name = "list",
-    about = "List the items in a datakiste file",
-    version = "",
-    author = "",
-    raw(global_settings = "&[AppSettings::DisableVersion]")
-)]
+#[structopt(name = "list", no_version)]
+/// List the items in a datakiste file
 struct Opt {
     #[structopt(name = "FILE", help = "File to read", parse(from_os_str))]
     f_in_name: PathBuf,

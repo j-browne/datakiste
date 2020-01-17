@@ -9,16 +9,11 @@ use std::{
     io::{BufRead, BufReader, BufWriter},
     path::PathBuf,
 };
-use structopt::{clap::AppSettings, StructOpt};
+use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
-#[structopt(
-    name = "combine",
-    about = "Combine hists and points from multiple datakiste files into one (summing items with the same name)",
-    version = "",
-    author = "",
-    raw(global_settings = "&[AppSettings::DisableVersion]")
-)]
+#[structopt(name = "combine", no_version)]
+/// Combine hists and points from multiple datakiste files into one (summing items with the same name)
 struct Opt {
     #[structopt(
         name = "LIST_FILE",

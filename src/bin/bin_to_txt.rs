@@ -5,16 +5,11 @@ use std::{
     io::{BufReader, BufWriter},
     path::PathBuf,
 };
-use structopt::{clap::AppSettings, StructOpt};
+use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
-#[structopt(
-    name = "bin_to_text",
-    about = "Convert a datakiste binary file to datakiste text file(s)",
-    version = "",
-    author = "",
-    raw(global_settings = "&[AppSettings::DisableVersion]")
-)]
+#[structopt(name = "bin_to_text", no_version)]
+/// Convert a datakiste binary file to datakiste text file(s)
 struct Opt {
     #[structopt(name = "FILE", help = "File to read", parse(from_os_str))]
     f_in_name: PathBuf,

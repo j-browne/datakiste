@@ -1,15 +1,10 @@
 use datakiste::io::ReadDkBin;
 use std::{fs::File, io::BufReader, path::PathBuf};
-use structopt::{clap::AppSettings, StructOpt};
+use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
-#[structopt(
-    name = "dk_version",
-    about = "Print the datakiste file format version",
-    version = "",
-    author = "",
-    raw(global_settings = "&[AppSettings::DisableVersion]")
-)]
+#[structopt(name = "dk_version", no_version)]
+/// Print the datakiste file format version
 struct Opt {
     #[structopt(name = "FILE", help = "File to read", parse(from_os_str))]
     f_in_name: PathBuf,

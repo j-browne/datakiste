@@ -10,16 +10,11 @@ use std::{
     io::{BufRead, BufReader, BufWriter},
     path::PathBuf,
 };
-use structopt::{clap::AppSettings, StructOpt};
+use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
-#[structopt(
-    name = "rebin",
-    about = "Rebin histograms",
-    version = "",
-    author = "",
-    raw(global_settings = "&[AppSettings::DisableVersion]")
-)]
+#[structopt(name = "rebin", no_version)]
+/// Rebin histograms
 struct Opt {
     #[structopt(name = "INPUT_FILE", help = "File to read", parse(from_os_str))]
     f_in_name: PathBuf,

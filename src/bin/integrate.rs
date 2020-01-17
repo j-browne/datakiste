@@ -3,16 +3,11 @@ use datakiste::{
     io::{DkItem, ReadDkBin},
 };
 use std::{fs::File, io::BufReader, path::PathBuf};
-use structopt::{clap::AppSettings, StructOpt};
+use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
-#[structopt(
-    name = "integrate",
-    about = "Integrate a histogram",
-    version = "",
-    author = "",
-    raw(global_settings = "&[AppSettings::DisableVersion]")
-)]
+#[structopt(name = "integrate", no_version)]
+/// Integrate a histogram
 struct Opt {
     #[structopt(subcommand)]
     sub_command: SubCommand,
@@ -20,22 +15,28 @@ struct Opt {
 
 #[derive(Debug, StructOpt)]
 enum SubCommand {
-    #[structopt(name = "all", author = "", version = "", about = "")]
+    #[structopt(name = "all", no_version)]
     All {
-        #[structopt(name = "HIST_FILE", help = "File with histogram", parse(from_os_str))]
+        #[structopt(name = "HIST_FILE", parse(from_os_str))]
+        /// File with histogram
         f_hist_name: PathBuf,
-        #[structopt(name = "HIST", help = "Name of hist to integrate")]
+        #[structopt(name = "HIST")]
+        /// Name of hist to integrate
         hist_name: String,
     },
-    #[structopt(name = "cut", author = "", version = "", about = "")]
+    #[structopt(name = "cut", no_version)]
     Cut {
-        #[structopt(name = "HIST_FILE", help = "File with histogram", parse(from_os_str))]
+        #[structopt(name = "HIST_FILE", parse(from_os_str))]
+        /// File with histogram
         f_hist_name: PathBuf,
-        #[structopt(name = "HIST", help = "Name of hist to integrate")]
+        #[structopt(name = "HIST")]
+        /// Name of hist to integrate
         hist_name: String,
-        #[structopt(name = "CUT_FILE", help = "File with cut", parse(from_os_str))]
+        #[structopt(name = "CUT_FILE", parse(from_os_str))]
+        /// File with cut
         f_cut_name: PathBuf,
-        #[structopt(name = "CUT", help = "Name of cut over which to integrate")]
+        #[structopt(name = "CUT")]
+        /// Name of cut over which to integrate
         cut_name: String,
     },
 }
