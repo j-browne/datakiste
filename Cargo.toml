@@ -3,6 +3,7 @@ name = "datakiste"
 version = "0.12.1"
 authors = ["Justin Browne <brownej@nscl.msu.edu>"]
 edition = "2018"
+license = "MIT OR Apache-2.0"
 
 [dependencies]
 byteorder = "*"
