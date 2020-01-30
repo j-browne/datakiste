@@ -388,7 +388,7 @@ mod tests {
         let mut rng = rand::thread_rng();
 
         for c in cs {
-            println!("cut: {:?}", c);
+            //println!("cut: {:?}", c);
             let range = Uniform::new(-2f64, 4f64);
 
             let mut xs: Vec<f64> = range.sample_iter(&mut rng).take(100).collect();
@@ -403,10 +403,10 @@ mod tests {
             for x in &xs {
                 for y in &ys {
                     if (*x < 1f64 && *x > -1f64) && (*y < 1f64 && *y > -1f64) {
-                        println!("Should be inside: ({}, {})", *x, *y);
+                        //println!("Should be inside: ({}, {})", *x, *y);
                         assert!(c.contains(*x, *y));
                     } else if (*x > 1f64 || *x < -1f64) || (*y > 1f64 || *y < -1f64) {
-                        println!("Should be outside: ({}, {})", *x, *y);
+                        //println!("Should be outside: ({}, {})", *x, *y);
                         assert!(!c.contains(*x, *y));
                     }
                 }

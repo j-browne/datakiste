@@ -6,6 +6,7 @@ extern crate error_chain;
 use crate::{calibration::Calibration, detector::Detector, error::Result};
 use indexmap::IndexMap;
 use rand::distributions::{Distribution, Uniform};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::{
     collections::HashMap,
     io::{Read, Write},
@@ -34,7 +35,7 @@ pub struct DetId(pub u16, pub u16);
 /// A `Run` holds a sequence of `Event`s.
 ///
 /// # Examples
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Run {
     pub events: Vec<Event>,
 }
@@ -105,7 +106,7 @@ impl Iterator for IntoHits {
 /// An `Event` holds a sequence of `Hit`s.
 ///
 /// # Examples
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Event {
     pub hits: Vec<Hit>,
 }
@@ -124,15 +125,93 @@ impl Event {
     }
 }
 
+fn deserialize_opt_det_id<'de, D>(deserializer: D) -> core::result::Result<Option<DetId>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let val = DetId::deserialize(deserializer)?;
+    match (val.0 & 0x8000, val.1 & 0x8000) {
+        (0, 0) => Ok(Some(val)),
+        _ => Ok(None),
+    }
+}
+
+fn serialize_opt_det_id<S>(
+    val: &Option<DetId>,
+    serializer: S,
+) -> core::result::Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    val.unwrap_or(DetId(0x8000, 0x8000)).serialize(serializer)
+}
+
+fn deserialize_opt_u15<'de, D>(deserializer: D) -> core::result::Result<Option<u16>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let val = u16::deserialize(deserializer)?;
+    match val & 0x8000 {
+        0 => Ok(Some(val)),
+        _ => Ok(None),
+    }
+}
+
+fn serialize_opt_u15<S>(val: &Option<u16>, serializer: S) -> core::result::Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    val.unwrap_or(0x8000).serialize(serializer)
+}
+
+fn deserialize_opt_val_unc<'de, D>(
+    deserializer: D,
+) -> core::result::Result<Option<ValUnc>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let (val, unc) = <(f64, f64)>::deserialize(deserializer)?;
+    match (val.is_finite(), unc.is_finite()) {
+        (true, true) => Ok(Some(ValUnc { val, unc })),
+        _ => Ok(None),
+    }
+}
+
+fn serialize_opt_val_unc<S>(
+    val: &Option<ValUnc>,
+    serializer: S,
+) -> core::result::Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    val.unwrap_or(ValUnc {
+        val: std::f64::NAN,
+        unc: std::f64::NAN,
+    })
+    .serialize(serializer)
+}
+
 /// A type that holds an experimental hit
 ///
 /// # Examples
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Hit {
     pub daqid: DaqId,
+    #[serde(
+        deserialize_with = "deserialize_opt_det_id",
+        serialize_with = "serialize_opt_det_id"
+    )]
     pub detid: Option<DetId>,
     pub rawval: u16,
+    #[serde(
+        deserialize_with = "deserialize_opt_u15",
+        serialize_with = "serialize_opt_u15"
+    )]
     pub value: Option<u16>,
+    #[serde(
+        deserialize_with = "deserialize_opt_val_unc",
+        serialize_with = "serialize_opt_val_unc"
+    )]
     pub energy: Option<ValUnc>,
     pub time: f64,
     pub trace: Vec<u16>,
@@ -213,12 +292,20 @@ mod tests {
         };
         let run = Run {
             events: vec![
-                Event {hits: vec![h.clone(); 3]},
-                Event {hits: vec![h.clone(); 4]},
-                Event {hits: vec![]},
-                Event {hits: vec![h.clone(); 1]},
-                Event {hits: vec![h.clone(); 2]},
-            ]
+                Event {
+                    hits: vec![h.clone(); 3],
+                },
+                Event {
+                    hits: vec![h.clone(); 4],
+                },
+                Event { hits: vec![] },
+                Event {
+                    hits: vec![h.clone(); 1],
+                },
+                Event {
+                    hits: vec![h.clone(); 2],
+                },
+            ],
         };
         assert_eq!(run.into_hits().count(), 10);
     }

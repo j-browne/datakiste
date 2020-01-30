@@ -5,5 +5,6 @@ error_chain! {
         Int(std::num::ParseIntError);
         Float(std::num::ParseFloatError);
         Io(std::io::Error) #[cfg(unix)];
+        Bincode(bincode::Error);
     }
 }

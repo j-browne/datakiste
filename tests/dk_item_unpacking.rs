@@ -13,48 +13,22 @@ fn dk_item_unpacking_1() {
     let h = Hist1d::new(3usize, 0f64, 3f64).unwrap();
     m.insert("2".to_string(), DkItem::Hist1d(Cow::Owned(h)));
 
-    println!("{:?}", m);
-
-    for (n, i) in &m {
-        {
-            let h = i.as_hist_1d().unwrap();
-            println!("{:?} --- {:?}", n, h);
-        }
+    for (_n, i) in &m {
+        let _h = i.as_hist_1d().unwrap();
     }
 
-    println!("");
-    println!("{:?}", m);
-
-    for (n, i) in &mut m {
-        {
-            let h = i.as_hist_1d().unwrap();
-            println!("{:?} --- {:?}", n, h);
-        }
-        {
-            let h = i.as_hist_1d_mut().unwrap();
-            h.fill(1f64);
-            println!("{:?} --- {:?}", n, h);
-        }
+    for (_n, i) in &mut m {
+        let _h = i.as_hist_1d().unwrap();
+        let h = i.as_hist_1d_mut().unwrap();
+        h.fill(1f64);
     }
 
-    println!("");
-    println!("{:?}", m);
-
-    for (n, mut i) in m {
-        {
-            let h = i.as_hist_1d().unwrap();
-            println!("{:?} --- {:?}", n, h);
-        }
-        {
-            let h = i.as_hist_1d_mut().unwrap();
-            h.fill(1f64);
-            println!("{:?} --- {:?}", n, h);
-        }
-        {
-            let mut h = i.into_hist_1d().unwrap();
-            h.fill(1f64);
-            println!("{:?} --- {:?}", n, h);
-        }
+    for (_n, mut i) in m {
+        let _h = i.as_hist_1d().unwrap();
+        let h = i.as_hist_1d_mut().unwrap();
+        h.fill(1f64);
+        let mut h = i.into_hist_1d().unwrap();
+        h.fill(1f64);
     }
 }
 
@@ -66,44 +40,17 @@ fn dk_item_unpacking_2() {
     let h = Hist1d::new(3usize, 0f64, 3f64).unwrap();
     m.insert("2".to_string(), DkItem::Hist1d(Cow::Owned(h)));
 
-    println!("");
-    println!("{:?}", m);
+    let _h = m["1"].as_hist_1d().unwrap();
+    let h = m.get_mut("1").unwrap().as_hist_1d_mut().unwrap();
+    h.fill(1f64);
+    let mut h = m.remove("1").unwrap().into_hist_1d().unwrap();
+    h.fill(1f64);
 
-    {
-        let h = m["1"].as_hist_1d().unwrap();
-        println!("{:?}", h);
-    }
-    {
-        let h = m.get_mut("1").unwrap().as_hist_1d_mut().unwrap();
-        h.fill(1f64);
-        println!("{:?}", h);
-    }
-    {
-        let mut h = m.remove("1").unwrap().into_hist_1d().unwrap();
-        h.fill(1f64);
-        println!("{:?}", h);
-    }
-
-    println!("");
-    println!("{:?}", m);
-
-    {
-        let h = m["2"].as_hist_1d().unwrap();
-        println!("{:?}", h);
-    }
-    {
-        let h = m.get_mut("2").unwrap().as_hist_1d_mut().unwrap();
-        h.fill(1f64);
-        println!("{:?}", h);
-    }
-    {
-        let mut h = m.remove("2").unwrap().into_hist_1d().unwrap();
-        h.fill(1f64);
-        println!("{:?}", h);
-    }
-
-    println!("");
-    println!("{:?}", m);
+    let _h = m["2"].as_hist_1d().unwrap();
+    let h = m.get_mut("2").unwrap().as_hist_1d_mut().unwrap();
+    h.fill(1f64);
+    let mut h = m.remove("2").unwrap().into_hist_1d().unwrap();
+    h.fill(1f64);
 }
 
 #[test]
@@ -114,45 +61,15 @@ fn dk_item_unpacking_3() {
     m.insert("1".to_string(), DkItem::Hist1d(Cow::Borrowed(&h1)));
     m.insert("2".to_string(), DkItem::Hist1d(Cow::Borrowed(&h2)));
 
-    println!("");
-    println!("{:?}", m);
+    let _h = m["1"].as_hist_1d().unwrap();
+    let h = m.get_mut("1").unwrap().as_hist_1d_mut().unwrap();
+    h.fill(1f64);
+    let mut h = m.remove("1").unwrap().into_hist_1d().unwrap();
+    h.fill(1f64);
 
-    {
-        let h = m["1"].as_hist_1d().unwrap();
-        println!("{:?}", h);
-    }
-    {
-        let h = m.get_mut("1").unwrap().as_hist_1d_mut().unwrap();
-        h.fill(1f64);
-        println!("{:?}", h);
-    }
-    {
-        let mut h = m.remove("1").unwrap().into_hist_1d().unwrap();
-        h.fill(1f64);
-        println!("{:?}", h);
-    }
-
-    println!("");
-    println!("{:?}", m);
-
-    {
-        let h = m["2"].as_hist_1d().unwrap();
-        println!("{:?}", h);
-    }
-    {
-        let h = m.get_mut("2").unwrap().as_hist_1d_mut().unwrap();
-        h.fill(1f64);
-        println!("{:?}", h);
-    }
-    {
-        let mut h = m.remove("2").unwrap().into_hist_1d().unwrap();
-        h.fill(1f64);
-        println!("{:?}", h);
-    }
-
-    println!("");
-    println!("{:?}", m);
-
-    println!("{:?}", h1);
-    println!("{:?}", h2);
+    let _h = m["2"].as_hist_1d().unwrap();
+    let h = m.get_mut("2").unwrap().as_hist_1d_mut().unwrap();
+    h.fill(1f64);
+    let mut h = m.remove("2").unwrap().into_hist_1d().unwrap();
+    h.fill(1f64);
 }
