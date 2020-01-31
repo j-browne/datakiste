@@ -8,27 +8,122 @@ use crate::{
     Run,
 };
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
+use serde::{de::Error as DeError, Deserialize, Deserializer, Serialize};
 use std::{
     borrow::{Borrow, Cow},
     io::{self, BufRead, BufReader, Read, Write},
 };
 
 const DK_MAGIC_NUMBER: u64 = 0xE2A1_642A_ACB5_C4C9;
-const DK_VERSION: (u64, u64, u64) = (0, 2, 0);
+const DK_VERSION: (u64, u64, u64) = (0, 3, 0);
 
 ///
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[non_exhaustive]
 pub enum DkItem<'a> {
     Run(Cow<'a, Run>),
     Hist1d(Cow<'a, Hist1d>),
     Hist2d(Cow<'a, Hist2d>),
     Hist3d(Cow<'a, Hist3d>),
     Hist4d(Cow<'a, Hist4d>),
+    #[serde(skip)]
+    #[doc(hidden)]
+    Unused5,
+    #[serde(skip)]
+    #[doc(hidden)]
+    Unused6,
+    #[serde(skip)]
+    #[doc(hidden)]
+    Unused7,
+    #[serde(skip)]
+    #[doc(hidden)]
+    Unused8,
+    #[serde(skip)]
+    #[doc(hidden)]
+    Unused9,
+    #[serde(skip)]
+    #[doc(hidden)]
+    Unused10,
     Points1d(Cow<'a, Points1d>),
     Points2d(Cow<'a, Points2d>),
     Points3d(Cow<'a, Points3d>),
     Points4d(Cow<'a, Points4d>),
+    #[serde(skip)]
+    #[doc(hidden)]
+    Unused15,
+    #[serde(skip)]
+    #[doc(hidden)]
+    Unused16,
+    #[serde(skip)]
+    #[doc(hidden)]
+    Unused17,
+    #[serde(skip)]
+    #[doc(hidden)]
+    Unused18,
+    #[serde(skip)]
+    #[doc(hidden)]
+    Unused19,
+    #[serde(skip)]
+    #[doc(hidden)]
+    Unused20,
+    #[serde(skip)]
+    #[doc(hidden)]
+    Unused21,
+    #[serde(skip)]
+    #[doc(hidden)]
+    Unused22,
+    #[serde(skip)]
+    #[doc(hidden)]
+    Unused23,
+    #[serde(skip)]
+    #[doc(hidden)]
+    Unused24,
+    #[serde(skip)]
+    #[doc(hidden)]
+    Unused25,
+    #[serde(skip)]
+    #[doc(hidden)]
+    Unused26,
+    #[serde(skip)]
+    #[doc(hidden)]
+    Unused27,
+    #[serde(skip)]
+    #[doc(hidden)]
+    Unused28,
+    #[serde(skip)]
+    #[doc(hidden)]
+    Unused29,
+    #[serde(skip)]
+    #[doc(hidden)]
+    Unused30,
+    #[serde(skip)]
+    #[doc(hidden)]
+    Unused31,
     Cut1dLin(Cow<'a, Cut1dLin>),
+    #[serde(skip)]
+    #[doc(hidden)]
+    Unused32,
+    #[serde(skip)]
+    #[doc(hidden)]
+    Unused33,
+    #[serde(skip)]
+    #[doc(hidden)]
+    Unused34,
+    #[serde(skip)]
+    #[doc(hidden)]
+    Unused35,
+    #[serde(skip)]
+    #[doc(hidden)]
+    Unused36,
+    #[serde(skip)]
+    #[doc(hidden)]
+    Unused37,
+    #[serde(skip)]
+    #[doc(hidden)]
+    Unused38,
+    #[serde(skip)]
+    #[doc(hidden)]
+    Unused39,
     Cut2dCirc(Cow<'a, Cut2dCirc>),
     Cut2dRect(Cow<'a, Cut2dRect>),
     Cut2dPoly(Cow<'a, Cut2dPoly>),
@@ -438,26 +533,151 @@ impl<'a> DkItem<'a> {
             DkItem::Cut2dCirc(_) => DkType::Cut2dCirc,
             DkItem::Cut2dRect(_) => DkType::Cut2dRect,
             DkItem::Cut2dPoly(_) => DkType::Cut2dPoly,
+            _ => unreachable!(),
         }
     }
 }
 
 ///
-#[derive(PartialEq, Eq, Debug, Clone, Copy)]
+#[derive(PartialEq, Eq, Debug, Clone, Copy, Serialize, Deserialize)]
+#[non_exhaustive]
+#[repr(C)]
 pub enum DkType {
-    Run,
-    Hist1d,
-    Hist2d,
-    Hist3d,
-    Hist4d,
-    Points1d,
-    Points2d,
-    Points3d,
-    Points4d,
-    Cut1dLin,
-    Cut2dCirc,
-    Cut2dRect,
-    Cut2dPoly,
+    Run = 0,
+    Hist1d = 1,
+    Hist2d = 2,
+    Hist3d = 3,
+    Hist4d = 4,
+    Points1d = 11,
+    Points2d = 12,
+    Points3d = 13,
+    Points4d = 14,
+    Cut1dLin = 32,
+    Cut2dCirc = 40,
+    Cut2dRect = 41,
+    Cut2dPoly = 42,
+}
+
+/// A datakiste file.
+///
+/// # Examples
+/// ```
+/// use datakiste::io::Datakiste;
+///
+/// let data: &[u8] = &[
+///     0xC9, 0xC4, 0xB5, 0xAC, 0x2A, 0x64, 0xA1, 0xE2, // Magic Number
+///     0, 0, 0, 0, 0, 0, 0, 0, // Version Number - Major
+///     3, 0, 0, 0, 0, 0, 0, 0, // Version Number - Minor
+///     0, 0, 0, 0, 0, 0, 0, 0, // Version Number - Patch
+///     0, 0, 0, 0, 0, 0, 0, 0, // Number of items
+/// ];
+///
+/// let dk: Datakiste = bincode::deserialize(data)?;
+/// assert!(dk.items.is_empty());
+///
+/// let reserialized = bincode::serialize(&dk)?;
+/// assert_eq!(data, reserialized.as_slice());
+/// # Ok::<(), Box<dyn std::error::Error>>(())
+/// ```
+///
+/// ```should_panic
+/// use datakiste::io::Datakiste;
+///
+/// let data: &[u8] = &[
+///     // Will panic because magic number is wrong
+///     0, 0, 0, 0, 0, 0, 0, 0, // Magic Number
+///     0, 0, 0, 0, 0, 0, 0, 0, // Version Number - Major
+///     3, 0, 0, 0, 0, 0, 0, 0, // Version Number - Minor
+///     0, 0, 0, 0, 0, 0, 0, 0, // Version Number - Patch
+///     0, 0, 0, 0, 0, 0, 0, 0, // Number of items
+/// ];
+///
+/// let dk: Datakiste = bincode::deserialize(&data)?;
+/// # Ok::<(), Box<dyn std::error::Error>>(())
+/// ```
+///
+/// ```should_panic
+/// use datakiste::io::Datakiste;
+///
+/// let data: &[u8] = &[
+///     0xC9, 0xC4, 0xB5, 0xAC, 0x2A, 0x64, 0xA1, 0xE2, // Magic Number
+///     // Will panic because version is wrong
+///     0, 0, 0, 0, 0, 0, 0, 0, // Version Number - Major
+///     0, 0, 0, 0, 0, 0, 0, 0, // Version Number - Minor
+///     0, 0, 0, 0, 0, 0, 0, 0, // Version Number - Patch
+///     0, 0, 0, 0, 0, 0, 0, 0, // Number of items
+/// ];
+///
+/// let dk: Datakiste = bincode::deserialize(&data)?;
+/// # Ok::<(), Box<dyn std::error::Error>>(())
+/// ```
+///
+/// ```
+/// use datakiste::{io::Datakiste, hist::Hist1d};
+///
+/// let data: &[u8] = &[
+///     0xC9, 0xC4, 0xB5, 0xAC, 0x2A, 0x64, 0xA1, 0xE2, // Magic Number
+///     0, 0, 0, 0, 0, 0, 0, 0, // Version Number - Major
+///     3, 0, 0, 0, 0, 0, 0, 0, // Version Number - Minor
+///     0, 0, 0, 0, 0, 0, 0, 0, // Version Number - Patch
+///     1, 0, 0, 0, 0, 0, 0, 0, // Number of items
+///     4, 0, 0, 0, 0, 0, 0, 0, // Item 1 - String - size
+///     b'h', b'i', b's', b't', // Item 1 - String - data
+///     1, 0, 0, 0,             // Item 1 - Type
+///     1, 0, 0, 0,             // Item 1 - Hist1d - Axis - Bins
+///     0, 0, 0, 0, 0, 0, 0, 0, // Item 1 - Hist1d - Axis - Min
+///     0, 0, 0, 0, 0, 0, 0, 0, // Item 1 - Hist1d - Axis - Max
+///     1, 0, 0, 0, 0, 0, 0, 0, // Item 1 - Hist1d - data - Length
+///     7, 0, 0, 0, 0, 0, 0, 0, // Item 1 - Hist1d - data
+/// ];
+///
+/// let dk: Datakiste = bincode::deserialize(&data)?;
+/// assert_eq!(dk.items.len(), 1);
+/// let i = &dk.items[0];
+/// assert_eq!(i.0, "hist");
+/// assert_eq!(*i.1.as_hist_1d().unwrap(), Hist1d::with_counts(1, 0.0, 0.0, vec![7]).unwrap());
+///
+/// let reserialized = bincode::serialize(&dk)?;
+/// assert_eq!(data, reserialized.as_slice());
+/// # Ok::<(), Box<dyn std::error::Error>>(())
+/// ```
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Datakiste<'a> {
+    #[serde(deserialize_with = "deserialize_magic_number")]
+    magic_number: u64,
+    #[serde(deserialize_with = "deserialize_version")]
+    version: (u64, u64, u64),
+    pub items: Vec<(String, DkItem<'a>)>,
+}
+
+fn deserialize_magic_number<'de, D>(deserializer: D) -> core::result::Result<u64, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let magic_number = u64::deserialize(deserializer)?;
+    if magic_number == DK_MAGIC_NUMBER {
+        Ok(magic_number)
+    } else {
+        Err(D::Error::invalid_value(
+            serde::de::Unexpected::Other(&"magic_number"),
+            &format!("0x{:016X}", DK_MAGIC_NUMBER).as_str(),
+        ))
+    }
+}
+
+fn deserialize_version<'de, D>(deserializer: D) -> core::result::Result<(u64, u64, u64), D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let version = <(u64, u64, u64)>::deserialize(deserializer)?;
+    if version == DK_VERSION {
+        Ok(version)
+    } else {
+        Err(D::Error::invalid_value(
+            serde::de::Unexpected::Other(&"version number"),
+            &format!("{:?}", DK_VERSION).as_str(),
+        ))
+    }
 }
 
 /// An interface for reading datakiste binary data
@@ -465,45 +685,6 @@ pub enum DkType {
 /// Anything that implements `byteorder::ReadBytesExt`
 /// will get a default implementation of `ReadDkBin`.
 pub trait ReadDkBin: ReadBytesExt {
-    /// Reads in a whole datakiste file.
-    ///
-    /// # Examples
-    /// ```
-    /// use datakiste::io::ReadDkBin;
-    ///
-    /// let mut data: Vec<u8> = vec![];
-    /// data.append(&mut vec![0xC9, 0xC4, 0xB5, 0xAC, 0x2A, 0x64, 0xA1, 0xE2]); // Magic Number
-    /// data.append(&mut vec![0, 0, 0, 0, 0, 0, 0, 0,   // Version Number - Major
-    ///                       2, 0, 0, 0, 0, 0, 0, 0,   // Version Number - Minor
-    ///                       0, 0, 0, 0, 0, 0, 0, 0]); // Version Number - Patch
-    ///
-    /// let items = data.as_slice().read_dk_bin().unwrap();
-    /// assert!(items.is_empty());
-    /// ```
-    ///
-    /// ```
-    /// use datakiste::hist::{Hist, Hist1d};
-    /// use datakiste::io::ReadDkBin;
-    ///
-    /// let mut data: Vec<u8> = vec![];
-    /// data.append(&mut vec![0xC9, 0xC4, 0xB5, 0xAC, 0x2A, 0x64, 0xA1, 0xE2]); // Magic Number
-    /// data.append(&mut vec![0, 0, 0, 0, 0, 0, 0, 0]); // Version Number - Major
-    /// data.append(&mut vec![2, 0, 0, 0, 0, 0, 0, 0]); // Version Number - Minor
-    /// data.append(&mut vec![0, 0, 0, 0, 0, 0, 0, 0]); // Version Number - Patch
-    /// data.append(&mut vec![4]);                      // Item 1 - String - size
-    /// data.append(&mut vec![b'h', b'i', b's', b't']); // Item 1 - String - data
-    /// data.append(&mut vec![1]);                      // Item 1 - DkType
-    /// data.append(&mut vec![1, 0, 0, 0]);             // Item 1 - Hist1d - Axis - Bins
-    /// data.append(&mut vec![0, 0, 0, 0, 0, 0, 0, 0]); // Item 1 - Hist1d - Axis - Min
-    /// data.append(&mut vec![0, 0, 0, 0, 0, 0, 0, 0]); // Item 1 - Hist1d - data - Max
-    /// data.append(&mut vec![0, 0, 0, 0, 0, 0, 0, 0]); // Item 1 - Hist1d - data
-    ///
-    /// let items = data.as_slice().read_dk_bin().unwrap();
-    /// assert_eq!(items.len(), 1);
-    /// let ref i = items[0];
-    /// assert_eq!(i.0, "hist");
-    /// assert_eq!(*i.1.as_hist_1d().unwrap(), Hist1d::new(1, 0.0, 0.0).unwrap());
-    /// ```
     fn read_dk_bin(&mut self) -> Result<Vec<(String, DkItem<'static>)>> {
         let version = self.read_dk_version_bin()?;
         if version != DK_VERSION {
@@ -512,25 +693,7 @@ pub trait ReadDkBin: ReadBytesExt {
                 "wrong datakiste file version",
             ))?
         } else {
-            let mut v = Vec::new();
-            loop {
-                match self.read_dk_item_bin() {
-                    Ok(i) => {
-                        v.push(i);
-                    }
-                    Err(e) => {
-                        match e.kind() {
-                            // FIXME: Differentiate between an expected and unexpected EOF
-                            crate::error::ErrorKind::Io(e)
-                                if e.kind() == io::ErrorKind::UnexpectedEof =>
-                            {
-                                break;
-                            }
-                            _ => return Err(e.into()),
-                        }
-                    }
-                }
-            }
+            let v: Vec<(String, DkItem)> = bincode::deserialize_from(self)?;
             Ok(v)
         }
     }
@@ -553,318 +716,6 @@ pub trait ReadDkBin: ReadBytesExt {
             Ok(version)
         }
     }
-
-    ///
-    fn read_dk_item_bin(&mut self) -> Result<(String, DkItem<'static>)> {
-        let name = self.read_string_bin()?;
-        match self.read_type_bin()? {
-            DkType::Run => {
-                let r: Run = bincode::deserialize_from(self)?;
-                Ok((name, r.into()))
-            }
-            DkType::Hist1d => Ok((name, self.read_hist_1d_bin()?.into())),
-            DkType::Hist2d => Ok((name, self.read_hist_2d_bin()?.into())),
-            DkType::Hist3d => Ok((name, self.read_hist_3d_bin()?.into())),
-            DkType::Hist4d => Ok((name, self.read_hist_4d_bin()?.into())),
-            DkType::Points1d => Ok((name, self.read_points_1d_bin()?.into())),
-            DkType::Points2d => Ok((name, self.read_points_2d_bin()?.into())),
-            DkType::Points3d => Ok((name, self.read_points_3d_bin()?.into())),
-            DkType::Points4d => Ok((name, self.read_points_4d_bin()?.into())),
-            DkType::Cut1dLin => Ok((name, self.read_cut_1d_lin_bin()?.into())),
-            DkType::Cut2dCirc => Ok((name, self.read_cut_2d_circ_bin()?.into())),
-            DkType::Cut2dRect => Ok((name, self.read_cut_2d_rect_bin()?.into())),
-            DkType::Cut2dPoly => Ok((name, self.read_cut_2d_poly_bin()?.into())),
-        }
-    }
-
-    ///
-    fn read_type_bin(&mut self) -> Result<DkType> {
-        let t = self.read_u8()?;
-        match t {
-            0 => Ok(DkType::Run),
-            1 => Ok(DkType::Hist1d),
-            2 => Ok(DkType::Hist2d),
-            3 => Ok(DkType::Hist3d),
-            4 => Ok(DkType::Hist4d),
-            11 => Ok(DkType::Points1d),
-            12 => Ok(DkType::Points2d),
-            13 => Ok(DkType::Points3d),
-            14 => Ok(DkType::Points4d),
-            32 => Ok(DkType::Cut1dLin),
-            40 => Ok(DkType::Cut2dCirc),
-            41 => Ok(DkType::Cut2dRect),
-            42 => Ok(DkType::Cut2dPoly),
-            _ => Err(io::Error::new(io::ErrorKind::Other, "Error creating DkType").into()),
-        }
-    }
-
-    /// Reads in a string
-    ///
-    /// # Format
-    /// * `n_bytes: u8`
-    /// * `bytes: n_bytes * u8`
-    ///
-    /// # Examples
-    fn read_string_bin(&mut self) -> Result<String> {
-        let n_bytes = self.read_u8()? as usize;
-
-        let mut bytes = vec![0u8; n_bytes];
-        let _ = self.read_exact(&mut bytes);
-
-        String::from_utf8(bytes)
-            .or_else(|_| Err(io::Error::new(io::ErrorKind::Other, "Error creating String").into()))
-    }
-
-    /// Reads in binary 1d-histogram data
-    ///
-    /// # Format
-    /// * `bins: u32`
-    /// * `min: f64`
-    /// * `max: f64`
-    /// * `counts: bins * u64`
-    ///
-    /// # Examples
-    fn read_hist_1d_bin(&mut self) -> Result<Hist1d> {
-        let bins_0 = self.read_u32::<LittleEndian>()? as usize;
-        let min_0 = self.read_f64::<LittleEndian>()?;
-        let max_0 = self.read_f64::<LittleEndian>()?;
-
-        let mut v = Vec::<u64>::new();
-        for _ in 0..bins_0 {
-            let c = self.read_u64::<LittleEndian>()?;
-            v.push(c);
-        }
-
-        match Hist1d::with_counts(bins_0, min_0, max_0, v) {
-            Some(h) => Ok(h),
-            None => Err(io::Error::new(io::ErrorKind::Other, "Error creating Hist1d").into()),
-        }
-    }
-
-    /// Reads in binary 2d-histogram data
-    ///
-    /// # Format
-    /// * `x_bins: u32`
-    /// * `x_min: f64`
-    /// * `x_max: f64`
-    /// * `y_bins: u32 `
-    /// * `y_min: f64`
-    /// * `y_max: f64`
-    /// * `counts: x_bins * y_bins * u64`
-    ///
-    /// # Examples
-    fn read_hist_2d_bin(&mut self) -> Result<Hist2d> {
-        let bins_0 = self.read_u32::<LittleEndian>()? as usize;
-        let min_0 = self.read_f64::<LittleEndian>()?;
-        let max_0 = self.read_f64::<LittleEndian>()?;
-
-        let bins_1 = self.read_u32::<LittleEndian>()? as usize;
-        let min_1 = self.read_f64::<LittleEndian>()?;
-        let max_1 = self.read_f64::<LittleEndian>()?;
-
-        let mut v = Vec::<u64>::new();
-        for _ in 0..(bins_0 * bins_1) {
-            let c = self.read_u64::<LittleEndian>()?;
-            v.push(c);
-        }
-
-        match Hist2d::with_counts(bins_0, min_0, max_0, bins_1, min_1, max_1, v) {
-            Some(h) => Ok(h),
-            None => Err(io::Error::new(io::ErrorKind::Other, "Error creating Hist2d").into()),
-        }
-    }
-
-    fn read_hist_3d_bin(&mut self) -> Result<Hist3d> {
-        let bins_0 = self.read_u32::<LittleEndian>()? as usize;
-        let min_0 = self.read_f64::<LittleEndian>()?;
-        let max_0 = self.read_f64::<LittleEndian>()?;
-
-        let bins_1 = self.read_u32::<LittleEndian>()? as usize;
-        let min_1 = self.read_f64::<LittleEndian>()?;
-        let max_1 = self.read_f64::<LittleEndian>()?;
-
-        let bins_2 = self.read_u32::<LittleEndian>()? as usize;
-        let min_2 = self.read_f64::<LittleEndian>()?;
-        let max_2 = self.read_f64::<LittleEndian>()?;
-
-        let mut v = Vec::<u64>::new();
-        for _ in 0..(bins_0 * bins_1 * bins_2) {
-            let c = self.read_u64::<LittleEndian>()?;
-            v.push(c);
-        }
-
-        match Hist3d::with_counts(
-            bins_0, min_0, max_0, bins_1, min_1, max_1, bins_2, min_2, max_2, v,
-        ) {
-            Some(h) => Ok(h),
-            None => Err(io::Error::new(io::ErrorKind::Other, "Error creating Hist3d").into()),
-        }
-    }
-
-    fn read_hist_4d_bin(&mut self) -> Result<Hist4d> {
-        let bins_0 = self.read_u32::<LittleEndian>()? as usize;
-        let min_0 = self.read_f64::<LittleEndian>()?;
-        let max_0 = self.read_f64::<LittleEndian>()?;
-
-        let bins_1 = self.read_u32::<LittleEndian>()? as usize;
-        let min_1 = self.read_f64::<LittleEndian>()?;
-        let max_1 = self.read_f64::<LittleEndian>()?;
-
-        let bins_2 = self.read_u32::<LittleEndian>()? as usize;
-        let min_2 = self.read_f64::<LittleEndian>()?;
-        let max_2 = self.read_f64::<LittleEndian>()?;
-
-        let bins_3 = self.read_u32::<LittleEndian>()? as usize;
-        let min_3 = self.read_f64::<LittleEndian>()?;
-        let max_3 = self.read_f64::<LittleEndian>()?;
-
-        let mut v = Vec::<u64>::new();
-        for _ in 0..(bins_0 * bins_1 * bins_2 * bins_3) {
-            let c = self.read_u64::<LittleEndian>()?;
-            v.push(c);
-        }
-
-        match Hist4d::with_counts(
-            bins_0, min_0, max_0, bins_1, min_1, max_1, bins_2, min_2, max_2, bins_3, min_3, max_3,
-            v,
-        ) {
-            Some(h) => Ok(h),
-            None => Err(io::Error::new(io::ErrorKind::Other, "Error creating Hist4d").into()),
-        }
-    }
-
-    fn read_points_1d_bin(&mut self) -> Result<Points1d> {
-        let n_points = self.read_u32::<LittleEndian>()? as usize;
-
-        let mut points = Vec::<f64>::with_capacity(n_points);
-        for _ in 0..n_points {
-            let v1 = self.read_f64::<LittleEndian>()?;
-            points.push(v1);
-        }
-
-        let p = Points1d::with_points(points);
-        Ok(p)
-    }
-
-    /// Reads in binary 2d-points data
-    ///
-    /// # Format
-    /// * `n_points: u32`
-    /// * `points: n_points * (f64, f64)`
-    ///
-    /// # Examples
-    fn read_points_2d_bin(&mut self) -> Result<Points2d> {
-        let n_points = self.read_u32::<LittleEndian>()? as usize;
-
-        let mut points = Vec::<(f64, f64)>::new();
-        for _ in 0..n_points {
-            let v1 = self.read_f64::<LittleEndian>()?;
-            let v2 = self.read_f64::<LittleEndian>()?;
-            points.push((v1, v2));
-        }
-
-        let p = Points2d::with_points(points);
-        Ok(p)
-    }
-
-    fn read_points_3d_bin(&mut self) -> Result<Points3d> {
-        let n_points = self.read_u32::<LittleEndian>()? as usize;
-
-        let mut points = Vec::<(f64, f64, f64)>::with_capacity(n_points);
-        for _ in 0..n_points {
-            let v1 = self.read_f64::<LittleEndian>()?;
-            let v2 = self.read_f64::<LittleEndian>()?;
-            let v3 = self.read_f64::<LittleEndian>()?;
-            points.push((v1, v2, v3));
-        }
-
-        let p = Points3d::with_points(points);
-        Ok(p)
-    }
-
-    fn read_points_4d_bin(&mut self) -> Result<Points4d> {
-        let n_points = self.read_u32::<LittleEndian>()? as usize;
-
-        let mut points = Vec::<(f64, f64, f64, f64)>::with_capacity(n_points);
-        for _ in 0..n_points {
-            let v1 = self.read_f64::<LittleEndian>()?;
-            let v2 = self.read_f64::<LittleEndian>()?;
-            let v3 = self.read_f64::<LittleEndian>()?;
-            let v4 = self.read_f64::<LittleEndian>()?;
-            points.push((v1, v2, v3, v4));
-        }
-
-        let p = Points4d::with_points(points);
-        Ok(p)
-    }
-
-    /// Reads in binary Cut1dLin
-    ///
-    /// # Format
-    /// * `min: f64`
-    /// * `max: f64`
-    ///
-    /// # Examples
-    fn read_cut_1d_lin_bin(&mut self) -> Result<Cut1dLin> {
-        let min = self.read_f64::<LittleEndian>()?;
-        let max = self.read_f64::<LittleEndian>()?;
-
-        Ok(Cut1dLin::new(min, max))
-    }
-
-    /// Reads in binary Cut2dCirc
-    ///
-    /// # Format
-    /// * `x: f64`
-    /// * `y: f64`
-    /// * `r: f64`
-    ///
-    /// # Examples
-    fn read_cut_2d_circ_bin(&mut self) -> Result<Cut2dCirc> {
-        let x = self.read_f64::<LittleEndian>()?;
-        let y = self.read_f64::<LittleEndian>()?;
-        let r = self.read_f64::<LittleEndian>()?;
-
-        Ok(Cut2dCirc::new(x, y, r))
-    }
-
-    /// Reads in binary Cut2dRect
-    ///
-    /// # Format
-    /// * `xmin: f64`
-    /// * `ymin: f64`
-    /// * `xmax: f64`
-    /// * `ymax: f64`
-    ///
-    /// # Examples
-    fn read_cut_2d_rect_bin(&mut self) -> Result<Cut2dRect> {
-        let x1 = self.read_f64::<LittleEndian>()?;
-        let y1 = self.read_f64::<LittleEndian>()?;
-        let x2 = self.read_f64::<LittleEndian>()?;
-        let y2 = self.read_f64::<LittleEndian>()?;
-
-        Ok(Cut2dRect::new(x1, y1, x2, y2))
-    }
-
-    /// Reads in binary Cut2dPoly
-    ///
-    /// # Format
-    /// * `n_verts: u16`
-    /// * `verts: n_verts * (f64, f64)`
-    ///
-    /// # Examples
-    fn read_cut_2d_poly_bin(&mut self) -> Result<Cut2dPoly> {
-        let n_verts = self.read_u16::<LittleEndian>()? as usize;
-
-        let mut v = Vec::<(f64, f64)>::new();
-        for _ in 0..n_verts {
-            let x = self.read_f64::<LittleEndian>()?;
-            let y = self.read_f64::<LittleEndian>()?;
-            v.push((x, y));
-        }
-
-        Ok(Cut2dPoly::from_verts(v))
-    }
 }
 
 /// An interface for writing datakiste binary data
@@ -875,13 +726,13 @@ pub trait WriteDkBin: WriteBytesExt {
     fn write_dk_bin<'a, I, S, D>(&mut self, it: I) -> Result<()>
     where
         I: Iterator<Item = (S, D)>,
-        S: Borrow<String>,
-        D: Borrow<DkItem<'a>>,
+        S: Borrow<String> + Serialize,
+        D: Borrow<DkItem<'a>> + Serialize,
     {
         self.write_dk_version_bin(DK_VERSION)?;
-        for (n, i) in it {
-            self.write_dk_item_bin(n.borrow(), i.borrow())?;
-        }
+
+        let v: Vec<_> = it.collect();
+        bincode::serialize_into(self, &v)?;
         Ok(())
     }
 
@@ -890,312 +741,6 @@ pub trait WriteDkBin: WriteBytesExt {
         self.write_u64::<LittleEndian>(version.0)?;
         self.write_u64::<LittleEndian>(version.1)?;
         self.write_u64::<LittleEndian>(version.2)?;
-        Ok(())
-    }
-
-    ///
-    fn write_dk_item_bin(&mut self, name: &str, item: &DkItem) -> Result<()> {
-        self.write_string_bin(name)?;
-        match *item {
-            DkItem::Run(ref r) => {
-                self.write_type_bin(DkType::Run)?;
-                bincode::serialize_into(self, &r)?;
-            }
-            DkItem::Hist1d(ref h) => {
-                self.write_type_bin(DkType::Hist1d)?;
-                self.write_hist_1d_bin(h)?;
-            }
-            DkItem::Hist2d(ref h) => {
-                self.write_type_bin(DkType::Hist2d)?;
-                self.write_hist_2d_bin(h)?;
-            }
-            DkItem::Hist3d(ref h) => {
-                self.write_type_bin(DkType::Hist3d)?;
-                self.write_hist_3d_bin(h)?;
-            }
-            DkItem::Hist4d(ref h) => {
-                self.write_type_bin(DkType::Hist4d)?;
-                self.write_hist_4d_bin(h)?;
-            }
-            DkItem::Points1d(ref p) => {
-                self.write_type_bin(DkType::Points1d)?;
-                self.write_points_1d_bin(p)?;
-            }
-            DkItem::Points2d(ref p) => {
-                self.write_type_bin(DkType::Points2d)?;
-                self.write_points_2d_bin(p)?;
-            }
-            DkItem::Points3d(ref p) => {
-                self.write_type_bin(DkType::Points3d)?;
-                self.write_points_3d_bin(p)?;
-            }
-            DkItem::Points4d(ref p) => {
-                self.write_type_bin(DkType::Points4d)?;
-                self.write_points_4d_bin(p)?;
-            }
-            DkItem::Cut1dLin(ref c) => {
-                self.write_type_bin(DkType::Cut1dLin)?;
-                self.write_cut_1d_lin_bin(c)?;
-            }
-            DkItem::Cut2dCirc(ref c) => {
-                self.write_type_bin(DkType::Cut2dCirc)?;
-                self.write_cut_2d_circ_bin(c)?;
-            }
-            DkItem::Cut2dRect(ref c) => {
-                self.write_type_bin(DkType::Cut2dRect)?;
-                self.write_cut_2d_rect_bin(c)?;
-            }
-            DkItem::Cut2dPoly(ref c) => {
-                self.write_type_bin(DkType::Cut2dPoly)?;
-                self.write_cut_2d_poly_bin(c)?;
-            }
-        }
-        Ok(())
-    }
-
-    ///
-    fn write_type_bin(&mut self, t: DkType) -> Result<()> {
-        let t: u8 = match t {
-            DkType::Run => 0,
-            DkType::Hist1d => 1,
-            DkType::Hist2d => 2,
-            DkType::Hist3d => 3,
-            DkType::Hist4d => 4,
-            DkType::Points1d => 11,
-            DkType::Points2d => 12,
-            DkType::Points3d => 13,
-            DkType::Points4d => 14,
-            DkType::Cut1dLin => 32,
-            DkType::Cut2dCirc => 40,
-            DkType::Cut2dRect => 41,
-            DkType::Cut2dPoly => 42,
-        };
-        self.write_u8(t)?;
-        Ok(())
-    }
-
-    ///
-    fn write_string_bin(&mut self, s: &str) -> Result<()> {
-        self.write_u8(s.len() as u8)?;
-        self.write_all(s.as_bytes())?;
-        Ok(())
-    }
-
-    /// Writes out binary 1D histogram data
-    ///
-    /// # Format
-    /// * `bins: u32`
-    /// * `min: f64`
-    /// * `max: f64`
-    /// * `counts: bins * u64`
-    ///
-    /// # Examples
-    fn write_hist_1d_bin(&mut self, h: &Hist1d) -> Result<()> {
-        let axes = h.axes();
-        self.write_u32::<LittleEndian>(axes.bins as u32)?;
-        self.write_f64::<LittleEndian>(axes.min)?;
-        self.write_f64::<LittleEndian>(axes.max)?;
-        for c in h.counts() {
-            self.write_u64::<LittleEndian>(*c)?;
-        }
-        Ok(())
-    }
-
-    /// Writes out binary 2D histogram data
-    ///
-    /// # Format
-    /// * `x_bins: u32`
-    /// * `x_min: f64`
-    /// * `x_max: f64`
-    /// * `y_bins: u32`
-    /// * `y_min: f64`
-    /// * `y_max: f64`
-    /// * `counts: x_bins * y_bins * u64`
-    ///
-    /// # Examples
-    fn write_hist_2d_bin(&mut self, h: &Hist2d) -> Result<()> {
-        let axes = h.axes();
-
-        self.write_u32::<LittleEndian>(axes.0.bins as u32)?;
-        self.write_f64::<LittleEndian>(axes.0.min)?;
-        self.write_f64::<LittleEndian>(axes.0.max)?;
-
-        self.write_u32::<LittleEndian>(axes.1.bins as u32)?;
-        self.write_f64::<LittleEndian>(axes.1.min)?;
-        self.write_f64::<LittleEndian>(axes.1.max)?;
-
-        for c in h.counts() {
-            self.write_u64::<LittleEndian>(*c)?;
-        }
-        Ok(())
-    }
-
-    fn write_hist_3d_bin(&mut self, h: &Hist3d) -> Result<()> {
-        let axes = h.axes();
-
-        self.write_u32::<LittleEndian>(axes.0.bins as u32)?;
-        self.write_f64::<LittleEndian>(axes.0.min)?;
-        self.write_f64::<LittleEndian>(axes.0.max)?;
-
-        self.write_u32::<LittleEndian>(axes.1.bins as u32)?;
-        self.write_f64::<LittleEndian>(axes.1.min)?;
-        self.write_f64::<LittleEndian>(axes.1.max)?;
-
-        self.write_u32::<LittleEndian>(axes.2.bins as u32)?;
-        self.write_f64::<LittleEndian>(axes.2.min)?;
-        self.write_f64::<LittleEndian>(axes.2.max)?;
-
-        for c in h.counts() {
-            self.write_u64::<LittleEndian>(*c)?;
-        }
-        Ok(())
-    }
-
-    fn write_hist_4d_bin(&mut self, h: &Hist4d) -> Result<()> {
-        let axes = h.axes();
-
-        self.write_u32::<LittleEndian>(axes.0.bins as u32)?;
-        self.write_f64::<LittleEndian>(axes.0.min)?;
-        self.write_f64::<LittleEndian>(axes.0.max)?;
-
-        self.write_u32::<LittleEndian>(axes.1.bins as u32)?;
-        self.write_f64::<LittleEndian>(axes.1.min)?;
-        self.write_f64::<LittleEndian>(axes.1.max)?;
-
-        self.write_u32::<LittleEndian>(axes.2.bins as u32)?;
-        self.write_f64::<LittleEndian>(axes.2.min)?;
-        self.write_f64::<LittleEndian>(axes.2.max)?;
-
-        self.write_u32::<LittleEndian>(axes.3.bins as u32)?;
-        self.write_f64::<LittleEndian>(axes.3.min)?;
-        self.write_f64::<LittleEndian>(axes.3.max)?;
-
-        for c in h.counts() {
-            self.write_u64::<LittleEndian>(*c)?;
-        }
-        Ok(())
-    }
-
-    fn write_points_1d_bin(&mut self, p: &Points1d) -> Result<()> {
-        let points = p.points();
-
-        self.write_u32::<LittleEndian>(points.len() as u32)?;
-
-        for p in points {
-            self.write_f64::<LittleEndian>(*p)?;
-        }
-
-        Ok(())
-    }
-
-    /// Writes out binary 2d-points data
-    ///
-    /// # Format
-    /// * `n_points: u32`
-    /// * `points: n_points * (f64, f64)`
-    ///
-    /// # Examples
-    fn write_points_2d_bin(&mut self, p: &Points2d) -> Result<()> {
-        let points = p.points();
-
-        self.write_u32::<LittleEndian>(points.len() as u32)?;
-
-        for p in points {
-            self.write_f64::<LittleEndian>(p.0)?;
-            self.write_f64::<LittleEndian>(p.1)?;
-        }
-
-        Ok(())
-    }
-
-    fn write_points_3d_bin(&mut self, p: &Points3d) -> Result<()> {
-        let points = p.points();
-
-        self.write_u32::<LittleEndian>(points.len() as u32)?;
-
-        for p in points {
-            self.write_f64::<LittleEndian>(p.0)?;
-            self.write_f64::<LittleEndian>(p.1)?;
-            self.write_f64::<LittleEndian>(p.2)?;
-        }
-
-        Ok(())
-    }
-
-    fn write_points_4d_bin(&mut self, p: &Points4d) -> Result<()> {
-        let points = p.points();
-
-        self.write_u32::<LittleEndian>(points.len() as u32)?;
-
-        for p in points {
-            self.write_f64::<LittleEndian>(p.0)?;
-            self.write_f64::<LittleEndian>(p.1)?;
-            self.write_f64::<LittleEndian>(p.2)?;
-            self.write_f64::<LittleEndian>(p.3)?;
-        }
-
-        Ok(())
-    }
-
-    /// Writes out binary Cut1dLin
-    ///
-    /// # Format
-    /// * `min: f64`
-    /// * `max: f64`
-    ///
-    /// # Examples
-    fn write_cut_1d_lin_bin(&mut self, c: &Cut1dLin) -> Result<()> {
-        self.write_f64::<LittleEndian>(c.min())?;
-        self.write_f64::<LittleEndian>(c.max())?;
-        Ok(())
-    }
-
-    /// Writes out binary Cut2dCirc
-    ///
-    /// # Format
-    /// * `x: f64`
-    /// * `y: f64`
-    /// * `r: f64`
-    ///
-    /// # Examples
-    fn write_cut_2d_circ_bin(&mut self, c: &Cut2dCirc) -> Result<()> {
-        self.write_f64::<LittleEndian>(c.x())?;
-        self.write_f64::<LittleEndian>(c.y())?;
-        self.write_f64::<LittleEndian>(c.r())?;
-        Ok(())
-    }
-
-    /// Writes out binary Cut2dRect
-    ///
-    /// # Format
-    /// * `xmin: f64`
-    /// * `ymin: f64`
-    /// * `xmax: f64`
-    /// * `ymax: f64 `
-    ///
-    /// # Examples
-    fn write_cut_2d_rect_bin(&mut self, c: &Cut2dRect) -> Result<()> {
-        self.write_f64::<LittleEndian>(c.xmin())?;
-        self.write_f64::<LittleEndian>(c.ymin())?;
-        self.write_f64::<LittleEndian>(c.xmax())?;
-        self.write_f64::<LittleEndian>(c.ymax())?;
-        Ok(())
-    }
-
-    /// Writes out binary Cut2dPoly
-    ///
-    /// # Format
-    /// * `n_verts: u16`
-    /// * `verts: n_verts * (f64, f64)`
-    ///
-    /// # Examples
-    fn write_cut_2d_poly_bin(&mut self, c: &Cut2dPoly) -> Result<()> {
-        let verts = c.verts();
-        self.write_u16::<LittleEndian>(verts.len() as u16)?;
-        for v in verts {
-            self.write_f64::<LittleEndian>(v.0)?;
-            self.write_f64::<LittleEndian>(v.1)?;
-        }
         Ok(())
     }
 }
@@ -1289,7 +834,7 @@ pub trait WriteDkTxt: Write {
     fn write_hist_2d_txt(&mut self, h: &Hist2d) -> Result<()> {
         let axes = h.axes();
         for (idx, c) in h.counts().iter().enumerate() {
-            if (idx != 0) && (idx % axes.1.bins == 0) {
+            if (idx != 0) && (idx % axes.1.bins as usize == 0) {
                 writeln!(self)?;
             }
             let val = h.val_at_idx(idx);
@@ -1724,11 +1269,11 @@ mod tests {
         // Read in hist from string
         let bytes = hist_1d_txt.to_string().into_bytes();
         let mut bytes = bytes.as_slice();
-        let mut h1 = Hist1d::new(3usize, 0f64, 3f64).unwrap();
+        let mut h1 = Hist1d::new(3, 0.0, 3.0).unwrap();
         let _ = bytes.read_to_hist_1d_txt(&mut h1);
 
         // Make sure it was read correctly
-        let h2 = Hist1d::with_counts(3usize, 0f64, 3f64, vec![2, 1, 0]).unwrap();
+        let h2 = Hist1d::with_counts(3, 0.0, 3.0, vec![2, 1, 0]).unwrap();
         assert_eq!(h1, h2);
 
         // Make sure there's nothing left over in `bytes`
@@ -1746,24 +1291,19 @@ mod tests {
     #[test]
     fn read_write_hist_1d_bin() {
         let hist_bytes = &[
-            3u8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 64, 2, 0, 0, 0, 0, 0, 0, 0,
-            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            3u8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 64, 3, 0, 0, 0, 0, 0, 0, 0,
+            2, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         ] as &[u8];
 
         // Read in hit from byte array
-        let mut bytes = hist_bytes;
-        let h1 = bytes.read_hist_1d_bin().unwrap();
+        let h1: Hist1d = bincode::deserialize(hist_bytes).unwrap();
 
         // Make sure it was read correctly
-        let h2 = Hist1d::with_counts(3usize, 0f64, 3f64, vec![2, 1, 0]).unwrap();
+        let h2 = Hist1d::with_counts(3, 0.0, 3.0, vec![2, 1, 0]).unwrap();
         assert_eq!(h1, h2);
 
-        // Make sure there's nothing left over in `bytes`
-        assert!(bytes.is_empty());
-
         // Write the hit out to a byte array
-        let mut v = Vec::<u8>::new();
-        let _ = v.write_hist_1d_bin(&h2);
+        let v = bincode::serialize(&h1).unwrap();
 
         // Make sure it was written out correctly
         assert_eq!(v, hist_bytes);
@@ -1776,12 +1316,11 @@ mod tests {
         // Read in hist from string
         let bytes = hist_2d_txt.to_string().into_bytes();
         let mut bytes = bytes.as_slice();
-        let mut h1 = Hist2d::new(2usize, 0f64, 4f64, 2usize, 0f64, 2f64).unwrap();
+        let mut h1 = Hist2d::new(2, 0.0, 4.0, 2, 0.0, 2.0).unwrap();
         let _ = bytes.read_to_hist_2d_txt(&mut h1);
 
         // Make sure it was read correctly
-        let h2 =
-            Hist2d::with_counts(2usize, 0f64, 4f64, 2usize, 0f64, 2f64, vec![2, 1, 0, 4]).unwrap();
+        let h2 = Hist2d::with_counts(2, 0.0, 4.0, 2, 0.0, 2.0, vec![2, 1, 0, 4]).unwrap();
         assert_eq!(h1, h2);
 
         // Make sure there's nothing left over in `bytes`
@@ -1800,25 +1339,19 @@ mod tests {
     fn read_write_hist_2d_bin() {
         let hist_bytes = &[
             2u8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16, 64, 2, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 64, 2, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 64, 4, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 1,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0,
         ] as &[u8];
 
         // Read in hit from byte array
-        let mut bytes = hist_bytes;
-        let h1 = bytes.read_hist_2d_bin().unwrap();
+        let h1: Hist2d = bincode::deserialize(hist_bytes).unwrap();
 
         // Make sure it was read correctly
-        let h2 =
-            Hist2d::with_counts(2usize, 0f64, 4f64, 2usize, 0f64, 2f64, vec![2, 1, 0, 4]).unwrap();
+        let h2 = Hist2d::with_counts(2, 0.0, 4.0, 2, 0.0, 2.0, vec![2, 1, 0, 4]).unwrap();
         assert_eq!(h1, h2);
 
-        // Make sure there's nothing left over in `bytes`
-        assert!(bytes.is_empty());
-
         // Write the hit out to a byte array
-        let mut v = Vec::<u8>::new();
-        let _ = v.write_hist_2d_bin(&h2);
+        let v = bincode::serialize(&h1).unwrap();
 
         // Make sure it was written out correctly
         assert_eq!(v, hist_bytes);

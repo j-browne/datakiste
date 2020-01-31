@@ -14,7 +14,7 @@ pub trait Points {
     }
 }
 
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct Points1d {
     points: Vec<f64>,
 }
@@ -41,7 +41,7 @@ impl Points1d {
     }
 }
 
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct Points2d {
     points: Vec<(f64, f64)>,
 }
@@ -68,7 +68,7 @@ impl Points2d {
     }
 }
 
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct Points3d {
     points: Vec<(f64, f64, f64)>,
 }
@@ -95,7 +95,7 @@ impl Points3d {
     }
 }
 
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct Points4d {
     points: Vec<(f64, f64, f64, f64)>,
 }

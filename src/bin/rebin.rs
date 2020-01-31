@@ -46,7 +46,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let x: Vec<_> = l.split_whitespace().collect();
         if x.len() == 4 {
             let name = x[0];
-            let bins = x[1].parse::<usize>().unwrap();
+            let bins = x[1].parse::<u32>().unwrap();
             let min = x[2].parse::<f64>().unwrap();
             let max = x[3].parse::<f64>().unwrap();
             hists.insert(
@@ -55,10 +55,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             );
         } else if x.len() == 7 {
             let name = x[0];
-            let bins_x = x[1].parse::<usize>().unwrap();
+            let bins_x = x[1].parse::<u32>().unwrap();
             let min_x = x[2].parse::<f64>().unwrap();
             let max_x = x[3].parse::<f64>().unwrap();
-            let bins_y = x[4].parse::<usize>().unwrap();
+            let bins_y = x[4].parse::<u32>().unwrap();
             let min_y = x[5].parse::<f64>().unwrap();
             let max_y = x[6].parse::<f64>().unwrap();
             hists.insert(

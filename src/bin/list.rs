@@ -82,6 +82,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 print!("Cut2d: ");
                 print!("{} ", n);
             }
+            _ => unreachable!(),
         }
         println!();
     }

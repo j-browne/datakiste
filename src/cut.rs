@@ -12,7 +12,7 @@ pub trait Cut2d {
     fn contains(&self, x: f64, y: f64) -> bool;
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Cut1dLin {
     min: f64,
     max: f64,
@@ -41,7 +41,7 @@ impl Cut1d for Cut1dLin {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Cut2dCirc {
     x: f64,
     y: f64,
@@ -72,7 +72,7 @@ impl Cut2d for Cut2dCirc {
     }
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Cut2dPoly {
     verts: Vec<(f64, f64)>,
 }
@@ -116,7 +116,7 @@ impl Cut2d for Cut2dPoly {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Cut2dRect {
     xmin: f64,
     ymin: f64,

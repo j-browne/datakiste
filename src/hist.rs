@@ -13,9 +13,9 @@ use std::mem;
 /// functionality needed to determine the value that corresponds to a bin.
 ///
 /// # Examples
-#[derive(PartialEq, Debug, Clone)]
+#[derive(PartialEq, Debug, Clone, Serialize, Deserialize)]
 pub struct HistAxis {
-    pub bins: usize,
+    pub bins: u32,
     pub min: f64,
     pub max: f64,
 }
@@ -24,7 +24,7 @@ impl HistAxis {
     /// Constructs a new `HistAxis`, with the supplied parameters.
     ///
     /// If the supplied parameters are invalid, `None` is returned.
-    fn new(bins: usize, min: f64, max: f64) -> Option<HistAxis> {
+    fn new(bins: u32, min: f64, max: f64) -> Option<HistAxis> {
         let mut min = min;
         let mut max = max;
         // swap min and max, if they are incorrectly ordered
@@ -48,8 +48,8 @@ impl HistAxis {
     /// Returns the bin index of the bin with value `val`.
     pub fn bin_at_val(&self, val: f64) -> usize {
         match (val - self.min) / self.bin_width() {
-            a if a < 0f64 => 0usize,
-            a if a > ((self.bins - 1) as f64) => self.bins - 1,
+            a if a < 0f64 => 0,
+            a if a > ((self.bins - 1) as f64) => (self.bins - 1) as usize,
             a => a.floor() as usize,
         }
     }
@@ -157,14 +157,14 @@ pub trait Hist {
 /// A type that describes a 1D histogram.
 ///
 /// # Examples
-#[derive(PartialEq, Debug, Clone)]
+#[derive(PartialEq, Debug, Clone, Serialize, Deserialize)]
 pub struct Hist1d {
     axes: HistAxis,
     counts: Vec<u64>,
 }
 
 impl Hist for Hist1d {
-    type Bin = usize;
+    type Bin = u32;
     type Val = f64;
     type Axes = HistAxis;
 
@@ -173,19 +173,19 @@ impl Hist for Hist1d {
     }
 
     fn bin_at_val(&self, val: Self::Val) -> Self::Bin {
-        (self.axes.bin_at_val(val))
+        self.axes.bin_at_val(val) as u32
     }
 
     fn val_at_bin(&self, bin: Self::Bin) -> Self::Val {
-        (self.axes.val_at_bin_mid(bin))
+        self.axes.val_at_bin_mid(bin as usize)
     }
 
     fn idx_at_bin(&self, bin: Self::Bin) -> usize {
-        bin
+        bin as usize
     }
 
     fn bin_at_idx(&self, idx: usize) -> Self::Bin {
-        (idx)
+        idx as u32
     }
 
     fn counts(&self) -> &Vec<u64> {
@@ -208,18 +208,18 @@ impl Hist1d {
     /// # Examples
     /// ```
     /// # use datakiste::hist::Hist1d;
-    /// let mut hist = Hist1d::new(100usize, 0f64, 100f64).unwrap();
+    /// let mut hist = Hist1d::new(100, 0.0, 100.0).unwrap();
     /// ```
     ///
     /// ```
     /// # use datakiste::hist::Hist1d;
-    /// let mut hist = Hist1d::new(0usize, 0f64, 100f64);
+    /// let mut hist = Hist1d::new(0, 0.0, 100.0);
     /// assert_eq!(hist, None);
     /// ```
-    pub fn new(bins_0: usize, min_0: f64, max_0: f64) -> Option<Hist1d> {
+    pub fn new(bins_0: u32, min_0: f64, max_0: f64) -> Option<Hist1d> {
         match HistAxis::new(bins_0, min_0, max_0) {
             Some(axis_0) => {
-                let counts = vec![0u64; bins_0];
+                let counts = vec![0u64; bins_0 as usize];
                 Some(Hist1d {
                     axes: (axis_0),
                     counts,
@@ -240,16 +240,16 @@ impl Hist1d {
     /// # Examples
     /// ```
     /// # use datakiste::hist::Hist1d;
-    /// let mut hist = Hist1d::with_counts(100usize, 0f64, 100f64, vec![0u64; 100]).unwrap();
+    /// let mut hist = Hist1d::with_counts(100, 0.0, 100.0, vec![0u64; 100]).unwrap();
     /// ```
     ///
     /// ```
     /// # use datakiste::hist::Hist1d;
-    /// let mut hist = Hist1d::with_counts(100usize, 0f64, 100f64, vec![]);
+    /// let mut hist = Hist1d::with_counts(100, 0.0, 100.0, vec![]);
     /// assert_eq!(hist, None);
     /// ```
-    pub fn with_counts(bins_0: usize, min_0: f64, max_0: f64, counts: Vec<u64>) -> Option<Hist1d> {
-        if bins_0 != counts.len() {
+    pub fn with_counts(bins_0: u32, min_0: f64, max_0: f64, counts: Vec<u64>) -> Option<Hist1d> {
+        if bins_0 != counts.len() as u32 {
             None
         } else {
             match HistAxis::new(bins_0, min_0, max_0) {
@@ -271,8 +271,8 @@ impl Hist1d {
         for (o_idx, o_c) in other.counts().iter().enumerate() {
             let o_bin = self.bin_at_idx(o_idx);
 
-            let o_val_min = other.axes.val_at_bin_mid(o_bin);
-            let o_val_max = other.axes.val_at_bin_max(o_bin);
+            let o_val_min = other.axes.val_at_bin_min(o_bin as usize);
+            let o_val_max = other.axes.val_at_bin_max(o_bin as usize);
 
             let range = Uniform::new(o_val_min, o_val_max);
 
@@ -301,14 +301,14 @@ impl Hist1d {
 /// A type that describes a 3D histogram.
 ///
 /// # Examples
-#[derive(PartialEq, Debug, Clone)]
+#[derive(PartialEq, Debug, Clone, Serialize, Deserialize)]
 pub struct Hist2d {
     axes: (HistAxis, HistAxis),
     counts: Vec<u64>,
 }
 
 impl Hist for Hist2d {
-    type Bin = (usize, usize);
+    type Bin = (u32, u32);
     type Val = (f64, f64);
     type Axes = (HistAxis, HistAxis);
 
@@ -317,25 +317,28 @@ impl Hist for Hist2d {
     }
 
     fn bin_at_val(&self, val: Self::Val) -> Self::Bin {
-        (self.axes.0.bin_at_val(val.0), self.axes.1.bin_at_val(val.1))
+        (
+            self.axes.0.bin_at_val(val.0) as u32,
+            self.axes.1.bin_at_val(val.1) as u32,
+        )
     }
 
     fn val_at_bin(&self, bin: Self::Bin) -> Self::Val {
         (
-            self.axes.0.val_at_bin_mid(bin.0),
-            self.axes.1.val_at_bin_mid(bin.1),
+            self.axes.0.val_at_bin_mid(bin.0 as usize),
+            self.axes.1.val_at_bin_mid(bin.1 as usize),
         )
     }
 
     fn idx_at_bin(&self, bin: Self::Bin) -> usize {
-        self.axes.1.bins * bin.0 + bin.1
+        (self.axes.1.bins * bin.0 + bin.1) as usize
     }
 
     fn bin_at_idx(&self, mut idx: usize) -> Self::Bin {
         let mut bin: Self::Bin = (0, 0);
-        bin.0 = idx / self.axes.1.bins;
-        idx %= self.axes.1.bins;
-        bin.1 = idx;
+        bin.0 = idx as u32 / self.axes.1.bins;
+        idx %= self.axes.1.bins as usize;
+        bin.1 = idx as u32;
         bin
     }
 
@@ -350,10 +353,10 @@ impl Hist for Hist2d {
 
 impl Hist2d {
     pub fn new(
-        bins_0: usize,
+        bins_0: u32,
         min_0: f64,
         max_0: f64,
-        bins_1: usize,
+        bins_1: u32,
         min_1: f64,
         max_1: f64,
     ) -> Option<Hist2d> {
@@ -362,7 +365,7 @@ impl Hist2d {
             HistAxis::new(bins_1, min_1, max_1),
         ) {
             (Some(axis_0), Some(axis_1)) => {
-                let counts = vec![0u64; bins_0 * bins_1];
+                let counts = vec![0u64; (bins_0 * bins_1) as usize];
                 Some(Hist2d {
                     axes: (axis_0, axis_1),
                     counts,
@@ -373,15 +376,15 @@ impl Hist2d {
     }
 
     pub fn with_counts(
-        bins_0: usize,
+        bins_0: u32,
         min_0: f64,
         max_0: f64,
-        bins_1: usize,
+        bins_1: u32,
         min_1: f64,
         max_1: f64,
         counts: Vec<u64>,
     ) -> Option<Hist2d> {
-        if bins_0 * bins_1 != counts.len() {
+        if bins_0 * bins_1 != counts.len() as u32 {
             None
         } else {
             match (
@@ -407,12 +410,12 @@ impl Hist2d {
             let o_bin = self.bin_at_idx(o_idx);
 
             let o_val_min = (
-                other.axes.0.val_at_bin_mid(o_bin.0),
-                other.axes.1.val_at_bin_mid(o_bin.1),
+                other.axes.0.val_at_bin_min(o_bin.0 as usize),
+                other.axes.1.val_at_bin_min(o_bin.1 as usize),
             );
             let o_val_max = (
-                other.axes.0.val_at_bin_max(o_bin.0),
-                other.axes.1.val_at_bin_max(o_bin.1),
+                other.axes.0.val_at_bin_max(o_bin.0 as usize),
+                other.axes.1.val_at_bin_max(o_bin.1 as usize),
             );
 
             let range = (
@@ -445,14 +448,14 @@ impl Hist2d {
 /// A type that describes a 3D histogram.
 ///
 /// # Examples
-#[derive(PartialEq, Debug, Clone)]
+#[derive(PartialEq, Debug, Clone, Serialize, Deserialize)]
 pub struct Hist3d {
     axes: (HistAxis, HistAxis, HistAxis),
     counts: Vec<u64>,
 }
 
 impl Hist for Hist3d {
-    type Bin = (usize, usize, usize);
+    type Bin = (u32, u32, u32);
     type Val = (f64, f64, f64);
     type Axes = (HistAxis, HistAxis, HistAxis);
 
@@ -462,31 +465,31 @@ impl Hist for Hist3d {
 
     fn bin_at_val(&self, val: Self::Val) -> Self::Bin {
         (
-            self.axes.0.bin_at_val(val.0),
-            self.axes.1.bin_at_val(val.1),
-            self.axes.2.bin_at_val(val.2),
+            self.axes.0.bin_at_val(val.0) as u32,
+            self.axes.1.bin_at_val(val.1) as u32,
+            self.axes.2.bin_at_val(val.2) as u32,
         )
     }
 
     fn val_at_bin(&self, bin: Self::Bin) -> Self::Val {
         (
-            self.axes.0.val_at_bin_mid(bin.0),
-            self.axes.1.val_at_bin_mid(bin.1),
-            self.axes.2.val_at_bin_mid(bin.2),
+            self.axes.0.val_at_bin_mid(bin.0 as usize),
+            self.axes.1.val_at_bin_mid(bin.1 as usize),
+            self.axes.2.val_at_bin_mid(bin.2 as usize),
         )
     }
 
     fn idx_at_bin(&self, bin: Self::Bin) -> usize {
-        self.axes.2.bins * (self.axes.1.bins * bin.0 + bin.1) + bin.2
+        (self.axes.2.bins * (self.axes.1.bins * bin.0 + bin.1) + bin.2) as usize
     }
 
     fn bin_at_idx(&self, mut idx: usize) -> Self::Bin {
         let mut bin: Self::Bin = (0, 0, 0);
-        bin.0 = idx / (self.axes.1.bins * self.axes.2.bins);
-        idx %= self.axes.1.bins * self.axes.2.bins;
-        bin.1 = idx / self.axes.2.bins;
-        idx %= self.axes.2.bins;
-        bin.2 = idx;
+        bin.0 = idx as u32 / (self.axes.1.bins * self.axes.2.bins);
+        idx %= (self.axes.1.bins * self.axes.2.bins) as usize;
+        bin.1 = idx as u32 / self.axes.2.bins;
+        idx %= self.axes.2.bins as usize;
+        bin.2 = idx as u32;
         bin
     }
 
@@ -501,13 +504,13 @@ impl Hist for Hist3d {
 
 impl Hist3d {
     pub fn new(
-        bins_0: usize,
+        bins_0: u32,
         min_0: f64,
         max_0: f64,
-        bins_1: usize,
+        bins_1: u32,
         min_1: f64,
         max_1: f64,
-        bins_2: usize,
+        bins_2: u32,
         min_2: f64,
         max_2: f64,
     ) -> Option<Hist3d> {
@@ -517,7 +520,7 @@ impl Hist3d {
             HistAxis::new(bins_2, min_2, max_2),
         ) {
             (Some(axis_0), Some(axis_1), Some(axis_2)) => {
-                let counts = vec![0u64; bins_0 * bins_1 * bins_2];
+                let counts = vec![0u64; (bins_0 * bins_1 * bins_2) as usize];
                 Some(Hist3d {
                     axes: (axis_0, axis_1, axis_2),
                     counts,
@@ -528,18 +531,18 @@ impl Hist3d {
     }
 
     pub fn with_counts(
-        bins_0: usize,
+        bins_0: u32,
         min_0: f64,
         max_0: f64,
-        bins_1: usize,
+        bins_1: u32,
         min_1: f64,
         max_1: f64,
-        bins_2: usize,
+        bins_2: u32,
         min_2: f64,
         max_2: f64,
         counts: Vec<u64>,
     ) -> Option<Hist3d> {
-        if bins_0 * bins_1 * bins_2 != counts.len() {
+        if bins_0 * bins_1 * bins_2 != counts.len() as u32 {
             None
         } else {
             match (
@@ -566,14 +569,14 @@ impl Hist3d {
             let o_bin = self.bin_at_idx(o_idx);
 
             let o_val_min = (
-                other.axes.0.val_at_bin_mid(o_bin.0),
-                other.axes.1.val_at_bin_mid(o_bin.1),
-                other.axes.2.val_at_bin_mid(o_bin.2),
+                other.axes.0.val_at_bin_min(o_bin.0 as usize),
+                other.axes.1.val_at_bin_min(o_bin.1 as usize),
+                other.axes.2.val_at_bin_min(o_bin.2 as usize),
             );
             let o_val_max = (
-                other.axes.0.val_at_bin_max(o_bin.0),
-                other.axes.1.val_at_bin_max(o_bin.1),
-                other.axes.2.val_at_bin_max(o_bin.2),
+                other.axes.0.val_at_bin_max(o_bin.0 as usize),
+                other.axes.1.val_at_bin_max(o_bin.1 as usize),
+                other.axes.2.val_at_bin_max(o_bin.2 as usize),
             );
 
             let range = (
@@ -599,14 +602,14 @@ impl Hist3d {
 /// A type that describes a 4D histogram.
 ///
 /// # Examples
-#[derive(PartialEq, Debug, Clone)]
+#[derive(PartialEq, Debug, Clone, Serialize, Deserialize)]
 pub struct Hist4d {
     axes: (HistAxis, HistAxis, HistAxis, HistAxis),
     counts: Vec<u64>,
 }
 
 impl Hist for Hist4d {
-    type Bin = (usize, usize, usize, usize);
+    type Bin = (u32, u32, u32, u32);
     type Val = (f64, f64, f64, f64);
     type Axes = (HistAxis, HistAxis, HistAxis, HistAxis);
 
@@ -616,35 +619,36 @@ impl Hist for Hist4d {
 
     fn bin_at_val(&self, val: Self::Val) -> Self::Bin {
         (
-            self.axes.0.bin_at_val(val.0),
-            self.axes.1.bin_at_val(val.1),
-            self.axes.2.bin_at_val(val.2),
-            self.axes.3.bin_at_val(val.3),
+            self.axes.0.bin_at_val(val.0) as u32,
+            self.axes.1.bin_at_val(val.1) as u32,
+            self.axes.2.bin_at_val(val.2) as u32,
+            self.axes.3.bin_at_val(val.3) as u32,
         )
     }
 
     fn val_at_bin(&self, bin: Self::Bin) -> Self::Val {
         (
-            self.axes.0.val_at_bin_mid(bin.0),
-            self.axes.1.val_at_bin_mid(bin.1),
-            self.axes.2.val_at_bin_mid(bin.2),
-            self.axes.3.val_at_bin_mid(bin.3),
+            self.axes.0.val_at_bin_mid(bin.0 as usize),
+            self.axes.1.val_at_bin_mid(bin.1 as usize),
+            self.axes.2.val_at_bin_mid(bin.2 as usize),
+            self.axes.3.val_at_bin_mid(bin.3 as usize),
         )
     }
 
     fn idx_at_bin(&self, bin: Self::Bin) -> usize {
-        self.axes.3.bins * (self.axes.2.bins * (self.axes.1.bins * bin.0 + bin.1) + bin.2) + bin.3
+        (self.axes.3.bins * (self.axes.2.bins * (self.axes.1.bins * bin.0 + bin.1) + bin.2) + bin.3)
+            as usize
     }
 
     fn bin_at_idx(&self, mut idx: usize) -> Self::Bin {
         let mut bin: Self::Bin = (0, 0, 0, 0);
-        bin.0 = idx / (self.axes.1.bins * self.axes.2.bins * self.axes.3.bins);
-        idx %= self.axes.1.bins * self.axes.2.bins * self.axes.3.bins;
-        bin.1 = idx / (self.axes.2.bins * self.axes.3.bins);
-        idx %= self.axes.2.bins * self.axes.3.bins;
-        bin.2 = idx / self.axes.3.bins;
-        idx %= self.axes.3.bins;
-        bin.3 = idx;
+        bin.0 = idx as u32 / (self.axes.1.bins * self.axes.2.bins * self.axes.3.bins);
+        idx %= (self.axes.1.bins * self.axes.2.bins * self.axes.3.bins) as usize;
+        bin.1 = idx as u32 / (self.axes.2.bins * self.axes.3.bins);
+        idx %= (self.axes.2.bins * self.axes.3.bins) as usize;
+        bin.2 = idx as u32 / self.axes.3.bins;
+        idx %= self.axes.3.bins as usize;
+        bin.3 = idx as u32;
         bin
     }
 
@@ -659,16 +663,16 @@ impl Hist for Hist4d {
 
 impl Hist4d {
     pub fn new(
-        bins_0: usize,
+        bins_0: u32,
         min_0: f64,
         max_0: f64,
-        bins_1: usize,
+        bins_1: u32,
         min_1: f64,
         max_1: f64,
-        bins_2: usize,
+        bins_2: u32,
         min_2: f64,
         max_2: f64,
-        bins_3: usize,
+        bins_3: u32,
         min_3: f64,
         max_3: f64,
     ) -> Option<Hist4d> {
@@ -679,7 +683,7 @@ impl Hist4d {
             HistAxis::new(bins_3, min_3, max_3),
         ) {
             (Some(axis_0), Some(axis_1), Some(axis_2), Some(axis_3)) => {
-                let counts = vec![0u64; bins_0 * bins_1 * bins_2 * bins_3];
+                let counts = vec![0u64; (bins_0 * bins_1 * bins_2 * bins_3) as usize];
                 Some(Hist4d {
                     axes: (axis_0, axis_1, axis_2, axis_3),
                     counts,
@@ -690,21 +694,21 @@ impl Hist4d {
     }
 
     pub fn with_counts(
-        bins_0: usize,
+        bins_0: u32,
         min_0: f64,
         max_0: f64,
-        bins_1: usize,
+        bins_1: u32,
         min_1: f64,
         max_1: f64,
-        bins_2: usize,
+        bins_2: u32,
         min_2: f64,
         max_2: f64,
-        bins_3: usize,
+        bins_3: u32,
         min_3: f64,
         max_3: f64,
         counts: Vec<u64>,
     ) -> Option<Hist4d> {
-        if bins_0 * bins_1 * bins_2 * bins_3 != counts.len() {
+        if bins_0 * bins_1 * bins_2 * bins_3 != counts.len() as u32 {
             None
         } else {
             match (
@@ -732,16 +736,16 @@ impl Hist4d {
             let o_bin = self.bin_at_idx(o_idx);
 
             let o_val_min = (
-                other.axes.0.val_at_bin_mid(o_bin.0),
-                other.axes.1.val_at_bin_mid(o_bin.1),
-                other.axes.2.val_at_bin_mid(o_bin.2),
-                other.axes.3.val_at_bin_mid(o_bin.3),
+                other.axes.0.val_at_bin_min(o_bin.0 as usize),
+                other.axes.1.val_at_bin_min(o_bin.1 as usize),
+                other.axes.2.val_at_bin_min(o_bin.2 as usize),
+                other.axes.3.val_at_bin_min(o_bin.3 as usize),
             );
             let o_val_max = (
-                other.axes.0.val_at_bin_max(o_bin.0),
-                other.axes.1.val_at_bin_max(o_bin.1),
-                other.axes.2.val_at_bin_max(o_bin.2),
-                other.axes.3.val_at_bin_max(o_bin.3),
+                other.axes.0.val_at_bin_max(o_bin.0 as usize),
+                other.axes.1.val_at_bin_max(o_bin.1 as usize),
+                other.axes.2.val_at_bin_max(o_bin.2 as usize),
+                other.axes.3.val_at_bin_max(o_bin.3 as usize),
             );
 
             let range = (
@@ -772,15 +776,15 @@ mod tests {
 
     #[test]
     fn hist_1d_construct() {
-        let h = Hist1d::new(3usize, 0f64, 3f64).unwrap();
+        let h = Hist1d::new(3, 0.0, 3.0).unwrap();
         assert_eq!(h.counts, [0, 0, 0]);
-        let h = Hist1d::with_counts(3usize, 0f64, 3f64, vec![2, 1, 0]).unwrap();
+        let h = Hist1d::with_counts(3, 0.0, 3.0, vec![2, 1, 0]).unwrap();
         assert_eq!(h.counts, [2, 1, 0]);
     }
 
     #[test]
     fn hist_1d_fill() {
-        let mut h = Hist1d::new(3usize, 0f64, 3f64).unwrap();
+        let mut h = Hist1d::new(3, 0.0, 3.0).unwrap();
         h.fill_at_val(0.0);
         h.fill_at_val(1.0);
         h.fill_at_val(-1.0);
@@ -789,44 +793,39 @@ mod tests {
 
     #[test]
     fn hist_1d_swap_min_max() {
-        let h1 = Hist1d::new(1usize, 100f64, -10f64).unwrap();
-        let h2 = Hist1d::new(1usize, -10f64, 100f64).unwrap();
+        let h1 = Hist1d::new(1, 100.0, -10.0).unwrap();
+        let h2 = Hist1d::new(1, -10.0, 100.0).unwrap();
         assert_eq!(h1, h2);
     }
 
     #[test]
     fn hist_1d_zero_size() {
-        let h = Hist1d::new(0usize, 0f64, 100f64);
+        let h = Hist1d::new(0, 0.0, 100.0);
         assert!(h.is_none());
     }
 
     #[test]
     fn hist_1d_bin_width() {
-        let h = Hist1d::new(1usize, 0f64, 100f64).unwrap();
+        let h = Hist1d::new(1, 0.0, 100.0).unwrap();
         let axes = h.axes();
-        assert_eq!(axes.bin_width(), 100f64);
+        assert_eq!(axes.bin_width(), 100.0);
 
-        let h = Hist1d::new(1usize, 0f64, 0f64).unwrap();
+        let h = Hist1d::new(1, 0.0, 0.0).unwrap();
         let axes = h.axes();
-        assert_eq!(axes.bin_width(), 0f64);
+        assert_eq!(axes.bin_width(), 0.0);
 
-        let h = Hist1d::new(0usize, 0f64, 0f64);
+        let h = Hist1d::new(0, 0.0, 0.0);
         assert!(h.is_none());
 
-        let h = Hist1d::new(0usize, 0f64, 100f64);
+        let h = Hist1d::new(0, 0.0, 100.0);
         assert!(h.is_none());
     }
 
     #[test]
     fn hist_1d_add() {
-        let mut h1a = Hist1d::with_counts(5usize, 0f64, 10f64, vec![2, 3, 50, 4, 1]).unwrap();
-        let mut h2a = Hist1d::with_counts(
-            10usize,
-            5f64,
-            10f64,
-            vec![0, 0, 5, 15, 16, 10, 9, 20, 8, 12],
-        )
-        .unwrap();
+        let mut h1a = Hist1d::with_counts(5, 0.0, 10.0, vec![2, 3, 50, 4, 1]).unwrap();
+        let mut h2a =
+            Hist1d::with_counts(10, 5.0, 10.0, vec![0, 0, 5, 15, 16, 10, 9, 20, 8, 12]).unwrap();
 
         let h1b = h1a.clone();
         let h2b = h2a.clone();
