@@ -3,9 +3,9 @@
 use crate::{
     cut::{Cut1d, Cut1dLin, Cut2d, Cut2dCirc, Cut2dPoly, Cut2dRect},
     error::Result,
+    event::Run,
     hist::{Hist, Hist1d, Hist2d, Hist3d, Hist4d},
     points::{Points, Points1d, Points2d, Points3d, Points4d},
-    Run,
 };
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use serde::{de::Error as DeError, Deserialize, Deserializer, Serialize};
@@ -648,6 +648,12 @@ pub struct Datakiste<'a> {
     #[serde(deserialize_with = "deserialize_version")]
     version: (u64, u64, u64),
     pub items: Vec<(String, DkItem<'a>)>,
+}
+
+impl Datakiste<'_> {
+    pub fn version(&self) -> (u64, u64, u64) {
+        self.version
+    }
 }
 
 fn deserialize_magic_number<'de, D>(deserializer: D) -> core::result::Result<u64, D::Error>
