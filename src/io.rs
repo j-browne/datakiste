@@ -7,11 +7,11 @@ use crate::{
     hist::{Hist, Hist1d, Hist2d, Hist3d, Hist4d},
     points::{Points, Points1d, Points2d, Points3d, Points4d},
 };
-use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
-use serde::{de::Error as DeError, Deserialize, Deserializer, Serialize};
+use indexmap::IndexMap;
+use serde::{de::Error as DeError, Deserialize, Deserializer};
 use std::{
-    borrow::{Borrow, Cow},
-    io::{self, BufRead, BufReader, Read, Write},
+    borrow::Cow,
+    io::{BufRead, BufReader, Read, Write},
 };
 
 const DK_MAGIC_NUMBER: u64 = 0xE2A1_642A_ACB5_C4C9;
@@ -20,110 +20,48 @@ const DK_VERSION: (u64, u64, u64) = (0, 3, 0);
 ///
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[non_exhaustive]
+#[rustfmt::skip]
 pub enum DkItem<'a> {
     Run(Cow<'a, Run>),
     Hist1d(Cow<'a, Hist1d>),
     Hist2d(Cow<'a, Hist2d>),
     Hist3d(Cow<'a, Hist3d>),
     Hist4d(Cow<'a, Hist4d>),
-    #[serde(skip)]
-    #[doc(hidden)]
-    Unused5,
-    #[serde(skip)]
-    #[doc(hidden)]
-    Unused6,
-    #[serde(skip)]
-    #[doc(hidden)]
-    Unused7,
-    #[serde(skip)]
-    #[doc(hidden)]
-    Unused8,
-    #[serde(skip)]
-    #[doc(hidden)]
-    Unused9,
-    #[serde(skip)]
-    #[doc(hidden)]
-    Unused10,
+    #[serde(skip)] #[doc(hidden)] Unused5,
+    #[serde(skip)] #[doc(hidden)] Unused6,
+    #[serde(skip)] #[doc(hidden)] Unused7,
+    #[serde(skip)] #[doc(hidden)] Unused8,
+    #[serde(skip)] #[doc(hidden)] Unused9,
+    #[serde(skip)] #[doc(hidden)] Unused10,
     Points1d(Cow<'a, Points1d>),
     Points2d(Cow<'a, Points2d>),
     Points3d(Cow<'a, Points3d>),
     Points4d(Cow<'a, Points4d>),
-    #[serde(skip)]
-    #[doc(hidden)]
-    Unused15,
-    #[serde(skip)]
-    #[doc(hidden)]
-    Unused16,
-    #[serde(skip)]
-    #[doc(hidden)]
-    Unused17,
-    #[serde(skip)]
-    #[doc(hidden)]
-    Unused18,
-    #[serde(skip)]
-    #[doc(hidden)]
-    Unused19,
-    #[serde(skip)]
-    #[doc(hidden)]
-    Unused20,
-    #[serde(skip)]
-    #[doc(hidden)]
-    Unused21,
-    #[serde(skip)]
-    #[doc(hidden)]
-    Unused22,
-    #[serde(skip)]
-    #[doc(hidden)]
-    Unused23,
-    #[serde(skip)]
-    #[doc(hidden)]
-    Unused24,
-    #[serde(skip)]
-    #[doc(hidden)]
-    Unused25,
-    #[serde(skip)]
-    #[doc(hidden)]
-    Unused26,
-    #[serde(skip)]
-    #[doc(hidden)]
-    Unused27,
-    #[serde(skip)]
-    #[doc(hidden)]
-    Unused28,
-    #[serde(skip)]
-    #[doc(hidden)]
-    Unused29,
-    #[serde(skip)]
-    #[doc(hidden)]
-    Unused30,
-    #[serde(skip)]
-    #[doc(hidden)]
-    Unused31,
+    #[serde(skip)] #[doc(hidden)] Unused15,
+    #[serde(skip)] #[doc(hidden)] Unused16,
+    #[serde(skip)] #[doc(hidden)] Unused17,
+    #[serde(skip)] #[doc(hidden)] Unused18,
+    #[serde(skip)] #[doc(hidden)] Unused19,
+    #[serde(skip)] #[doc(hidden)] Unused20,
+    #[serde(skip)] #[doc(hidden)] Unused21,
+    #[serde(skip)] #[doc(hidden)] Unused22,
+    #[serde(skip)] #[doc(hidden)] Unused23,
+    #[serde(skip)] #[doc(hidden)] Unused24,
+    #[serde(skip)] #[doc(hidden)] Unused25,
+    #[serde(skip)] #[doc(hidden)] Unused26,
+    #[serde(skip)] #[doc(hidden)] Unused27,
+    #[serde(skip)] #[doc(hidden)] Unused28,
+    #[serde(skip)] #[doc(hidden)] Unused29,
+    #[serde(skip)] #[doc(hidden)] Unused30,
+    #[serde(skip)] #[doc(hidden)] Unused31,
     Cut1dLin(Cow<'a, Cut1dLin>),
-    #[serde(skip)]
-    #[doc(hidden)]
-    Unused32,
-    #[serde(skip)]
-    #[doc(hidden)]
-    Unused33,
-    #[serde(skip)]
-    #[doc(hidden)]
-    Unused34,
-    #[serde(skip)]
-    #[doc(hidden)]
-    Unused35,
-    #[serde(skip)]
-    #[doc(hidden)]
-    Unused36,
-    #[serde(skip)]
-    #[doc(hidden)]
-    Unused37,
-    #[serde(skip)]
-    #[doc(hidden)]
-    Unused38,
-    #[serde(skip)]
-    #[doc(hidden)]
-    Unused39,
+    #[serde(skip)] #[doc(hidden)] Unused33,
+    #[serde(skip)] #[doc(hidden)] Unused34,
+    #[serde(skip)] #[doc(hidden)] Unused35,
+    #[serde(skip)] #[doc(hidden)] Unused36,
+    #[serde(skip)] #[doc(hidden)] Unused37,
+    #[serde(skip)] #[doc(hidden)] Unused38,
+    #[serde(skip)] #[doc(hidden)] Unused39,
     Cut2dCirc(Cow<'a, Cut2dCirc>),
     Cut2dRect(Cow<'a, Cut2dRect>),
     Cut2dPoly(Cow<'a, Cut2dPoly>),
@@ -633,7 +571,7 @@ pub enum DkType {
 ///
 /// let dk: Datakiste = bincode::deserialize(&data)?;
 /// assert_eq!(dk.items.len(), 1);
-/// let i = &dk.items[0];
+/// let i = &dk.items.get_index(0).unwrap();
 /// assert_eq!(i.0, "hist");
 /// assert_eq!(*i.1.as_hist_1d().unwrap(), Hist1d::with_counts(1, 0.0, 0.0, vec![7]).unwrap());
 ///
@@ -647,12 +585,63 @@ pub struct Datakiste<'a> {
     magic_number: u64,
     #[serde(deserialize_with = "deserialize_version")]
     version: (u64, u64, u64),
-    pub items: Vec<(String, DkItem<'a>)>,
+    pub items: IndexMap<String, DkItem<'a>>,
 }
 
 impl Datakiste<'_> {
+    pub fn new() -> Self {
+        Default::default()
+    }
+
     pub fn version(&self) -> (u64, u64, u64) {
         self.version
+    }
+}
+
+impl<'a> Datakiste<'a> {
+    pub fn iter(&self) -> indexmap::map::Iter<String, DkItem<'a>> {
+        self.items.iter()
+    }
+
+    pub fn iter_mut(&mut self) -> indexmap::map::IterMut<String, DkItem<'a>> {
+        self.items.iter_mut()
+    }
+}
+
+impl Default for Datakiste<'_> {
+    fn default() -> Self {
+        Self {
+            magic_number: DK_MAGIC_NUMBER,
+            version: DK_VERSION,
+            items: Default::default(),
+        }
+    }
+}
+
+impl<'a, 'b> IntoIterator for &'b Datakiste<'a> {
+    type Item = (&'b String, &'b DkItem<'a>);
+    type IntoIter = indexmap::map::Iter<'b, String, DkItem<'a>>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.items.iter()
+    }
+}
+
+impl<'a, 'b> IntoIterator for &'b mut Datakiste<'a> {
+    type Item = (&'b String, &'b mut DkItem<'a>);
+    type IntoIter = indexmap::map::IterMut<'b, String, DkItem<'a>>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.items.iter_mut()
+    }
+}
+
+impl<'a> IntoIterator for Datakiste<'a> {
+    type Item = (String, DkItem<'a>);
+    type IntoIter = indexmap::map::IntoIter<String, DkItem<'a>>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.items.into_iter()
     }
 }
 
@@ -683,71 +672,6 @@ where
             serde::de::Unexpected::Other(&"version number"),
             &format!("{:?}", DK_VERSION).as_str(),
         ))
-    }
-}
-
-/// An interface for reading datakiste binary data
-///
-/// Anything that implements `byteorder::ReadBytesExt`
-/// will get a default implementation of `ReadDkBin`.
-pub trait ReadDkBin: ReadBytesExt {
-    fn read_dk_bin(&mut self) -> Result<Vec<(String, DkItem<'static>)>> {
-        let version = self.read_dk_version_bin()?;
-        if version != DK_VERSION {
-            Err(io::Error::new(
-                io::ErrorKind::Other,
-                "wrong datakiste file version",
-            ))?
-        } else {
-            let v: Vec<(String, DkItem)> = bincode::deserialize_from(self)?;
-            Ok(v)
-        }
-    }
-
-    fn read_dk_version_bin(&mut self) -> Result<(u64, u64, u64)> {
-        let magic = self.read_u64::<LittleEndian>()?;
-
-        if magic != DK_MAGIC_NUMBER {
-            Err(io::Error::new(
-                io::ErrorKind::Other,
-                "tried to read a non-valid datakiste file",
-            )
-            .into())
-        } else {
-            let version = (
-                self.read_u64::<LittleEndian>()?,
-                self.read_u64::<LittleEndian>()?,
-                self.read_u64::<LittleEndian>()?,
-            );
-            Ok(version)
-        }
-    }
-}
-
-/// An interface for writing datakiste binary data
-///
-/// Anything that implements `byteorder::WriteBytesExt`
-/// will get a default implementation of `WriteDkBin`.
-pub trait WriteDkBin: WriteBytesExt {
-    fn write_dk_bin<'a, I, S, D>(&mut self, it: I) -> Result<()>
-    where
-        I: Iterator<Item = (S, D)>,
-        S: Borrow<String> + Serialize,
-        D: Borrow<DkItem<'a>> + Serialize,
-    {
-        self.write_dk_version_bin(DK_VERSION)?;
-
-        let v: Vec<_> = it.collect();
-        bincode::serialize_into(self, &v)?;
-        Ok(())
-    }
-
-    fn write_dk_version_bin(&mut self, version: (u64, u64, u64)) -> Result<()> {
-        self.write_u64::<LittleEndian>(DK_MAGIC_NUMBER)?;
-        self.write_u64::<LittleEndian>(version.0)?;
-        self.write_u64::<LittleEndian>(version.1)?;
-        self.write_u64::<LittleEndian>(version.2)?;
-        Ok(())
     }
 }
 
@@ -906,8 +830,6 @@ pub trait WriteDkTxt: Write {
 }
 
 // Provide some default implementations
-impl<R: ReadBytesExt + Sized> ReadDkBin for R {}
-impl<W: WriteBytesExt> WriteDkBin for W {}
 impl<R: Read> ReadDkTxt for R {}
 impl<W: Write> WriteDkTxt for W {}
 
@@ -915,8 +837,9 @@ impl<W: Write> WriteDkTxt for W {}
 mod tests {
     use super::*;
     use crate::{
+        event::{Event, Hit},
         hist::{Hist1d, Hist2d},
-        DetId, Event, Hit,
+        DetId,
     };
     use val_unc::ValUnc;
 

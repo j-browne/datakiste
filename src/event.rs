@@ -110,6 +110,7 @@ where
     }
 }
 
+#[allow(clippy::trivially_copy_pass_by_ref)]
 fn serialize_opt_det_id<S>(
     val: &Option<DetId>,
     serializer: S,
@@ -131,6 +132,7 @@ where
     }
 }
 
+#[allow(clippy::trivially_copy_pass_by_ref)]
 fn serialize_opt_u15<S>(val: &Option<u16>, serializer: S) -> core::result::Result<S::Ok, S::Error>
 where
     S: Serializer,

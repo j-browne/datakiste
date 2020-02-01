@@ -1,6 +1,6 @@
 use datakiste::{
     hist::Hist,
-    io::{DkItem, ReadDkBin},
+    io::{Datakiste, DkItem},
     points::Points,
 };
 use std::{fs::File, io::BufReader, path::PathBuf};
@@ -16,9 +16,10 @@ struct Opt {
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let opt = Opt::from_args();
-    let mut f_in = BufReader::new(File::open(opt.f_in_name)?);
+    let f_in = BufReader::new(File::open(opt.f_in_name)?);
+    let dk: Datakiste = bincode::deserialize_from(f_in)?;
 
-    for (n, i) in f_in.read_dk_bin()? {
+    for (n, i) in dk {
         match i {
             DkItem::Run(_r) => {
                 print!("Run: ");

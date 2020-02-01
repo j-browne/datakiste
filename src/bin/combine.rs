@@ -1,6 +1,6 @@
 use datakiste::{
     hist::{Hist, Hist1d, Hist2d, Hist3d, Hist4d},
-    io::{DkItem, ReadDkBin, WriteDkBin},
+    io::{Datakiste, DkItem},
     points::{Points, Points1d, Points2d, Points3d, Points4d},
 };
 use std::{
@@ -29,15 +29,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let opt = Opt::from_args();
     let f_list = BufReader::new(File::open(opt.f_list_name)?);
 
-    let mut items = HashMap::<String, DkItem>::new();
+    let mut items = HashMap::new();
     for line in f_list.lines() {
         let fin_name = &line?;
         println!("{}", fin_name);
 
-        let f_in = File::open(fin_name)?;
-        let mut f_in = BufReader::new(f_in);
+        let f_in = BufReader::new(File::open(fin_name)?);
+        let dk_old: Datakiste = bincode::deserialize_from(f_in)?;
 
-        for (n, i) in f_in.read_dk_bin()? {
+        for (n, i) in dk_old.items {
             match i {
                 DkItem::Hist1d(h) => {
                     let axes = h.axes();
@@ -146,9 +146,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    let mut f_out = BufWriter::new(File::create(opt.f_out_name)?);
+    let f_out = BufWriter::new(File::create(opt.f_out_name)?);
 
-    f_out.write_dk_bin(items.iter())?;
+    let mut dk = Datakiste::new();
+    dk.items = items.into_iter().collect();
+    bincode::serialize_into(f_out, &dk)?;
 
     Ok(())
 }

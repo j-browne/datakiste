@@ -1,4 +1,4 @@
-use datakiste::io::{DkItem, DkType, ReadDkBin, WriteDkTxt};
+use datakiste::io::{Datakiste, DkItem, DkType, WriteDkTxt};
 use std::{
     collections::HashMap,
     fs::File,
@@ -17,12 +17,13 @@ struct Opt {
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let opt = Opt::from_args();
-    let mut f_in = BufReader::new(File::open(opt.f_in_name)?);
+    let f_in = BufReader::new(File::open(opt.f_in_name)?);
+    let dk: Datakiste = bincode::deserialize_from(f_in)?;
 
     // Read in all items
     // Note: This overwrites items with the same name
     let mut items = HashMap::<String, DkItem>::new();
-    for (n, i) in f_in.read_dk_bin()? {
+    for (n, i) in dk {
         match i.dk_type() {
             DkType::Hist1d
             | DkType::Hist2d

@@ -1,4 +1,4 @@
-use datakiste::io::ReadDkBin;
+use datakiste::io::Datakiste;
 use std::{fs::File, io::BufReader, path::PathBuf};
 use structopt::StructOpt;
 
@@ -12,9 +12,10 @@ struct Opt {
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let opt = Opt::from_args();
-    let mut f_in = BufReader::new(File::open(opt.f_in_name)?);
+    let f_in = BufReader::new(File::open(opt.f_in_name)?);
+    let dk: Datakiste = bincode::deserialize_from(f_in)?;
 
-    let version = f_in.read_dk_version_bin()?;
+    let version = dk.version();
     println!("v{}.{}.{}", version.0, version.1, version.2);
 
     Ok(())

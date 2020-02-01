@@ -1,6 +1,6 @@
 use datakiste::{
     hist::Hist,
-    io::{DkItem, ReadDkBin},
+    io::{Datakiste, DkItem},
 };
 use std::{fs::File, io::BufReader, path::PathBuf};
 use structopt::StructOpt;
@@ -48,10 +48,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             f_hist_name,
             hist_name,
         } => {
-            let mut f_hist = BufReader::new(File::open(f_hist_name)?);
+            let f_hist = BufReader::new(File::open(f_hist_name)?);
+            let dk: Datakiste = bincode::deserialize_from(f_hist)?;
             let mut hist_item = None;
 
-            for (n, i) in f_hist.read_dk_bin()? {
+            for (n, i) in dk {
                 if n == hist_name {
                     match i {
                         DkItem::Hist1d(_)
@@ -78,12 +79,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             f_cut_name,
             cut_name,
         } => {
-            let mut f_hist = BufReader::new(File::open(f_hist_name)?);
-            let mut f_cut = BufReader::new(File::open(f_cut_name)?);
+            let f_hist = BufReader::new(File::open(f_hist_name)?);
+            let f_cut = BufReader::new(File::open(f_cut_name)?);
+            let dk_hist: Datakiste = bincode::deserialize_from(f_hist)?;
+            let dk_cut: Datakiste = bincode::deserialize_from(f_cut)?;
             let mut hist_item = None;
             let mut cut_item = None;
 
-            for (n, i) in f_cut.read_dk_bin()? {
+            for (n, i) in dk_cut.items {
                 if n == cut_name {
                     match i {
                         DkItem::Cut1dLin(_)
@@ -96,7 +99,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
             }
 
-            for (n, i) in f_hist.read_dk_bin()? {
+            for (n, i) in dk_hist.items {
                 if n == hist_name {
                     match i {
                         DkItem::Hist1d(_) | DkItem::Hist2d(_) => hist_item = Some(i),
