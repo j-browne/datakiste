@@ -1,6 +1,9 @@
-use crate::{error::Result, DaqId};
+use crate::{
+    error::Result,
+    unc::{Unc, ValUnc},
+    DaqId,
+};
 use std::{collections::HashMap, io::Read};
-use val_unc::ValUnc;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Calibration {
@@ -11,20 +14,21 @@ pub struct Calibration {
 
 impl Calibration {
     pub fn apply(&self, x: f64) -> ValUnc {
-        let mean = self.intercept.val + self.slope.val * x;
+        let ValUnc {
+            val: s_val,
+            unc: Unc(s_unc),
+        } = self.slope;
+        let ValUnc {
+            val: i_val,
+            unc: Unc(i_unc),
+        } = self.intercept;
+
+        let mean = i_val + s_val * x;
         let max_res = *[
-            (((self.intercept.val - self.intercept.unc) + (self.slope.val - self.slope.unc) * x)
-                - mean)
-                .abs(),
-            (((self.intercept.val - self.intercept.unc) + (self.slope.val + self.slope.unc) * x)
-                - mean)
-                .abs(),
-            (((self.intercept.val + self.intercept.unc) + (self.slope.val - self.slope.unc) * x)
-                - mean)
-                .abs(),
-            (((self.intercept.val + self.intercept.unc) + (self.slope.val + self.slope.unc) * x)
-                - mean)
-                .abs(),
+            (((i_val - i_unc) + (s_val - s_unc) * x) - mean).abs(),
+            (((i_val - i_unc) + (s_val + s_unc) * x) - mean).abs(),
+            (((i_val + i_unc) + (s_val - s_unc) * x) - mean).abs(),
+            (((i_val + i_unc) + (s_val + s_unc) * x) - mean).abs(),
         ]
         .iter()
         .max_by(|a, b| {
@@ -37,7 +41,7 @@ impl Calibration {
 
         ValUnc {
             val: mean,
-            unc: max_res,
+            unc: Unc(max_res),
         }
     }
 }

@@ -1,8 +1,12 @@
-use crate::{calibration::Calibration, detector::Detector, DaqId, DetId};
+use crate::{
+    calibration::Calibration,
+    detector::Detector,
+    unc::{Unc, ValUnc},
+    DaqId, DetId,
+};
 use rand::distributions::{Distribution, Uniform};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::collections::HashMap;
-use val_unc::ValUnc;
 
 /// A type that hold the data from an experimental run
 ///
@@ -148,7 +152,7 @@ where
 {
     let (val, unc) = <(f64, f64)>::deserialize(deserializer)?;
     match (val.is_finite(), unc.is_finite()) {
-        (true, true) => Ok(Some(ValUnc { val, unc })),
+        (true, true) => Ok(Some(ValUnc { val, unc: Unc(unc) })),
         _ => Ok(None),
     }
 }
@@ -160,10 +164,10 @@ fn serialize_opt_val_unc<S>(
 where
     S: Serializer,
 {
-    val.unwrap_or(ValUnc {
-        val: std::f64::NAN,
-        unc: std::f64::NAN,
-    })
+    val.map_or(
+        (std::f64::NAN, std::f64::NAN),
+        |ValUnc { val, unc: Unc(unc) }| (val, unc),
+    )
     .serialize(serializer)
 }
 

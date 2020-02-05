@@ -839,9 +839,9 @@ mod tests {
     use crate::{
         event::{Event, Hit},
         hist::{Hist1d, Hist2d},
+        unc::{Unc, ValUnc},
         DetId,
     };
-    use val_unc::ValUnc;
 
     macro_rules! assert_f64_eq {
         ($a:expr, $b:expr) => {{
@@ -857,8 +857,18 @@ mod tests {
     #[test]
     fn read_write_hit_detid_none() {
         let hit_bytes = &[
-            1u8, 0, 0, 0, 7, 0, 0, 0, 0, 128, 0, 128, 130, 37, 130, 37, 0, 0, 0, 0, 0, 193, 194,
-            64, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 48, 36, 10, 65, 0, 0, 0, 0, 0, 0, 0, 0,
+            1u8, 0, // daqid.0
+            0, 0, // daqid.1
+            7, 0, // daqid.2
+            0, 0, // daqid.3
+            0, 128, // detid.0
+            0, 128, // detid.1
+            130, 37, // rawval
+            130, 37, // value
+            0, 0, 0, 0, 0, 193, 194, 64, // energy.val
+            0, 0, 0, 0, 0, 0, 0, 0, // energy.unc
+            0, 0, 0, 0, 48, 36, 10, 65, // time
+            0, 0, 0, 0, 0, 0, 0, 0, // trace len
         ] as &[u8];
 
         // Read in hit from byte array
@@ -875,7 +885,7 @@ mod tests {
         let value = h.value.unwrap();
         assert_eq!(value, 9602);
         assert!(h.energy.is_some());
-        let ValUnc { val, unc } = h.energy.as_ref().unwrap();
+        let ValUnc { val, unc: Unc(unc) } = h.energy.as_ref().unwrap();
         assert_f64_eq!(*val, 9602.0);
         assert_f64_eq!(*unc, 0.0);
         assert_f64_eq!(h.time, 214150.0);
@@ -891,8 +901,18 @@ mod tests {
     #[test]
     fn read_hit_di_none() {
         let hit_bytes = &[
-            1u8, 0, 0, 0, 7, 0, 0, 0, 40, 128, 0, 0, 130, 37, 130, 37, 0, 0, 0, 0, 0, 193, 194, 64,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 48, 36, 10, 65, 0, 0, 0, 0, 0, 0, 0, 0,
+            1u8, 0, // daqid.0
+            0, 0, // daqid.1
+            7, 0, // daqid.2
+            0, 0, // daqid.3
+            40, 128, // detid.0
+            0, 0, // detid.1
+            130, 37, // rawval
+            130, 37, // value
+            0, 0, 0, 0, 0, 193, 194, 64, // energy.val
+            0, 0, 0, 0, 0, 0, 0, 0, // energy.unc
+            0, 0, 0, 0, 48, 36, 10, 65, // time
+            0, 0, 0, 0, 0, 0, 0, 0, // trace len
         ] as &[u8];
 
         // Read in hit from byte array
@@ -909,7 +929,7 @@ mod tests {
         let value = h.value.unwrap();
         assert_eq!(value, 9602);
         assert!(h.energy.is_some());
-        let ValUnc { val, unc } = h.energy.as_ref().unwrap();
+        let ValUnc { val, unc: Unc(unc) } = h.energy.as_ref().unwrap();
         assert_f64_eq!(*val, 9602.0);
         assert_f64_eq!(*unc, 0.0);
         assert_f64_eq!(h.time, 214150.0);
@@ -919,8 +939,18 @@ mod tests {
     #[test]
     fn read_hit_dc_none() {
         let hit_bytes = &[
-            1u8, 0, 0, 0, 7, 0, 0, 0, 40, 0, 0, 128, 130, 37, 130, 37, 0, 0, 0, 0, 0, 193, 194, 64,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 48, 36, 10, 65, 0, 0, 0, 0, 0, 0, 0, 0,
+            1u8, 0, // daqid.0
+            0, 0, // daqid.1
+            7, 0, // daqid.2
+            0, 0, // daqid.3
+            40, 0, // detid.0
+            0, 128, // detid.1
+            130, 37, // rawval
+            130, 37, // value
+            0, 0, 0, 0, 0, 193, 194, 64, // energy.val
+            0, 0, 0, 0, 0, 0, 0, 0, // energy.unc
+            0, 0, 0, 0, 48, 36, 10, 65, // time
+            0, 0, 0, 0, 0, 0, 0, 0, // trace len
         ] as &[u8];
 
         // Read in hit from byte array
@@ -937,7 +967,7 @@ mod tests {
         let value = h.value.unwrap();
         assert_eq!(value, 9602);
         assert!(h.energy.is_some());
-        let ValUnc { val, unc } = h.energy.as_ref().unwrap();
+        let ValUnc { val, unc: Unc(unc) } = h.energy.as_ref().unwrap();
         assert_f64_eq!(*val, 9602.0);
         assert_f64_eq!(*unc, 0.0);
         assert_f64_eq!(h.time, 214150.0);
@@ -947,8 +977,18 @@ mod tests {
     #[test]
     fn read_write_hit_value_none() {
         let hit_bytes = &[
-            1u8, 0, 0, 0, 7, 0, 0, 0, 40, 0, 0, 0, 130, 37, 0, 128, 0, 0, 0, 0, 0, 193, 194, 64, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 48, 36, 10, 65, 0, 0, 0, 0, 0, 0, 0, 0,
+            1u8, 0, // daqid.0
+            0, 0, // daqid.1
+            7, 0, // daqid.2
+            0, 0, // daqid.3
+            40, 0, // detid.0
+            0, 0, // detid.1
+            130, 37, // rawval
+            0, 128, // value
+            0, 0, 0, 0, 0, 193, 194, 64, // energy.val
+            0, 0, 0, 0, 0, 0, 0, 0, // energy.unc
+            0, 0, 0, 0, 48, 36, 10, 65, // time
+            0, 0, 0, 0, 0, 0, 0, 0, // trace len
         ] as &[u8];
 
         // Read in hit from byte array
@@ -966,7 +1006,7 @@ mod tests {
         assert_eq!(h.rawval, 9602);
         assert!(h.value.is_none());
         assert!(h.energy.is_some());
-        let ValUnc { val, unc } = h.energy.as_ref().unwrap();
+        let ValUnc { val, unc: Unc(unc) } = h.energy.as_ref().unwrap();
         assert_f64_eq!(*val, 9602.0);
         assert_f64_eq!(*unc, 0.0);
         assert_f64_eq!(h.time, 214150.0);
@@ -982,8 +1022,18 @@ mod tests {
     #[test]
     fn read_write_hit_energy_none() {
         let hit_bytes = &[
-            1u8, 0, 0, 0, 7, 0, 0, 0, 40, 0, 0, 0, 130, 37, 130, 37, 0, 0, 0, 0, 0, 0, 248, 127, 0,
-            0, 0, 0, 0, 0, 248, 127, 0, 0, 0, 0, 48, 36, 10, 65, 0, 0, 0, 0, 0, 0, 0, 0,
+            1u8, 0, // daqid.0
+            0, 0, // daqid.1
+            7, 0, // daqid.2
+            0, 0, // daqid.3
+            40, 0, // detid.0
+            0, 0, // detid.1
+            130, 37, // rawval
+            130, 37, // value
+            0, 0, 0, 0, 0, 0, 248, 127, // energy.val
+            0, 0, 0, 0, 0, 0, 248, 127, // energy.unc
+            0, 0, 0, 0, 48, 36, 10, 65, // time
+            0, 0, 0, 0, 0, 0, 0, 0, // trace len
         ] as &[u8];
 
         // Read in hit from byte array
@@ -1016,8 +1066,18 @@ mod tests {
     #[test]
     fn read_hit_energy_val_none() {
         let hit_bytes = &[
-            1u8, 0, 0, 0, 7, 0, 0, 0, 40, 0, 0, 0, 130, 37, 130, 37, 0, 0, 0, 0, 0, 0, 248, 127, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 48, 36, 10, 65, 0, 0, 0, 0, 0, 0, 0, 0,
+            1u8, 0, // daqid.0
+            0, 0, // daqid.1
+            7, 0, // daqid.2
+            0, 0, // daqid.3
+            40, 0, // detid.0
+            0, 0, // detid.1
+            130, 37, // rawval
+            130, 37, // value
+            0, 0, 0, 0, 0, 0, 248, 127, // energy.val
+            0, 0, 0, 0, 0, 0, 0, 0, // energy.unc
+            0, 0, 0, 0, 48, 36, 10, 65, // time
+            0, 0, 0, 0, 0, 0, 0, 0, // trace len
         ] as &[u8];
 
         // Read in hit from byte array
@@ -1044,8 +1104,18 @@ mod tests {
     #[test]
     fn read_hit_energy_unc_none() {
         let hit_bytes = &[
-            1u8, 0, 0, 0, 7, 0, 0, 0, 40, 0, 0, 0, 130, 37, 130, 37, 0, 0, 0, 0, 0, 193, 194, 64,
-            0, 0, 0, 0, 0, 0, 248, 127, 0, 0, 0, 0, 48, 36, 10, 65, 0, 0, 0, 0, 0, 0, 0, 0,
+            1u8, 0, // daqid.0
+            0, 0, // daqid.1
+            7, 0, // daqid.2
+            0, 0, // daqid.3
+            40, 0, // detid.0
+            0, 0, // detid.1
+            130, 37, // rawval
+            130, 37, // value
+            0, 0, 0, 0, 0, 193, 194, 64, // energy.val
+            0, 0, 0, 0, 0, 0, 248, 127, // energy.unc
+            0, 0, 0, 0, 48, 36, 10, 65, // time
+            0, 0, 0, 0, 0, 0, 0, 0, // trace len
         ] as &[u8];
 
         // Read in hit from byte array
@@ -1072,8 +1142,18 @@ mod tests {
     #[test]
     fn read_write_hit() {
         let hit_bytes = &[
-            1u8, 0, 0, 0, 7, 0, 0, 0, 40, 0, 0, 0, 130, 37, 130, 37, 0, 0, 0, 0, 0, 193, 194, 64,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 48, 36, 10, 65, 0, 0, 0, 0, 0, 0, 0, 0,
+            1u8, 0, // daqid.0
+            0, 0, // daqid.1
+            7, 0, // daqid.2
+            0, 0, // daqid.3
+            40, 0, // detid.0
+            0, 0, // detid.1
+            130, 37, // rawval
+            130, 37, // value
+            0, 0, 0, 0, 0, 193, 194, 64, // energy.val
+            0, 0, 0, 0, 0, 0, 0, 0, // energy.unc
+            0, 0, 0, 0, 48, 36, 10, 65, // time
+            0, 0, 0, 0, 0, 0, 0, 0, // trace len
         ] as &[u8];
 
         // Read in hit from byte array
@@ -1093,7 +1173,7 @@ mod tests {
         let value = h.value.unwrap();
         assert_eq!(value, 9602);
         assert!(h.energy.is_some());
-        let ValUnc { val, unc } = h.energy.as_ref().unwrap();
+        let ValUnc { val, unc: Unc(unc) } = h.energy.as_ref().unwrap();
         assert_f64_eq!(*val, 9602.0);
         assert_f64_eq!(*unc, 0.0);
         assert_f64_eq!(h.time, 214150.0);
@@ -1109,9 +1189,19 @@ mod tests {
     #[test]
     fn read_write_hit_trace() {
         let hit_bytes = &[
-            1u8, 0, 0, 0, 7, 0, 0, 0, 40, 0, 0, 0, 130, 37, 130, 37, 0, 0, 0, 0, 0, 193, 194, 64,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 48, 36, 10, 65, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-            0, 2, 0, 3, 0, 4, 0, 5, 0, 6, 0, 7, 0, 8, 0, 9, 0,
+            1u8, 0, // daqid.0
+            0, 0, // daqid.1
+            7, 0, // daqid.2
+            0, 0, // daqid.3
+            40, 0, // detid.0
+            0, 0, // detid.1
+            130, 37, // rawval
+            130, 37, // value
+            0, 0, 0, 0, 0, 193, 194, 64, // energy.val
+            0, 0, 0, 0, 0, 0, 0, 0, // energy.unc
+            0, 0, 0, 0, 48, 36, 10, 65, // time
+            10, 0, 0, 0, 0, 0, 0, 0, // trace len
+            0, 0, 1, 0, 2, 0, 3, 0, 4, 0, 5, 0, 6, 0, 7, 0, 8, 0, 9, 0, // trace data
         ] as &[u8];
 
         // Read in hit from byte array
@@ -1131,7 +1221,7 @@ mod tests {
         let value = h.value.unwrap();
         assert_eq!(value, 9602);
         assert!(h.energy.is_some());
-        let ValUnc { val, unc } = h.energy.as_ref().unwrap();
+        let ValUnc { val, unc: Unc(unc) } = h.energy.as_ref().unwrap();
         assert_f64_eq!(*val, 9602.0);
         assert_f64_eq!(*unc, 0.0);
         assert_f64_eq!(h.time, 214150.0);
@@ -1147,10 +1237,33 @@ mod tests {
     #[test]
     fn read_write_event() {
         let event_bytes = &[
-            2u8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 0, 0, 0, 0, 0, 0, 0, 244, 48, 244, 48, 0, 0,
-            0, 0, 0, 122, 200, 64, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 192, 17, 10, 65, 0, 0, 0, 0,
-            0, 0, 0, 0, 1, 0, 0, 0, 7, 0, 0, 0, 40, 0, 0, 0, 130, 37, 130, 37, 0, 0, 0, 0, 0, 193,
-            194, 64, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 48, 36, 10, 65, 0, 0, 0, 0, 0, 0, 0, 0,
+            2u8, 0, 0, 0, 0, 0, 0, 0, // event len
+            // hit 1
+            0, 0, // daqid.0
+            0, 0, // daqid.1
+            10, 0, // daqid.2,
+            0, 0, // daqid.3
+            0, 0, // detid.0
+            0, 0, // detid.1
+            244, 48, // rawval
+            244, 48, // value
+            0, 0, 0, 0, 0, 122, 200, 64, // energy.val
+            0, 0, 0, 0, 0, 0, 0, 0, // energy.unc
+            0, 0, 0, 0, 192, 17, 10, 65, // time
+            0, 0, 0, 0, 0, 0, 0, 0, // trace len
+            // hit 2
+            1, 0, // daqid.0
+            0, 0, // daqid.1
+            7, 0, // daqid.2
+            0, 0, // daqid.3
+            40, 0, // detid.0
+            0, 0, // detid.1
+            130, 37, // rawval
+            130, 37, // value
+            0, 0, 0, 0, 0, 193, 194, 64, // energy.val
+            0, 0, 0, 0, 0, 0, 0, 0, // energy.unc
+            0, 0, 0, 0, 48, 36, 10, 65, // time
+            0, 0, 0, 0, 0, 0, 0, 0, // trace len
         ] as &[u8];
 
         // Read in event from byte array
@@ -1170,11 +1283,35 @@ mod tests {
     #[test]
     fn read_write_run() {
         let run_bytes = &[
-            1u8, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 0, 0, 0, 0, 0, 0, 0,
-            244, 48, 244, 48, 0, 0, 0, 0, 0, 122, 200, 64, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 192,
-            17, 10, 65, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 7, 0, 0, 0, 40, 0, 0, 0, 130, 37, 130,
-            37, 0, 0, 0, 0, 0, 193, 194, 64, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 48, 36, 10, 65, 0,
-            0, 0, 0, 0, 0, 0, 0,
+            1u8, 0, 0, 0, 0, 0, 0, 0, // run len
+            // event 1
+            2, 0, 0, 0, 0, 0, 0, 0, // event len
+            // hit 1
+            0, 0, // daqid.0
+            0, 0, // daqid.1
+            10, 0, // daqid.2,
+            0, 0, // daqid.3
+            0, 0, // detid.0
+            0, 0, // detid.1
+            244, 48, // rawval
+            244, 48, // value
+            0, 0, 0, 0, 0, 122, 200, 64, // energy.val
+            0, 0, 0, 0, 0, 0, 0, 0, // energy.unc
+            0, 0, 0, 0, 192, 17, 10, 65, // time
+            0, 0, 0, 0, 0, 0, 0, 0, // trace len
+            // hit 2
+            1, 0, // daqid.0
+            0, 0, // daqid.1
+            7, 0, // daqid.2
+            0, 0, // daqid.3
+            40, 0, // detid.0
+            0, 0, // detid.1
+            130, 37, // rawval
+            130, 37, // value
+            0, 0, 0, 0, 0, 193, 194, 64, // energy.val
+            0, 0, 0, 0, 0, 0, 0, 0, // energy.unc
+            0, 0, 0, 0, 48, 36, 10, 65, // time
+            0, 0, 0, 0, 0, 0, 0, 0, // trace len
         ] as &[u8];
 
         // Read in run from byte array
@@ -1183,6 +1320,42 @@ mod tests {
         // Make sure it was read correctly (we don't check that the events
         // were read correctly because there are separate tests for that)
         assert_eq!(r.events.len(), 1);
+
+        // Write the run out to a byte array
+        let v = bincode::serialize(&r).unwrap();
+
+        // Make sure it was written out correctly
+        assert_eq!(v, run_bytes);
+    }
+
+    #[test]
+    fn read_write_run_empty_events() {
+        let run_bytes = &[
+            8u8, 0, 0, 0, 0, 0, 0, 0, // run len
+            // event 1
+            0, 0, 0, 0, 0, 0, 0, 0, // event len
+            // event 2
+            0, 0, 0, 0, 0, 0, 0, 0, // event len
+            // event 3
+            0, 0, 0, 0, 0, 0, 0, 0, // event len
+            // event 4
+            0, 0, 0, 0, 0, 0, 0, 0, // event len
+            // event 5
+            0, 0, 0, 0, 0, 0, 0, 0, // event len
+            // event 6
+            0, 0, 0, 0, 0, 0, 0, 0, // event len
+            // event 7
+            0, 0, 0, 0, 0, 0, 0, 0, // event len
+            // event 8
+            0, 0, 0, 0, 0, 0, 0, 0, // event len
+        ] as &[u8];
+
+        // Read in run from byte array
+        let r: Run = bincode::deserialize(run_bytes).unwrap();
+
+        // Make sure it was read correctly (we don't check that the events
+        // were read correctly because there are separate tests for that)
+        assert_eq!(r.events.len(), 8);
 
         // Write the run out to a byte array
         let v = bincode::serialize(&r).unwrap();
@@ -1220,8 +1393,15 @@ mod tests {
     #[test]
     fn read_write_hist_1d_bin() {
         let hist_bytes = &[
-            3u8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 64, 3, 0, 0, 0, 0, 0, 0, 0,
-            2, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            // axis
+            3u8, 0, 0, 0, // bins
+            0, 0, 0, 0, 0, 0, 0, 0, // min
+            0, 0, 0, 0, 0, 0, 8, 64, // max
+            // data
+            3, 0, 0, 0, 0, 0, 0, 0, // data len
+            2, 0, 0, 0, 0, 0, 0, 0, // data 1
+            1, 0, 0, 0, 0, 0, 0, 0, // data 2
+            0, 0, 0, 0, 0, 0, 0, 0, // data 3
         ] as &[u8];
 
         // Read in hit from byte array
@@ -1267,9 +1447,20 @@ mod tests {
     #[test]
     fn read_write_hist_2d_bin() {
         let hist_bytes = &[
-            2u8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16, 64, 2, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 64, 4, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 1,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0,
+            // axis 1
+            2u8, 0, 0, 0, // bins
+            0, 0, 0, 0, 0, 0, 0, 0, // min
+            0, 0, 0, 0, 0, 0, 16, 64, // max
+            // axis 2
+            2, 0, 0, 0, // bins
+            0, 0, 0, 0, 0, 0, 0, 0, // min
+            0, 0, 0, 0, 0, 0, 0, 64, // max
+            // data
+            4, 0, 0, 0, 0, 0, 0, 0, // data len
+            2, 0, 0, 0, 0, 0, 0, 0, // data 1
+            1, 0, 0, 0, 0, 0, 0, 0, // data 2
+            0, 0, 0, 0, 0, 0, 0, 0, // data 3
+            4, 0, 0, 0, 0, 0, 0, 0, // data 4
         ] as &[u8];
 
         // Read in hit from byte array
