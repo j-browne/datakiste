@@ -599,6 +599,13 @@ impl Datakiste<'_> {
 }
 
 impl<'a> Datakiste<'a> {
+    pub fn with_items(items: IndexMap<String, DkItem<'a>>) -> Self {
+        Self {
+            items,
+            ..Default::default()
+        }
+    }
+
     pub fn iter(&self) -> indexmap::map::Iter<String, DkItem<'a>> {
         self.items.iter()
     }

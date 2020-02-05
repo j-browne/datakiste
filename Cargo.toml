@@ -1,6 +1,6 @@
 [package]
 name = "datakiste"
-version = "0.13.0"
+version = "0.13.1"
 authors = ["Justin Browne <brownej@nscl.msu.edu>"]
 edition = "2018"
 license = "MIT OR Apache-2.0"
