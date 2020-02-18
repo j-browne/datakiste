@@ -1,7 +1,6 @@
 //!
 
 use crate::{
-    cut::{Cut1d, Cut1dLin, Cut2d, Cut2dCirc, Cut2dPoly, Cut2dRect},
     error::Result,
     event::Run,
     hist::{Hist, Hist1d, Hist2d, Hist3d, Hist4d},
@@ -37,34 +36,6 @@ pub enum DkItem<'a> {
     Points2d(Cow<'a, Points2d>),
     Points3d(Cow<'a, Points3d>),
     Points4d(Cow<'a, Points4d>),
-    #[serde(skip)] #[doc(hidden)] Unused15,
-    #[serde(skip)] #[doc(hidden)] Unused16,
-    #[serde(skip)] #[doc(hidden)] Unused17,
-    #[serde(skip)] #[doc(hidden)] Unused18,
-    #[serde(skip)] #[doc(hidden)] Unused19,
-    #[serde(skip)] #[doc(hidden)] Unused20,
-    #[serde(skip)] #[doc(hidden)] Unused21,
-    #[serde(skip)] #[doc(hidden)] Unused22,
-    #[serde(skip)] #[doc(hidden)] Unused23,
-    #[serde(skip)] #[doc(hidden)] Unused24,
-    #[serde(skip)] #[doc(hidden)] Unused25,
-    #[serde(skip)] #[doc(hidden)] Unused26,
-    #[serde(skip)] #[doc(hidden)] Unused27,
-    #[serde(skip)] #[doc(hidden)] Unused28,
-    #[serde(skip)] #[doc(hidden)] Unused29,
-    #[serde(skip)] #[doc(hidden)] Unused30,
-    #[serde(skip)] #[doc(hidden)] Unused31,
-    Cut1dLin(Cow<'a, Cut1dLin>),
-    #[serde(skip)] #[doc(hidden)] Unused33,
-    #[serde(skip)] #[doc(hidden)] Unused34,
-    #[serde(skip)] #[doc(hidden)] Unused35,
-    #[serde(skip)] #[doc(hidden)] Unused36,
-    #[serde(skip)] #[doc(hidden)] Unused37,
-    #[serde(skip)] #[doc(hidden)] Unused38,
-    #[serde(skip)] #[doc(hidden)] Unused39,
-    Cut2dCirc(Cow<'a, Cut2dCirc>),
-    Cut2dRect(Cow<'a, Cut2dRect>),
-    Cut2dPoly(Cow<'a, Cut2dPoly>),
 }
 
 impl<'a> From<Run> for DkItem<'a> {
@@ -172,54 +143,6 @@ impl<'a> From<Points4d> for DkItem<'a> {
 impl<'a> From<&'a Points4d> for DkItem<'a> {
     fn from(p: &'a Points4d) -> DkItem<'a> {
         DkItem::Points4d(Cow::Borrowed(p))
-    }
-}
-
-impl<'a> From<Cut1dLin> for DkItem<'a> {
-    fn from(c: Cut1dLin) -> DkItem<'a> {
-        DkItem::Cut1dLin(Cow::Owned(c))
-    }
-}
-
-impl<'a> From<&'a Cut1dLin> for DkItem<'a> {
-    fn from(c: &'a Cut1dLin) -> DkItem<'a> {
-        DkItem::Cut1dLin(Cow::Borrowed(c))
-    }
-}
-
-impl<'a> From<Cut2dCirc> for DkItem<'a> {
-    fn from(c: Cut2dCirc) -> DkItem<'a> {
-        DkItem::Cut2dCirc(Cow::Owned(c))
-    }
-}
-
-impl<'a> From<&'a Cut2dCirc> for DkItem<'a> {
-    fn from(c: &'a Cut2dCirc) -> DkItem<'a> {
-        DkItem::Cut2dCirc(Cow::Borrowed(c))
-    }
-}
-
-impl<'a> From<Cut2dRect> for DkItem<'a> {
-    fn from(c: Cut2dRect) -> DkItem<'a> {
-        DkItem::Cut2dRect(Cow::Owned(c))
-    }
-}
-
-impl<'a> From<&'a Cut2dRect> for DkItem<'a> {
-    fn from(c: &'a Cut2dRect) -> DkItem<'a> {
-        DkItem::Cut2dRect(Cow::Borrowed(c))
-    }
-}
-
-impl<'a> From<Cut2dPoly> for DkItem<'a> {
-    fn from(c: Cut2dPoly) -> DkItem<'a> {
-        DkItem::Cut2dPoly(Cow::Owned(c))
-    }
-}
-
-impl<'a> From<&'a Cut2dPoly> for DkItem<'a> {
-    fn from(c: &'a Cut2dPoly) -> DkItem<'a> {
-        DkItem::Cut2dPoly(Cow::Borrowed(c))
     }
 }
 
@@ -440,22 +363,6 @@ impl<'a> DkItem<'a> {
         }
     }
 
-    pub fn as_cut_1d(&self) -> Option<&dyn Cut1d> {
-        match *self {
-            DkItem::Cut1dLin(ref c) => Some(c.as_ref()),
-            _ => None,
-        }
-    }
-
-    pub fn as_cut_2d(&self) -> Option<&dyn Cut2d> {
-        match *self {
-            DkItem::Cut2dCirc(ref c) => Some(c.as_ref()),
-            DkItem::Cut2dRect(ref c) => Some(c.as_ref()),
-            DkItem::Cut2dPoly(ref c) => Some(c.as_ref()),
-            _ => None,
-        }
-    }
-
     pub fn dk_type(&self) -> DkType {
         match *self {
             DkItem::Run(_) => DkType::Run,
@@ -467,10 +374,6 @@ impl<'a> DkItem<'a> {
             DkItem::Points2d(_) => DkType::Points2d,
             DkItem::Points3d(_) => DkType::Points3d,
             DkItem::Points4d(_) => DkType::Points4d,
-            DkItem::Cut1dLin(_) => DkType::Cut1dLin,
-            DkItem::Cut2dCirc(_) => DkType::Cut2dCirc,
-            DkItem::Cut2dRect(_) => DkType::Cut2dRect,
-            DkItem::Cut2dPoly(_) => DkType::Cut2dPoly,
             _ => unreachable!(),
         }
     }
@@ -490,10 +393,6 @@ pub enum DkType {
     Points2d = 12,
     Points3d = 13,
     Points4d = 14,
-    Cut1dLin = 32,
-    Cut2dCirc = 40,
-    Cut2dRect = 41,
-    Cut2dPoly = 42,
 }
 
 /// A datakiste file.
@@ -793,17 +692,6 @@ pub trait WriteDkTxt: Write {
             let val = h.val_at_idx(idx);
             writeln!(self, "{}\t{}\t{}\t{}\t{}", val.0, val.1, val.2, val.3, c)?;
         }
-        Ok(())
-    }
-
-    fn write_cut_2d_poly_txt(&mut self, c: &Cut2dPoly) -> Result<()> {
-        for v in c.verts() {
-            writeln!(self, "{}\t{}", v.0, v.1)?;
-        }
-        if let Some(v) = c.verts().first() {
-            writeln!(self, "{}\t{}", v.0, v.1)?;
-        }
-        writeln!(self)?;
         Ok(())
     }
 

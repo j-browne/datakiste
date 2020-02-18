@@ -286,7 +286,7 @@ impl Hist1d {
     }
 
     /// Returns the number of counts contained by `cut`.
-    pub fn integrate(&self, cut: &dyn Cut1d) -> u64 {
+    pub fn integrate(&self, cut: &Cut1d) -> u64 {
         let mut sum = 0u64;
         for (idx, c) in self.counts().iter().enumerate() {
             let val = self.val_at_idx(idx);
@@ -433,7 +433,7 @@ impl Hist2d {
     }
 
     /// Returns the number of counts contained by `cut`.
-    pub fn integrate(&self, cut: &dyn Cut2d) -> u64 {
+    pub fn integrate(&self, cut: &Cut2d) -> u64 {
         let mut sum = 0u64;
         for (idx, c) in self.counts().iter().enumerate() {
             let val = self.val_at_idx(idx);

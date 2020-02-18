@@ -1,7 +1,7 @@
 extern crate datakiste;
 extern crate rand;
 
-use datakiste::cut::{Cut1dLin, Cut2dCirc, Cut2dPoly};
+use datakiste::cut::{Cut1dBetween, Cut2dCirc, Cut2dPoly};
 use datakiste::hist::{Hist, Hist1d, Hist2d};
 use rand::distributions::{Distribution, Uniform};
 
@@ -26,11 +26,17 @@ fn integrate_1d_rand() {
         h.fill(-x);
     }
 
-    let c1 = Cut1dLin::new(-1.5, 1.5);
-    let c2 = Cut1dLin::new(-5.0, 5.0);
+    let c1 = Cut1dBetween {
+        min: -1.5,
+        max: 1.5,
+    };
+    let c2 = Cut1dBetween {
+        min: -5.0,
+        max: 5.0,
+    };
 
-    assert_eq!(h.integrate(&c1), 150);
-    assert_eq!(h.integrate(&c2), 350);
+    assert_eq!(h.integrate(&c1.into()), 150);
+    assert_eq!(h.integrate(&c2.into()), 350);
 }
 
 #[test]
@@ -58,11 +64,19 @@ fn integrate_2d_rand() {
         h.fill((-x, y));
     }
 
-    let c1 = Cut2dCirc::new(0.0, 0.0, 1.5);
-    let c2 = Cut2dCirc::new(0.0, 0.0, 5.0);
+    let c1 = Cut2dCirc {
+        x0: 0.0,
+        y0: 0.0,
+        r: 1.5,
+    };
+    let c2 = Cut2dCirc {
+        x0: 0.0,
+        y0: 0.0,
+        r: 5.0,
+    };
 
-    assert_eq!(h.integrate(&c1), 150);
-    assert_eq!(h.integrate(&c2), 550);
+    assert_eq!(h.integrate(&c1.into()), 150);
+    assert_eq!(h.integrate(&c2.into()), 550);
 }
 
 #[test]
@@ -74,13 +88,15 @@ fn integrate_2d_banana() {
     h.fill_with_counts((8., 10.), 342);
     h.fill_with_counts((0., 0.), 114);
 
-    let c1 = Cut2dPoly::from_verts(vec![
-        (0.1, 0.75),
-        (0.5, 0.65),
-        (0.75, 0.5),
-        (0.4, 0.5),
-        (0.1, 0.7),
-    ]);
+    let c1 = Cut2dPoly {
+        verts: vec![
+            (0.1, 0.75),
+            (0.5, 0.65),
+            (0.75, 0.5),
+            (0.4, 0.5),
+            (0.1, 0.7),
+        ],
+    };
 
-    assert_eq!(h.integrate(&c1), 342);
+    assert_eq!(h.integrate(&c1.into()), 342);
 }

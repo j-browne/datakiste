@@ -75,14 +75,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 print!("{} ", n);
                 print!("{} ", p.points().len());
             }
-            DkItem::Cut1dLin(_c) => {
-                print!("Cut1d: ");
-                print!("{} ", n);
-            }
-            DkItem::Cut2dCirc(_) | DkItem::Cut2dRect(_) | DkItem::Cut2dPoly(_) => {
-                print!("Cut2d: ");
-                print!("{} ", n);
-            }
             _ => unreachable!(),
         }
         println!();
