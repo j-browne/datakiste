@@ -3,6 +3,7 @@ use datakiste::{
     hist::Hist,
     io::{Datakiste, DkItem},
 };
+use indexmap::IndexMap;
 use std::{fs::File, io::BufReader, path::PathBuf};
 use structopt::StructOpt;
 
@@ -36,6 +37,9 @@ enum SubCommand {
         #[structopt(name = "CUT_FILE", parse(from_os_str))]
         /// JSON file with cut
         f_cut_name: PathBuf,
+        #[structopt(name = "CUT")]
+        /// Name of cut to use
+        cut_name: String,
     },
 }
 
@@ -75,11 +79,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             f_hist_name,
             hist_name,
             f_cut_name,
+            cut_name,
         } => {
             let f_hist = BufReader::new(File::open(f_hist_name)?);
             let f_cut = BufReader::new(File::open(f_cut_name)?);
             let dk_hist: Datakiste = bincode::deserialize_from(f_hist)?;
-            let cut: Cut = serde_json::from_reader(f_cut)?;
+            let mut cuts: IndexMap<String, Cut> = serde_json::from_reader(f_cut)?;
+            let cut = cuts
+                .remove(&cut_name)
+                .ok_or(format!("{} not found in cut file", cut_name))?;
             let mut hist_item = None;
 
             for (n, i) in dk_hist.items {

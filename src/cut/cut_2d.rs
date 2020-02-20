@@ -91,6 +91,7 @@ pub struct Cut2dEllipse {
     pub y0: f64,
     pub rx: f64,
     pub ry: f64,
+    #[serde(default, with = "angle_serde")]
     pub theta: f64,
 }
 
@@ -130,6 +131,25 @@ impl Cut2dPoly {
         }
 
         inside
+    }
+}
+
+mod angle_serde {
+    use serde::{Deserialize, Deserializer, Serialize, Serializer};
+
+    #[allow(clippy::trivially_copy_pass_by_ref)]
+    pub(super) fn serialize<S>(v: &f64, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        v.to_degrees().serialize(serializer)
+    }
+
+    pub(super) fn deserialize<'de, D>(deserializer: D) -> Result<f64, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        f64::deserialize(deserializer).map(f64::to_radians)
     }
 }
 

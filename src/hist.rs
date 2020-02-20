@@ -296,6 +296,20 @@ impl Hist1d {
         }
         sum
     }
+
+    /// Consumes `self` and returns the hist with all bins that are not in
+    /// `cut` set to 0.
+    pub fn filter(self, cut: &Cut1d) -> Self {
+        let Self { axes, mut counts } = self;
+        for (idx, c) in counts.iter_mut().enumerate() {
+            let val = axes.val_at_bin_mid(idx);
+            if !cut.contains(val) {
+                *c = 0;
+            }
+        }
+
+        Self { axes, counts }
+    }
 }
 
 /// A type that describes a 3D histogram.
@@ -442,6 +456,33 @@ impl Hist2d {
             }
         }
         sum
+    }
+
+    /// Consumes `self` and returns the hist with all bins that are not in
+    /// `cut` set to 0.
+    pub fn filter(self, cut: &Cut2d) -> Self {
+        let Self { axes, mut counts } = self;
+        for (idx, c) in counts.iter_mut().enumerate() {
+            // FIXME: Do not repeat yourself. This should be a method that
+            // doesn't need a borrow
+            let val = {
+                let mut idx = idx;
+                let mut bin: <Self as Hist>::Bin = (0, 0);
+                bin.0 = idx as u32 / axes.1.bins;
+                idx %= axes.1.bins as usize;
+                bin.1 = idx as u32;
+                (
+                    axes.0.val_at_bin_mid(bin.0 as usize),
+                    axes.1.val_at_bin_mid(bin.1 as usize),
+                )
+            };
+
+            if !cut.contains(val.0, val.1) {
+                *c = 0;
+            }
+        }
+
+        Self { axes, counts }
     }
 }
 
