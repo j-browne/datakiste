@@ -1,8 +1,7 @@
-extern crate datakiste;
-extern crate rand;
-
-use datakiste::cut::{Cut1dBetween, Cut2dCirc, Cut2dPoly};
-use datakiste::hist::{Hist, Hist1d, Hist2d};
+use datakiste::{
+    cut::{Cut1dBetween, Cut2dCirc, Cut2dPoly},
+    hist::{Hist, Hist1d, Hist2d},
+};
 use rand::distributions::{Distribution, Uniform};
 
 #[test]
