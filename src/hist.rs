@@ -150,7 +150,9 @@ pub trait Hist {
     }
 
     fn clear(&mut self) {
-        self.counts_mut().clear();
+        for c in self.counts_mut() {
+            *c = 0;
+        }
     }
 }
 
@@ -927,13 +929,22 @@ mod tests {
         let h = Hist2d::new(0usize, 0f64, 100f64);
         assert!(h.is_none());
     }
+    */
 
     #[test]
     fn hist_2d_add() {
-        let mut h1a = Hist2d::with_counts(5usize, 0f64, 10f64,
-            vec![2, 3, 50, 4, 1]).unwrap();
-        let mut h2a = Hist2d::with_counts(10usize, 5f64, 10f64,
-            vec![0, 0, 5, 15, 16, 10, 9, 20, 8, 12]).unwrap();
+        let mut h1a = Hist2d::with_counts(
+            2, 0.0, 2.0, // axis 1
+            2, 0.0, 2.0, // axis 2
+            vec![2, 3, 50, 4],
+        )
+        .unwrap();
+        let mut h2a = Hist2d::with_counts(
+            3, 0.0, 2.0, // axis 1
+            3, 0.0, 3.0, // axis 2
+            vec![0, 0, 15, 16, 10, 9, 20, 8, 5],
+        )
+        .unwrap();
 
         let h1b = h1a.clone();
         let h2b = h2a.clone();
@@ -941,10 +952,9 @@ mod tests {
         h1a.add(&h2b);
         h2a.add(&h1b);
 
-        assert_eq!(h1a.counts, [2, 3, 50, 50, 50]);
-        assert_eq!(h2a.counts, [55, 0, 5, 15, 20, 10, 9, 20, 9, 12]);
-        assert_eq!(h1b.counts, [2, 3, 50, 4, 1]);
-        assert_eq!(h2b.counts, [0, 0, 5, 15, 16, 10, 9, 20, 8, 12]);
+        assert_eq!(h1a.counts, [2, 18, 86, 36]);
+        assert_eq!(h2a.counts, [2, 3, 15, 16, 10, 9, 70, 12, 5]);
+        assert_eq!(h1b.counts, [2, 3, 50, 4]);
+        assert_eq!(h2b.counts, [0, 0, 15, 16, 10, 9, 20, 8, 5]);
     }
-    */
 }
