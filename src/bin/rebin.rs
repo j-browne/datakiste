@@ -5,11 +5,11 @@ use datakiste::{
     io::{Datakiste, DkItem},
 };
 use std::{
-    collections::HashMap,
     fs::File,
     io::{BufRead, BufReader, BufWriter},
     path::PathBuf,
 };
+use indexmap::IndexMap;
 use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
@@ -41,7 +41,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let f_out = BufWriter::new(File::create(opt.f_out_name)?);
     let dk: Datakiste = bincode::deserialize_from(f_in)?;
 
-    let mut hists = HashMap::<String, DkItem>::new();
+    let mut hists = IndexMap::<String, DkItem>::new();
     for line in f_hists.lines() {
         let l = line.unwrap();
         let x: Vec<_> = l.split_whitespace().collect();
@@ -73,11 +73,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    for (n, i) in &dk {
+    for (n, i) in dk {
         match i {
             DkItem::Hist1d(h1) => {
-                if hists.contains_key(n) {
-                    if let DkItem::Hist1d(ref mut h2) = *hists.get_mut(n).unwrap() {
+                if hists.contains_key(&n) {
+                    if let DkItem::Hist1d(ref mut h2) = *hists.get_mut(&n).unwrap() {
                         let h = h2.to_mut();
                         h.clear();
                         if opt.fuzz {
@@ -91,8 +91,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
             }
             DkItem::Hist2d(h1) => {
-                if hists.contains_key(n) {
-                    if let DkItem::Hist2d(ref mut h2) = *hists.get_mut(n).unwrap() {
+                if hists.contains_key(&n) {
+                    if let DkItem::Hist2d(ref mut h2) = *hists.get_mut(&n).unwrap() {
                         let h = h2.to_mut();
                         h.clear();
                         if opt.fuzz {
@@ -109,7 +109,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    bincode::serialize_into(f_out, &dk)?;
+    let dk_new = Datakiste::with_items(hists);
+    bincode::serialize_into(f_out, &dk_new)?;
 
     Ok(())
 }
