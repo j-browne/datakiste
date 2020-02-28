@@ -484,6 +484,7 @@ pub struct Datakiste<'a> {
     magic_number: u64,
     #[serde(deserialize_with = "deserialize_version")]
     version: (u64, u64, u64),
+    #[serde(deserialize_with = "deserialize_items")]
     pub items: IndexMap<String, DkItem<'a>>,
 }
 
@@ -579,6 +580,16 @@ where
             &format!("{:?}", DK_VERSION).as_str(),
         ))
     }
+}
+
+fn deserialize_items<'de, 'a, D>(
+    deserializer: D,
+) -> core::result::Result<IndexMap<String, DkItem<'a>>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let items = <Vec<(String, DkItem<'a>)>>::deserialize(deserializer)?;
+    Ok(items.into_iter().collect())
 }
 
 /// An interface for reading datakiste text data
