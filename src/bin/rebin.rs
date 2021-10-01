@@ -4,12 +4,12 @@ use datakiste::{
     hist::{Hist, Hist1d, Hist2d},
     io::{Datakiste, DkItem},
 };
+use indexmap::IndexMap;
 use std::{
     fs::File,
     io::{BufRead, BufReader, BufWriter},
     path::PathBuf,
 };
-use indexmap::IndexMap;
 use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
